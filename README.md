@@ -33,9 +33,11 @@ Pastikan sistem Anda sudah terinstall:
 Untuk Ubuntu / Unix:
 
 1. Update Sistem:
-   $ sudo apt update && sudo apt upgrade -y
+   ```bash
+   sudo apt update && sudo apt upgrade -y
+  ```
 
-2. Instal Node.js dan npm:
+3. Instal Node.js dan npm:
 
    - Menggunakan NodeSource (disarankan untuk mendapatkan versi LTS terbaru):
      $ curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
@@ -44,17 +46,17 @@ Untuk Ubuntu / Unix:
    - Atau menggunakan apt (pastikan versinya memadai):
      $ sudo apt install nodejs npm
 
-3. Clone Repository:
+4. Clone Repository:
    $ git clone https://github.com/bangtutorial/StreamFlow.git
    $ cd streamflow
 
-4. Install Dependencies:
+5. Install Dependencies:
    $ npm install
 
-5. Jalankan Aplikasi:
+6. Jalankan Aplikasi:
      $ npm start
 
-6. Akses Aplikasi:
+7. Akses Aplikasi:
    Buka browser dan akses http://localhost:5000
 
 

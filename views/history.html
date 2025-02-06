@@ -14,7 +14,7 @@
     <nav class="bg-nav fixed top-0 left-0 w-full z-50">
         <div class="flex justify-between items-center h-16 px-4">
             <a href="/dashboard" class="pl-3">
-                <img src="/img/logo.svg" alt="Stream Flow Logo" class="h-9 w-auto cursor-pointer" />  <!-- Tambahkan cursor-pointer -->
+                <img src="/img/logo.svg" alt="Stream Flow Logo" class="h-9 w-auto cursor-pointer" /> 
             </a>
             <div class="flex items-center gap-2">
                 <div class="relative" id="profileContainer">
@@ -140,9 +140,13 @@
             paginatedData.forEach((item, index) => {
                 const row = document.createElement('tr');
                 row.className = 'border-b border-gray-100 hover:bg-gray-50/50 transition-colors';
+
+                // Column 1: No.
                 const noCell = document.createElement('td');
                 noCell.className = 'py-4 pl-6 text-left'; 
                 noCell.textContent = (startIndex + index + 1).toString();
+
+                // Column 2: Title & Details
                 const titleCell = document.createElement('td');
                 titleCell.className = 'py-4 pl-4 pr-6 text-left'; 
                 titleCell.innerHTML = `
@@ -156,6 +160,8 @@
                         </div>
                     </div>
                 `;
+
+                // Column 3: Platform
                 const platformCell = document.createElement('td');
                 platformCell.className = 'py-4 px-6 text-center'; 
                 let platform;
@@ -169,6 +175,9 @@
                     platform = '<span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-sm font-medium text-gray-600 ring-1 ring-gray-500/10 ring-inset"><i class="fa-solid fa-link"></i>&nbsp;RTMP</span>';
                 }
                 platformCell.innerHTML = platform;
+
+
+                // Column 4: Stream Configuration
                 const configCell = document.createElement('td');
                 configCell.className = 'py-4 px-6 text-center'; 
                 configCell.innerHTML = `
@@ -184,6 +193,8 @@
                         </span>
                     </div>
                 `;
+
+                // Column 5: Date & Time
                 const dateCell = document.createElement('td');
                 dateCell.className = 'py-4 px-6 text-left'; 
                 const date = new Date(item.created_at);
@@ -202,6 +213,8 @@
                         </div>
                     </div>
                 `;
+
+                // Column 6: Actions
                 const actionCell = document.createElement('td');
                 actionCell.className = 'py-4 px-6 text-center'; 
                 actionCell.innerHTML = `
@@ -270,6 +283,7 @@
                         'success'
                     );
                     
+                    // Update table instead of reloading the page
                     updatePagination(historyData.filter(item => item.id !== id));
                 } catch (error) {
                     Swal.fire({
@@ -296,8 +310,6 @@
                     throw new Error(`Error fetching history: ${errorMessage}`);
                 }
                 const historyData = await response.json();
-
-                // Update total stream count
                 totalStreamElement.textContent = historyData.length;
 
                 if (historyData.length === 0) {

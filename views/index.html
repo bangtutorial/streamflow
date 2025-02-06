@@ -14,7 +14,7 @@
   <nav class="bg-nav fixed top-0 left-0 w-full z-50">
     <div class="flex justify-between items-center h-16 px-4">
       <a href="/dashboard" class="pl-3">
-        <img src="/img/logo.svg" alt="Stream Flow Logo" class="h-9 w-auto cursor-pointer" /> 
+        <img src="/img/logo.svg" alt="Stream Flow Logo" class="h-9 w-auto cursor-pointer" />
       </a>
       <div class="flex items-center gap-2">
         <button id="addContainer" class="bg-blue-600 text-sm text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all mr-2">
@@ -110,7 +110,8 @@
     </div>
   </div>
 </div>
-<script src="app.js"></script>
+
+  <script src="app.js"></script>
 </body>
 </html>
 <script>
@@ -122,14 +123,12 @@ document.getElementById('settingsMenu').addEventListener('click', async function
     const data = await response.json();
     originalUsername = data.username;
     document.getElementById('settingsPopup').classList.add('show');
-    document.querySelector('input[name="username"]').value = originalUsername; 
+    document.querySelector('input[name="username"]').value = originalUsername;
 });
-
   document.getElementById('closeSettings').addEventListener('click', function() {
     document.getElementById('settingsPopup').classList.remove('show');
     resetForm();
   });
-
   document.getElementById('avatarInput').addEventListener('change', function() {
     const file = this.files[0];
     const preview = document.getElementById('avatarPreview');
@@ -143,7 +142,6 @@ document.getElementById('settingsMenu').addEventListener('click', async function
         preview.src = '/img/avatar.jpg';
         return;
       }
-
       if (file.size > 10 * 1024 * 1024) {
         showMessage('Ukuran file maksimal 10MB', 'error');
         this.value = '';
@@ -151,12 +149,10 @@ document.getElementById('settingsMenu').addEventListener('click', async function
         preview.src = '/img/avatar.jpg';
         return;
       }
-
       const reader = new FileReader();
       reader.onload = (e) => {
         preview.src = e.target.result;
         selectedAvatarFile = file;
-        
         document.getElementById('profileMenu').src = e.target.result;
       };
       reader.readAsDataURL(file);
@@ -169,7 +165,7 @@ document.getElementById('settingsMenu').addEventListener('click', async function
   document.getElementById('settingsForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   console.log('[Client] Form submission started');
-
+  
   const formMessage = document.getElementById('formMessage');
   formMessage.classList.add('hidden');
 
@@ -286,7 +282,7 @@ document.getElementById('settingsMenu').addEventListener('click', async function
   .form-settings {
     padding: 20px 50px 40px 50px;
   }
-
+  
   .content-header {
     border-bottom: 1px solid #e2e8f0;
     padding: 1.1rem 2rem 1.1rem 50px;
@@ -315,7 +311,7 @@ document.getElementById('settingsMenu').addEventListener('click', async function
     transform: rotate(90deg);
     background: #f1f5f9;
   }
-
+  
   .avatar-section {
     display: flex;
     align-items: center;

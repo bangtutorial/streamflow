@@ -32,7 +32,6 @@ body, button, input, textarea, select, a, span, div, p, h1, h2, h3, h4, h5, h6 {
 .transition-all {
   transition: all 0.2s ease-in-out;
 }
-
 .switch {
   position: relative;
   display: inline-block;

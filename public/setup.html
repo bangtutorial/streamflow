@@ -5,12 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Setup | StreamFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body class="bg-gradient min-h-screen flex justify-center items-center">
     <div class="flex flex-col items-center relative pb-16">
         <h2 class="text-4xl font-medium mb-8 text-white text-center">Setup Akun</h2>
+
         <div class="w-full p-8 bg-nav rounded-2xl backdrop-blur-xl shadow-2xl max-w-md" style="width: 350px;">
             <form id="setupForm" enctype="multipart/form-data" class="space-y-2">
                 <div class="flex flex-col items-center mb-8">
@@ -50,6 +53,7 @@
                                 required>
                         </div>
                     </div>
+
                     <div>
                         <div class="relative">
                             <i class="fas fa-lock absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
@@ -94,7 +98,6 @@
                 reader.readAsDataURL(file);
             }
         });
-
         document.getElementById('setupForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             messageDiv.textContent = '';

@@ -1,28 +1,26 @@
-# StreamFlow: Multi-Window Live Streaming Application
+# StreamFlow: Aplikasi Live Streaming Multi-Window
 
-StreamFlow is a live streaming application that allows you to stream live to various platforms such as YouTube, Facebook, and others via the RTMP protocol. This application runs in a VPS (Virtual Private Server) environment and allows you to run multiple streams simultaneously by adding multiple streaming windows. StreamFlow also includes secure login features and streaming history to track your activity.
+StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan siaran langsung ke berbagai platform seperti YouTube, Facebook, dan lainnya menggunakan protokol RTMP. Aplikasi ini berjalan di lingkungan VPS (Virtual Private Server) dan mendukung streaming ke banyak platform sekaligus dengan fitur multi-window. StreamFlow juga dilengkapi dengan fitur login dan history streaming untuk melacak aktivitasmu.
 
-## Key Features:
+## Fitur Utama:
 
-* **Multi-Window Streaming:** Broadcast multiple streams simultaneously from a single application.
-* **Versatile Platform Support:** Stream to YouTube, Facebook, and other platforms supporting RTMP.
-* **User-Friendly Interface:** Easy to use and navigate, even for new users.
-* **Secure Login:** Protect your account with a secure login system.
-* **Streaming History:** Track all your streaming activity with a saved history.
+* **Multi-Window Streaming:** Bisa melakukan siaran ke beberapa platform sekaligus dalam satu aplikasi.
+* **Dukungan Banyak Platform:** Bisa streaming ke YouTube, Facebook, dan platform lain yang mendukung RTMP.
+* **Login Page:** Ada fitur login supaya hanya pemilik akun yang bisa akses aplikasi.
+* **Riwayat Streaming:** Semua aktivitas streaming tersimpan, jadi bisa dilihat kembali kapan saja.
 
+## Cara Instalasi:
 
-## Installation:
+**Sebelum mulai:** Pastikan server / VPS kamu sudah terinstall Node.js, npm, dan FFmpeg sebelum meng-clone repositori ini.
 
-**Before you begin:** You need to install Node.js, npm, and FFmpeg on your Ubuntu server before cloning the repository.
-
-1. **Install Node.js and npm using the official NodeSource PPA:**
+1. **Install Node.js dan npm melalui NodeSource PPA:**
 
    ```bash
    curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
    sudo apt-get install -y nodejs
    sudo apt-get install -y npm
    ```
-   Verify the installation:
+   Cek apakah instalasi berhasil:
    ```bash
    node -v
    npm -v
@@ -34,71 +32,74 @@ StreamFlow is a live streaming application that allows you to stream live to var
    sudo apt-get update
    sudo apt-get install -y ffmpeg
    ```
-   Verify the installation:
+   Cek apakah instalasi berhasil:
    ```bash
    ffmpeg -version
    ```
 
-3. **Clone the Repository:**
+3. **Clone Repositori:**
    ```bash
    git clone https://github.com/bangtutorial/StreamFlow/
    cd streamflow
    ```
 
-4. **Install Dependencies:**
-   Running `npm install` will automatically install all the necessary Node.js modules listed in the `package.json` file.  This includes packages like Express.js, SQLite3, bcryptjs, and others.
+4. **Install Dependensi:**
+   Jalankan `npm install` untuk menginstal semua modul Node.js yang dibutuhkan seperti Express.js, SQLite3, bcryptjs, dan lainnya.
 
    ```bash
    npm install
    ```
 
-5. **Run the Application:**
+5. **Jalankan Aplikasi:**
    ```bash
    npm start
    ```
-   To run the application in development mode with auto-reload, use:
+   Untuk mode development dengan auto-reload, gunakan:
    ```bash
    npm run dev
    ```
 
-6. **Configuration:**
-    * Make sure you have configured the appropriate RTMP URL for each streaming platform you want to use. This configuration can be done through the application's user interface. You may need to obtain a Stream Key from your chosen streaming platform.
+6. **Konfigurasi:**
+    * Pastikan kamu sudah mengatur URL RTMP yang sesuai untuk setiap platform yang ingin digunakan. Konfigurasi ini bisa dilakukan langsung melalui tampilan aplikasi.
+    * Silahkan dapatkan Stream Key dari platform streaming yang kamu gunakan.
 
-## Additional Information:
+## Informasi Tambahan:
 
-* This application uses Express.js as the backend framework, SQLite as the database, and FFmpeg for encoding and streaming.
-* The user interface is built using HTML, CSS, and JavaScript with Tailwind CSS for styling.
-* To run this application, ensure you have a server configured with Node.js and the required dependencies. This application is designed to run in a server environment, not a local browser.
+* Aplikasi ini menggunakan Express.js sebagai backend, SQLite sebagai database, dan FFmpeg untuk encoding serta streaming.
+* Antarmuka pengguna dibuat dengan HTML, CSS, dan JavaScript, serta menggunakan Tailwind CSS untuk styling.
+* Aplikasi ini dirancang untuk berjalan di server dengan Node.js, bukan di browser lokal.
 
-## Contributing:
+## Changelog:
 
-Contributions are highly appreciated! Please create a pull request if you have any improvements or new features.
+### Version 1.0 - Feb 06, 2025
+- **Added:**
+  * Added: Halaman setup akun
+  * Added: Halaman login
+  * Added: Halaman history
+  * Added: Pengaturan akun
 
+- **Fixed:**
+  * Fixed: Streaming hilang jika dibuka di browser berbeda
+  * Fixed: Streaming berhenti sendiri
 
-## License:
+- **Improvement:**
+  * Improvement: Pembaruan tampilan aplikasi
 
-MIT License
+### Version 1.0 Beta - Jan 22, 2025
+- Aplikasi dirilis (untuk internal)
 
-Copyright © 2025 <a href="https://youtube.com/bangtutorial">Bang Tutorial</a>
+## Kontribusi:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Jika teman-teman punya ide atau perbaikan koding aplikasi ini, silakan buat pull request 🤝
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+## Lisensi:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/streamflow/LICENSE)
 
-## Contact:
+Hak Cipta © 2025 - [Bang Tutorial](https://youtube.com/bangtutorial)
 
-For questions or issues, please contact <info.bangtutorial@gmail.com>.
+Aplikasi ini disediakan "SEBAGAIMANA ADANYA", tanpa jaminan apa pun, baik tersurat maupun tersirat, termasuk tetapi tidak terbatas pada jaminan kelayakan untuk diperdagangkan, kesesuaian untuk tujuan tertentu, dan non-pelanggaran. Dalam keadaan apa pun, penulis atau pemegang hak cipta tidak bertanggung jawab atas klaim, kerusakan, atau kewajiban lainnya.
+
+## Kontak:
+
+Jika ada pertanyaan, silahkan hubungi info.bangtutorial@gmail.com.

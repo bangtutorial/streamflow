@@ -139,6 +139,7 @@ function createContainer(containerData) {
   const removeVideoBtn = container.querySelector('.remove-video');
   const stopStreamBtn = container.querySelector('.stop-stream');
   const liveNotif = container.querySelector('.live-notif');
+  videoElement.loop = loop;
   if (previewFile) {
     const videoURL = `/video/${previewFile}`;
     videoElement.src = videoURL;

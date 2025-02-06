@@ -1,7 +1,5 @@
 const os = require('os');
 const crypto = require('crypto');
-const https = require('https');
-const fs = require('fs');
 const express = require('express');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
@@ -49,11 +47,6 @@ const uploadAvatar = multer({
 });
 
 // Setup middleware
-const privateKey = fs.readFileSync('./sslcert/privkey.pem');
-const certificate = fs.readFileSync('./sslcert/fullchain.pem');
-const credentials = { key: privateKey, cert: certificate };
-const httpsServer = https.createServer(credentials, app);
-
 app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.static(path.join(__dirname, 'uploads')));
 app.use(cors({ origin: true, credentials: true }));
@@ -566,4 +559,5 @@ for (const iface of Object.values(ifaces)) {
 }
 
 const PORT = process.env.PORT || 5000;
-httpsServer.listen(PORT, () => console.log(`\x1b[32mStreamFlow berjalan dengan HTTPS\x1b[0m\nAkses aplikasi di \x1b[34mhttps://${ipAddress}:${PORT}\x1b[0m`));
+app.listen(PORT, () => console.log(`\x1b[32mStreamFlow berjalan\x1b[0m\nAkses aplikasi di \x1b[34mhttp://${ipAddress}:${PORT}\x1b[0m`));
+

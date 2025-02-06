@@ -1,3 +1,10 @@
+<div align="center">
+<img alt="LOGO" src="https://raw.githubusercontent.com/bangtutorial/StreamFlow/refs/heads/main/public/img/logo.svg" width="400" height="auto" />
+</div>
+<br><br>
+
+
+
 # StreamFlow: Aplikasi Live Streaming Multi-Window
 
 StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan siaran langsung ke berbagai platform seperti YouTube, Facebook, dan lainnya menggunakan protokol RTMP. Aplikasi ini berjalan di VPS (Virtual Private Server) dan mendukung streaming ke banyak platform sekaligus dengan fitur multi-window. StreamFlow juga dilengkapi dengan fitur login dan history streaming untuk melacak history streaming.

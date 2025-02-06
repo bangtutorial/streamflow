@@ -4,7 +4,7 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 
 ## Fitur Utama:
 
-* **Multi-Window Streaming:** Bisa melakukan siaran ke beberapa platform sekaligus dalam satu aplikasi.
+* **Multi-Window Streaming:** Bisa melakukan streaming ke beberapa platform sekaligus dalam satu aplikasi.
 * **Dukungan Banyak Platform:** Bisa streaming ke YouTube, Facebook, dan platform lain yang mendukung RTMP.
 * **Login Page:** Ada fitur login supaya hanya pemilik akun yang bisa akses aplikasi.
 * **Riwayat Streaming:** Semua aktivitas streaming tersimpan, jadi bisa dilihat kembali kapan saja.

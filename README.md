@@ -1,7 +1,8 @@
-<br><br><div align="center">
+<br>
+<div align="center">
 <img alt="LOGO" src="https://raw.githubusercontent.com/bangtutorial/StreamFlow/refs/heads/main/public/img/logo.svg" width="400" height="auto" />
 </div>
-<br><br>
+<br>
 
 
 

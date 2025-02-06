@@ -478,14 +478,23 @@ app.get('/stream-status/:streamKey', (req, res) => {
     }
   }, 5000);
 
-  res.on('close', () => {
-    clearInterval(intervalId);
-    if (streams[streamKey]) {
-      database.updateStreamContainer(streams[streamKey].containerId, { is_streaming: 0 }, (err) => {
-        if (err) console.error('Error updating stream container status to 0 on close:', err);
-      });
-    }
-  });
+  res.on('end', () => {
+    console.log('Streaming selesai:', streamKey);
+    delete streams[streamKey];
+    database.updateStreamContainer(containerId, { is_streaming: 0 }, (err) => {
+      if (err) console.error('Error updating database:', err);
+      deleteFile(newFilePath);
+    });
+  })
+  res.on('error', (err) => {
+    console.error('Stream error:', err);
+    delete streams[streamKey];
+    deleteFile(newFilePath);
+    // Update status jika streaming gagal
+    database.updateStreamContainer(containerId, { is_streaming: 0 }, (err) => {
+      if (err) console.error('Error updating database:', err);
+    });
+  })  
 });
 
 // ================== SETUP AKUN ==================

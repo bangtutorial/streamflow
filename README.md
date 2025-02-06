@@ -36,30 +36,43 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
    ```bash
    ffmpeg -version
    ```
+   
+3. **Install PM2:**
 
-3. **Clone Repositori:**
+   ```bash
+   npm install -g pm2
+   ```
+
+4. **Clone Repositori:**
    ```bash
    git clone https://github.com/bangtutorial/StreamFlow/
    cd StreamFlow
    ```
 
-4. **Install Dependensi:**
+5. **Install Dependensi:**
    Jalankan `npm install` untuk menginstal semua modul Node.js yang dibutuhkan seperti Express.js, SQLite3, bcryptjs, dan lainnya.
 
    ```bash
    npm install
    ```
 
-5. **Jalankan Aplikasi:**
+6. **Jalankan Aplikasi:**
    ```bash
-   npm start
-   ```
-   Untuk mode development dengan auto-reload, gunakan:
-   ```bash
-   npm run dev
+   pm2 start StreamFlow
+   pm2 logs StreamFlow -i 0 --lines 1
    ```
 
-6. **Konfigurasi:**
+   Melihat status aplikasi berjalan
+   ```bash
+   pm2 status StreamFlow
+   ```
+
+   Menghentikan aplikasi
+   ```bash
+   pm2 stop StreamFlow
+   ```
+
+7. **Konfigurasi:**
     * Pastikan kamu sudah mengatur URL RTMP yang sesuai untuk setiap platform yang ingin digunakan. Konfigurasi ini bisa dilakukan langsung melalui tampilan aplikasi.
     * Silahkan dapatkan Stream Key dari platform streaming yang kamu gunakan.
 

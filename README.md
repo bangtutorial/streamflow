@@ -1,6 +1,6 @@
 <br>
 <div align="center">
-<img alt="LOGO" src="https://raw.githubusercontent.com/bangtutorial/StreamFlow/refs/heads/main/public/img/logo.png" width="420" height="auto" />
+<img alt="LOGO" src="https://raw.githubusercontent.com/bangtutorial/streamflow/refs/heads/main/public/img/logo.png" width="420" height="auto" />
 </div>
 <br>
 
@@ -53,8 +53,8 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 
 4. **Clone Repositori:**
    ```bash
-   git clone https://github.com/bangtutorial/StreamFlow/
-   cd StreamFlow
+   git clone https://github.com/bangtutorial/streamflow/
+   cd streamflow
    ```
 
 5. **Install Dependensi:**
@@ -66,18 +66,18 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 
 6. **Jalankan Aplikasi:**
    ```bash
-   pm2 start StreamFlow
-   pm2 logs StreamFlow -i 0 --lines 1
+   pm2 start streamflow
+   pm2 logs streamflow -i 0 --lines 1
    ```
 
    Melihat status aplikasi berjalan
    ```bash
-   pm2 status StreamFlow
+   pm2 status streamflow
    ```
 
    Menghentikan aplikasi
    ```bash
-   pm2 stop StreamFlow
+   pm2 stop streamflow
    ```
 
 7. **Konfigurasi:**
@@ -96,6 +96,6 @@ Jika teman-teman punya ide atau perbaikan koding aplikasi ini, silakan buat pull
 
 ## Lisensi:
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/StreamFlow/blob/main/LICENSE)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/streamflow/blob/main/LICENSE)
 
 Hak Cipta © 2025 - [Bang Tutorial](https://youtube.com/bangtutorial)

@@ -1,6 +1,6 @@
 <br>
 <div align="center">
-<img alt="LOGO" src="https://raw.githubusercontent.com/bangtutorial/StreamFlow/refs/heads/main/public/img/logo.svg" width="400" height="auto" />
+<img alt="LOGO" src="https://raw.githubusercontent.com/bangtutorial/StreamFlow/refs/heads/main/public/img/logo.png" width="420" height="auto" />
 </div>
 <br>
 
@@ -96,6 +96,6 @@ Jika teman-teman punya ide atau perbaikan koding aplikasi ini, silakan buat pull
 
 ## Lisensi:
 
-[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/streamflow/LICENSE)
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/StreamFlow/blob/main/LICENSE)
 
 Hak Cipta © 2025 - [Bang Tutorial](https://youtube.com/bangtutorial)

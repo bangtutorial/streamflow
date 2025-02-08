@@ -54,6 +54,7 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 4. **Clone Repositori:**
    ```bash
    git clone https://github.com/bangtutorial/streamflow/
+   cd streamflow
    ```
 
 5. **Install Dependensi:**
@@ -64,22 +65,29 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
    ```
 
 6. **Jalankan Aplikasi:**
+
+   Kembali ke directory root (jika masih di directory streamflow)
+   ```bash
+   cd ..
+   ```
+
+   🚀 Perintah menjalankan aplikasi ✨
    ```bash
    pm2 start streamflow
    pm2 logs streamflow -i 0 --lines 1
    ```
 
-   Melihat status aplikasi berjalan
+   📈 Melihat status aplikasi berjalan
    ```bash
    pm2 status streamflow
    ```
 
-   Menghentikan aplikasi
+   ⛔ Menghentikan aplikasi
    ```bash
    pm2 stop streamflow
    ```
 
-7. **Konfigurasi:**
+8. **Konfigurasi:**
     * Pastikan kamu sudah mengatur URL RTMP yang sesuai untuk setiap platform yang ingin digunakan. Konfigurasi ini bisa dilakukan langsung melalui tampilan aplikasi.
     * Silahkan dapatkan Stream Key dari platform streaming yang kamu gunakan.
 

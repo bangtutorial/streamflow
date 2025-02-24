@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan | StreamFlow</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="icon" type="image/x-icon" href="/img/favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-gradient min-h-screen flex flex-col">
+    <nav class="bg-nav fixed top-0 left-0 w-full z-50">
+        <div class="flex justify-between items-center h-16 px-4">
+            <a href="/dashboard" class="pl-3">
+                <img src="/img/logo.svg" alt="Stream Flow Logo" class="h-9 w-auto cursor-pointer" />
+            </a>
+            <div class="flex items-center">
+                <div class="relative">
+                    <img src="/img/avatar.jpg" alt="Profile" id="profileMenu"
+                        class="w-9 h-9 rounded-full cursor-pointer object-cover border-2 border-white hover:border-blue-500 transition-all">
+                    <div id="submenu" class="hidden absolute right-0 mt-2 bg-white rounded-md shadow-lg py-1"
+                        style="width: 140px;">
+                        <a href="/gallery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa-regular fa-images mr-1"></i> Galeri
+                        </a>
+                        <a href="/history" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
+                        </a>
+                        <div class="border-t border-gray-200 my-1"></div>
+                        <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fa-solid fa-gear mr-1"></i> Pengaturan
+                        </a>
+                        <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Keluar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 pt-24 pb-8">
+        <div class="mb-14">
+            <h1 class="text-2xl font-bold text-white mb-1">Pengaturan</h1>
+            <p class="text-gray-400 text-sm">Kelola pengaturan akun dan aplikasi</p>
+        </div>
+        <div
+            class="max-w-xl mx-auto bg-gray-900/30 backdrop-blur-sm rounded-2xl border border-gray-800/50 overflow-hidden">
+            <div class="flex border-b border-gray-800/50">
+                <button class="tab-btn active flex-1 px-6 py-4 text-white font-medium transition-all">
+                    <i class="fa-solid fa-user mr-2"></i>Profil
+                </button>
+                <button class="tab-btn flex-1 px-6 py-4 text-gray-400 font-medium transition-all">
+                    <i class="fa-solid fa-key mr-2"></i>Google Drive API
+                </button>
+            </div>
+            <div id="profileSection" class="p-6">
+                <div class="flex flex-col items-center mb-8">
+                    <div class="relative mb-4">
+                        <img src="/img/avatar.jpg" alt="Profile Picture"
+                            class="w-24 h-24 rounded-2xl object-cover ring-4 ring-blue-500/20">
+                        <button class="absolute -bottom-2 -right-2 bg-blue-600 w-8 h-8 flex items-center justify-center rounded-full 
+                               text-white hover:bg-blue-700 transition-all">
+                            <i class="fa-solid fa-camera"></i>
+                        </button>
+                    </div>
+                    <h3 class="text-white text-lg font-medium flex items-center gap-1">
+                        <span id="displayUsername"></span>
+                        <i class="fas fa-check-circle text-blue-500/70 text-xs mt-1"></i>
+                    </h3>
+                    <p class="text-gray-400 text-sm">Administrator</p>
+                </div>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                        <input type="text" value="admin" class="w-full bg-gray-800/50 border border-gray-700/50 text-white px-4 py-3 rounded-xl
+                               focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                        <div class="relative">
+                            <input type="password" disabled value="••••••••" id="passwordInput"
+                                class="w-full bg-gray-800/50 border border-gray-700/50 text-white px-4 py-3 rounded-xl
+                                       focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent">
+                            <button id="changePasswordBtn"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm hover:text-blue-300 transition-colors">
+                                Ubah Password
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="apiSection" class="hidden p-6">
+                <div class="mb-6">
+                    <div class="relative">
+                        <input type="text" id="driveApiKey" class="w-full bg-gray-800/50 border border-gray-700/50 text-white px-4 py-3 rounded-xl
+                               focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent"
+                            placeholder="Masukkan API key Google Drive">
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2">
+                            <i class="fa-brands fa-google-drive text-gray-500"></i>
+                        </div>
+                    </div>
+                    <p class="mt-2 text-gray-400 text-sm">
+                        API key diperlukan untuk mengakses file dari Google Drive
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-xl mx-auto mt-6">
+            <button id="saveSettings" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl
+                   flex items-center justify-center gap-2
+                   ">
+                <i class="fa-solid fa-save"></i>
+                <span>Simpan Perubahan</span>
+            </button>
+        </div>
+        <div class="max-w-xl mx-auto mt-4">
+            <div id="messageAlert" class="hidden rounded-xl p-4 text-sm flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="message-icon text-lg"></i>
+                    <p class="message-text"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black bg-opacity-30 py-2 text-white mt-auto">
+        <div class="mx-auto px-8 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <p class="text-xs">
+                    From Creator for Creator by
+                    <a href="https://youtube.com/bangtutorial"
+                        class="text-blue-400 font-semibold hover:text-blue-300 transition-colors" target="_blank"
+                        rel="noopener noreferrer">
+                        Bang Tutorial
+                    </a>
+                </p>
+            </div>
+            <div class="flex items-center space-x-1">
+                <div class="relative group">
+                    <a href="https://youtube101.id/streamflow/donate/"
+                        class="inline-flex items-center bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-medium ring-1 ring-inset ring-green-600/20 transition-colors"
+                        target="_blank" rel="noopener noreferrer">
+                        <i class="fa-solid fa-mug-hot mr-1"></i>Traktir Kopi
+                    </a>
+                    <div
+                        class="absolute bottom-full mb-2 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-max max-w-[200px] text-center">
+                        <div class="bg-white text-gray-800 text-xs px-3 py-1.5 rounded-md shadow-lg">
+                            ☺️ Thank you udah support<br>pengembangan aplikasi ini
+                        </div>
+                        <div
+                            class="absolute top-full right-2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-white">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
+
+
+<style>
+    .tab-btn {
+        position: relative;
+        background: rgba(17, 24, 39, 0.4);
+    }
+
+    .tab-btn::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: transparent;
+        transition: all 0.3s;
+    }
+
+    .tab-btn:hover::after {
+        background: rgba(59, 130, 246, 0.7);
+    }
+
+    .tab-btn.active::after {
+        background: rgb(59, 130, 246);
+    }
+
+    .tab-btn:hover {
+        background: rgba(17, 24, 39, 0.8);
+    }
+
+    .tab-btn.active {
+        background: rgba(17, 24, 39, 0.95);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const sections = ['profileSection', 'apiSection'];
+
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                sections.forEach(section => {
+                    document.getElementById(section).classList.add('hidden');
+                });
+                document.getElementById(sections[index]).classList.remove('hidden');
+            });
+        });
+
+        const profileMenu = document.getElementById('profileMenu');
+        const submenu = document.getElementById('submenu');
+
+        profileMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            submenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!profileMenu.contains(e.target)) {
+                submenu.classList.add('hidden');
+            }
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const sections = ['profileSection', 'apiSection'];
+
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                sections.forEach(section => {
+                    document.getElementById(section).classList.add('hidden');
+                });
+                document.getElementById(sections[index]).classList.remove('hidden');
+            });
+        });
+    });
+
+    function showMessage(type, message) {
+        const messageAlert = document.getElementById('messageAlert');
+        const messageIcon = messageAlert.querySelector('.message-icon');
+        const messageText = messageAlert.querySelector('.message-text');
+
+        messageAlert.classList.remove('bg-red-500/10', 'text-red-500', 'bg-green-500/10', 'text-green-500');
+        messageIcon.classList.remove('fa-circle-check', 'fa-circle-xmark');
+
+        if (type === 'success') {
+            messageAlert.classList.add('bg-green-500/10', 'text-green-500');
+            messageIcon.classList.add('fa-solid', 'fa-circle-check');
+        } else {
+            messageAlert.classList.add('bg-red-500/10', 'text-red-500');
+            messageIcon.classList.add('fa-solid', 'fa-circle-xmark');
+        }
+
+        messageText.textContent = message;
+        messageAlert.classList.remove('hidden');
+
+        setTimeout(() => {
+            messageAlert.classList.add('hidden');
+        }, 3000);
+    }
+
+    const avatarInput = document.createElement('input');
+    avatarInput.type = 'file';
+    avatarInput.accept = 'image/jpeg';
+    avatarInput.style.display = 'none';
+    document.body.appendChild(avatarInput);
+
+    const avatarButton = document.querySelector('.fa-camera').parentElement;
+    const avatarImage = document.querySelector('img[alt="Profile Picture"]');
+    const navAvatar = document.querySelector('#profileMenu');
+
+    avatarButton.addEventListener('click', () => {
+        avatarInput.click();
+    });
+
+    avatarInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+
+        if (!file.type.includes('jpeg')) {
+            showMessage('error', 'Hanya file JPG yang diperbolehkan');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        try {
+            avatarButton.disabled = true;
+            avatarButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+            const response = await fetch('/upload-avatar', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('Upload failed');
+            const timestamp = new Date().getTime();
+            avatarImage.src = `/img/avatar.jpg?t=${timestamp}`;
+            navAvatar.src = `/img/avatar.jpg?t=${timestamp}`;
+            showMessage('success', 'Foto profil berhasil diperbarui');
+
+        } catch (error) {
+            console.error('Upload error:', error);
+            showMessage('error', 'Gagal mengupload foto profil');
+        } finally {
+            avatarButton.disabled = false;
+            avatarButton.innerHTML = '<i class="fa-solid fa-camera"></i>';
+            avatarInput.value = '';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const usernameInput = document.querySelector('input[type="text"]');
+        const passwordInput = document.getElementById('passwordInput');
+        const changePasswordBtn = document.getElementById('changePasswordBtn');
+        const saveBtn = document.getElementById('saveSettings');
+
+        let hasChanges = false;
+        let newUsername = '';
+        let newPassword = '';
+        let isEditingPassword = false;
+
+        fetch('/api/user/profile')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    usernameInput.value = data.username;
+                    usernameInput.defaultValue = data.username;
+                    document.getElementById('displayUsername').textContent = data.username;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching user profile:', error);
+                showMessage('error', 'Gagal memuat data profil');
+            });
+
+        usernameInput.addEventListener('input', (e) => {
+            newUsername = e.target.value;
+            hasChanges = newUsername !== usernameInput.defaultValue;
+            updateSaveButton();
+        });
+
+        changePasswordBtn.addEventListener('click', () => {
+            if (!isEditingPassword) {
+                passwordInput.disabled = false;
+                passwordInput.value = '';
+                passwordInput.focus();
+                passwordInput.type = 'text';
+                changePasswordBtn.textContent = 'Batalkan';
+                isEditingPassword = true;
+            } else {
+                passwordInput.disabled = true;
+                passwordInput.value = '••••••••';
+                passwordInput.type = 'password';
+                changePasswordBtn.textContent = 'Ubah Password';
+                isEditingPassword = false;
+                newPassword = '';
+                hasChanges = false;
+                updateSaveButton();
+            }
+        });
+
+        passwordInput.addEventListener('input', (e) => {
+            newPassword = e.target.value;
+            if (newPassword.length > 0 && newPassword.length < 8) {
+                passwordInput.classList.add('border-red-500');
+                changePasswordBtn.classList.remove('text-blue-400', 'hover:text-blue-300');
+                changePasswordBtn.classList.add('text-red-400');
+                changePasswordBtn.textContent = 'Min. 8 karakter';
+                hasChanges = false;
+            } else {
+                passwordInput.classList.remove('border-red-500');
+                changePasswordBtn.classList.remove('text-red-400');
+                changePasswordBtn.classList.add('text-blue-400', 'hover:text-blue-300');
+                if (isEditingPassword) {
+                    changePasswordBtn.textContent = 'Batalkan';
+                    hasChanges = newPassword.length >= 8;
+                }
+            }
+
+            updateSaveButton();
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            if (!hasChanges) return;
+            if (newPassword && newPassword.length < 8) {
+                showMessage('error', 'Password minimal 8 karakter');
+                return;
+            }
+
+            try {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+                const response = await fetch('/api/settings/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: newUsername || undefined,
+                        newPassword: newPassword || undefined
+                    })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+                showMessage('success', 'Pengaturan berhasil diperbarui');
+
+                // Reset states
+                hasChanges = false;
+                if (newUsername) {
+                    document.getElementById('displayUsername').textContent = newUsername;
+                    usernameInput.defaultValue = newUsername;
+                }
+                if (newPassword) {
+                    passwordInput.disabled = true;
+                    passwordInput.value = '••••••••';
+                    passwordInput.type = 'password';
+                    changePasswordBtn.textContent = 'Ubah Password';
+                    isEditingPassword = false;
+                    newPassword = '';
+                }
+                updateSaveButton();
+
+                if (newUsername) {
+                    setTimeout(() => window.location.reload(), 1000);
+                }
+
+            } catch (error) {
+                showMessage('error', error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fa-solid fa-save"></i> Simpan Perubahan';
+            }
+        });
+
+        function updateSaveButton() {
+            saveBtn.disabled = !hasChanges;
+            saveBtn.classList.toggle('opacity-50', !hasChanges);
+            saveBtn.classList.toggle('cursor-not-allowed', !hasChanges);
+        }
+    });
+
+    const apiKeyInput = document.getElementById('driveApiKey');
+    let actualApiKey = '';
+
+    fetch('/api/drive-api-key')
+        .then(response => response.json())
+        .then(data => {
+            if (data.apiKey) {
+                actualApiKey = data.apiKey;
+                apiKeyInput.value = maskApiKey(data.apiKey);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching API key:', error);
+            showMessage('error', 'Gagal memuat API key');
+        });
+
+    function maskApiKey(key) {
+        if (!key) return '';
+        return key.substring(0, 9) + '*'.repeat(key.length - 7);
+    }
+
+    apiKeyInput.addEventListener('focus', () => {
+        apiKeyInput.value = actualApiKey;
+    });
+
+    apiKeyInput.addEventListener('blur', () => {
+        apiKeyInput.value = maskApiKey(actualApiKey);
+    });
+
+    apiKeyInput.addEventListener('input', (e) => {
+        actualApiKey = e.target.value;
+    });
+
+    apiKeyInput.addEventListener('change', async () => {
+        try {
+            const response = await fetch('/api/drive-api-key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    apiKey: actualApiKey
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                showMessage('success', 'API key berhasil disimpan');
+                apiKeyInput.value = maskApiKey(actualApiKey);
+            } else {
+                throw new Error(data.message);
+            }
+        } catch (error) {
+            console.error('Error saving API key:', error);
+            showMessage('error', error.message || 'Gagal menyimpan API key');
+        }
+    });
+</script>

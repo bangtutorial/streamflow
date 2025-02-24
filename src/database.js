@@ -4,16 +4,17 @@ const bcrypt = require('bcryptjs');
 
 // ============== BUAT TABEL DATABASE ==============
 db.serialize(() => {
-  // Tabel users: menyimpan data user dan password hash-nya
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL
+      password_hash TEXT NOT NULL,
+      salt TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  // Tabel stream_containers: menyimpan data streaming dan informasi terkait
+  // Tabel stream_containers
   db.run(`
     CREATE TABLE IF NOT EXISTS stream_containers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,7 +29,23 @@ db.serialize(() => {
         loop_enabled INTEGER DEFAULT 0, -- 0 atau 1 sebagai boolean
         is_streaming INTEGER DEFAULT 0,   -- 0 atau 1 sebagai boolean
         container_order INTEGER,
+        schedule_enabled INTEGER DEFAULT 0, -- 0 atau 1 sebagai boolean
+        schedule_start_enabled INTEGER DEFAULT 0, -- 0 atau 1 sebagai boolean
+        schedule_duration_enabled INTEGER DEFAULT 0, -- 0 atau 1 sebagai boolean
+        schedule_start DATETIME,
+        schedule_duration INTEGER,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Tabel settings: menyimpan data pengaturan
+  db.run(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 });
@@ -36,29 +53,40 @@ db.serialize(() => {
 // ============== USER MANAGEMENT ==============
 
 // Menambahkan user baru dengan password yang di-hash.
-const addUser = (username, password, callback) => {
-  bcrypt.hash(password, 10, (err, hash) => {
-    if (err) return callback(err);
-    db.run(
-      'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-      [username, hash],
-      callback
-    );
-  });
+const addUser = (username, hashedPassword, salt, callback) => {
+  const query = `
+    INSERT INTO users (username, password_hash, salt)
+    VALUES (?, ?, ?)
+  `;
+  
+  db.run(query, [username, hashedPassword, salt], callback);
 };
 
 // Mengambil data user berdasarkan username.
 const getUser = (username, callback) => {
-  db.get(
-    'SELECT * FROM users WHERE username = ?',
-    [username],
-    (err, user) => {
-      callback(err, user);
-    }
-  );
+  const query = 'SELECT * FROM users WHERE username = ?';
+  db.get(query, [username], callback);
 };
 
-// Memperbarui data user.
+// Fungsi untuk mendapatkan salt user
+const getUserSalt = (username, callback) => {
+  const query = 'SELECT salt FROM users WHERE username = ?';
+  db.get(query, [username], (err, row) => {
+    if (err) return callback(err);
+    callback(null, row);
+  });
+};
+
+// Fungsi untuk verifikasi user
+const verifyUser = (username, hashedPassword, callback) => {
+  const query = 'SELECT * FROM users WHERE username = ? AND password_hash = ?';
+  db.get(query, [username, hashedPassword], (err, row) => {
+    if (err) return callback(err);
+    callback(null, row);
+  });
+};
+
+// Memperbarui data user
 const updateUser = (userId, updates, callback) => {
   let query = 'UPDATE users SET ';
   const params = [];
@@ -72,6 +100,10 @@ const updateUser = (userId, updates, callback) => {
     setClauses.push('password_hash = ?');
     params.push(updates.password_hash);
   }
+  if (updates.salt) {
+    setClauses.push('salt = ?');
+    params.push(updates.salt);
+  }
 
   if (setClauses.length === 0) {
     return callback(new Error('No fields to update'));
@@ -80,8 +112,12 @@ const updateUser = (userId, updates, callback) => {
   query += setClauses.join(', ') + ' WHERE id = ?';
   params.push(userId);
 
-  db.run(query, params, function (err) {
-    callback(err, this);
+  db.run(query, params, function(err) {
+    if (err) {
+      console.error('Database update error:', err);
+      return callback(err);
+    }
+    callback(null);
   });
 };
 
@@ -90,7 +126,12 @@ const updateUser = (userId, updates, callback) => {
 // Menambahkan data stream container baru ke database.
 const addStreamContainer = (data, callback) => {
   db.run(
-    'INSERT INTO stream_containers (title, preview_file, stream_file, stream_key, stream_url, bitrate, resolution, fps, loop_enabled, container_order, is_streaming) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    `INSERT INTO stream_containers (
+      title, preview_file, stream_file, stream_key, stream_url, 
+      bitrate, resolution, fps, loop_enabled, container_order, 
+      is_streaming, schedule_enabled, schedule_start_enabled,
+      schedule_duration_enabled, schedule_start, schedule_duration
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.title,
       data.preview_file,
@@ -102,7 +143,12 @@ const addStreamContainer = (data, callback) => {
       data.fps,
       data.loop_enabled,
       data.container_order,
-      data.is_streaming
+      data.is_streaming,
+      data.schedule_enabled || 0,
+      data.schedule_start_enabled || 0,
+      data.schedule_duration_enabled || 0,
+      data.schedule_start || null,
+      data.schedule_duration || null
     ],
     function(err) {
       if (err) {
@@ -132,7 +178,26 @@ const updateStreamContainer = (id, updates, callback) => {
     setClauses.push('stream_file = ?');
     params.push(updates.stream_file);
   }
-
+  if (updates.schedule_enabled !== undefined) {
+    setClauses.push('schedule_enabled = ?');
+    params.push(updates.schedule_enabled);
+  }
+  if (updates.schedule_start_enabled !== undefined) {
+    setClauses.push('schedule_start_enabled = ?');
+    params.push(updates.schedule_start_enabled);
+  }
+  if (updates.schedule_duration_enabled !== undefined) {
+    setClauses.push('schedule_duration_enabled = ?');
+    params.push(updates.schedule_duration_enabled);
+  }
+  if (updates.schedule_start !== undefined) {
+    setClauses.push('schedule_start = ?');
+    params.push(updates.schedule_start);
+  }
+  if (updates.schedule_duration !== undefined) {
+    setClauses.push('schedule_duration = ?');
+    params.push(updates.schedule_duration);
+  }
   if (setClauses.length === 0) {
     return callback(new Error('No fields to update'));
   }
@@ -175,10 +240,55 @@ const getUserCount = (callback) => {
   });
 };
 
+const updatePassword = (userId, hashedPassword, salt) => {
+  return new Promise((resolve, reject) => {
+    const query = `
+      UPDATE users 
+      SET password_hash = ?, salt = ?
+      WHERE id = ?
+    `;
+    db.run(query, [hashedPassword, salt, userId], (err) => {
+      if (err) reject(err);
+      resolve();
+    });
+  });
+};
+
+// Menyimpan setting
+const saveSetting = (key, value) => {
+  return new Promise((resolve, reject) => {
+    db.run(
+      'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+      [key, value],
+      (err) => {
+        if (err) reject(err);
+        resolve();
+      }
+    );
+  });
+};
+
+// Mengambil setting
+const getSetting = (key) => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      'SELECT value FROM settings WHERE key = ?',
+      [key],
+      (err, row) => {
+        if (err) reject(err);
+        resolve(row ? row.value : null);
+      }
+    );
+  });
+};
+
 module.exports = { 
   addUser, 
   getUser, 
-  updateUser, 
+  getUserSalt,
+  verifyUser,
+  updateUser,
+  updatePassword,
   addStreamContainer, 
   updateStreamContainer, 
   getStreamContainers, 
@@ -186,5 +296,7 @@ module.exports = {
   getStreamContainerByStreamKey, 
   getHistoryStreamContainers, 
   deleteStreamContainer, 
-  getUserCount 
+  getUserCount,
+  saveSetting,
+  getSetting
 };

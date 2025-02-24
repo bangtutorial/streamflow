@@ -8,6 +8,7 @@
     <link rel="icon" type="image/x-icon" href="/img/favicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 
 <body class="bg-gradient min-h-screen flex justify-center items-center">
@@ -98,11 +99,53 @@
                 reader.readAsDataURL(file);
             }
         });
+
+        function validatePassword(password) {
+            if (password.length < 8) {
+                return 'Password harus minimal 8 karakter';
+            }
+            return '';
+        }
+
+        document.getElementById('password').addEventListener('input', function(e) {
+            const errorMessage = validatePassword(e.target.value);
+            messageDiv.textContent = errorMessage;
+        });
+
+        function generateSalt() {
+            return CryptoJS.lib.WordArray.random(16).toString();
+        }
+
+        function hashPassword(password, salt) {
+            return CryptoJS.SHA256(password + salt).toString();
+        }
+
         document.getElementById('setupForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             messageDiv.textContent = '';
 
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            const passwordError = validatePassword(password);
+            if (passwordError) {
+                messageDiv.textContent = passwordError;
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                messageDiv.textContent = 'Password tidak sama';
+                return;
+            }
+
+            const salt = generateSalt();
+            const hashedPassword = hashPassword(password, salt);
             const formData = new FormData(event.target);
+            formData.delete('password');
+            formData.delete('confirmPassword');
+            formData.append('hashedPassword', hashedPassword);
+            formData.append('salt', salt);
+
             try {
                 const response = await fetch('/setup', {
                     method: 'POST',

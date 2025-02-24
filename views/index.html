@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,27 +11,37 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body class="bg-gradient min-h-screen flex flex-col">
   <nav class="bg-nav fixed top-0 left-0 w-full z-50">
     <div class="flex justify-between items-center h-16 px-4">
       <a href="/dashboard" class="pl-3">
         <img src="/img/logo.svg" alt="Stream Flow Logo" class="h-9 w-auto cursor-pointer" />
       </a>
-      <div class="flex items-center gap-2">
-        <button id="addContainer" class="bg-blue-600 text-sm text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all mr-2">
+      <div class="flex items-center gap-4">
+        <button id="addContainer"
+          class="bg-blue-600 text-sm text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-all">
           <i class="fa-solid fa-video"></i> Tambah
         </button>
-        <span class="bg-white h-4 border-l-2 border-gray-500 ml-2 mr-3 opacity-50"></span>
+        <div class="w-px h-6 bg-gray-600"></div>
         <div class="relative">
-          <img 
-            src="/img/avatar.jpg" 
-            alt="Profile" 
-            id="profileMenu" 
+          <img src="/img/avatar.jpg" alt="Profile" id="profileMenu"
             class="w-9 h-9 rounded-full cursor-pointer object-cover border-2 border-white hover:border-blue-500 transition-all">
-          <div id="submenu" class="hidden absolute right-0 mt-2 bg-white rounded-md shadow-lg py-1" style="width: 140px;">
-            <a href="/history" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i class="fa-solid fa-clock-rotate-left mr-1"></i> History</a>
-            <a href="#" id="settingsMenu"class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i class="fa-solid fa-gear mr-1"></i> Pengaturan</a>
-            <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"><i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Keluar</a>
+          <div id="submenu" class="hidden absolute right-0 mt-2 bg-white rounded-md shadow-lg py-1"
+            style="width: 140px;">
+            <a href="/gallery" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+              <i class="fa-regular fa-images mr-1"></i> Galeri
+            </a>
+            <a href="/history" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+              <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
+            </a>
+            <div class="border-t border-gray-200 my-1"></div>
+            <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+              <i class="fa-solid fa-gear mr-1"></i> Pengaturan
+            </a>
+            <a href="/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+              <i class="fa-solid fa-arrow-right-from-bracket mr-1"></i> Keluar
+            </a>
           </div>
         </div>
       </div>
@@ -40,359 +51,55 @@
   </div>
   <div id="defaultMessage" class="flex flex-col items-center justify-center flex-grow mb-10">
     <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-700 mb-5">
-        <i class="fa-regular fa-window-restore text-2xl text-gray-500"></i>
+      <i class="fa-regular fa-window-restore text-2xl text-gray-500"></i>
     </div>
     <p class="text-center text-white text-lg">
-        Tambahkan jendela baru untuk memulai live streaming ↗
+      Tambahkan jendela baru untuk memulai live streaming ↗
     </p>
-</div>
+  </div>
+  <!--Footer-->
   <footer class="bg-black bg-opacity-30 py-2 text-white mt-auto">
     <div class="mx-auto px-8 flex justify-between items-center">
       <div class="flex items-center space-x-4">
         <p class="text-xs">
-          From Creator for Creator by 
-          <a href="https://youtube.com/bangtutorial" class="text-blue-400 font-semibold hover:text-blue-300 transition-colors" target="_blank" rel="noopener noreferrer">
+          From Creator for Creator by
+          <a href="https://youtube.com/bangtutorial"
+            class="text-blue-400 font-semibold hover:text-blue-300 transition-colors" target="_blank"
+            rel="noopener noreferrer">
             Bang Tutorial
           </a>
         </p>
       </div>
       <div class="flex items-center space-x-1">
         <div class="relative group">
-          <a href="https://saweria.co/fitrieffendi" class="inline-flex items-center bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-medium ring-1 ring-inset ring-green-600/20 transition-colors" target="_blank" rel="noopener noreferrer">
+          <a href="https://youtube101.id/streamflow/donate/"
+            class="inline-flex items-center bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-medium ring-1 ring-inset ring-green-600/20 transition-colors"
+            target="_blank" rel="noopener noreferrer">
             <i class="fa-solid fa-mug-hot mr-1"></i>Traktir Kopi
           </a>
-          <div class="absolute bottom-full mb-2 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-max max-w-[200px] text-center">
+          <div
+            class="absolute bottom-full mb-2 right-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 w-max max-w-[200px] text-center">
             <div class="bg-white text-gray-800 text-xs px-3 py-1.5 rounded-md shadow-lg">
               ☺️ Thank you udah support<br>pengembangan aplikasi ini
             </div>
-            <div class="absolute top-full right-2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-white"></div>
+            <div
+              class="absolute top-full right-2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-l-transparent border-r-4 border-r-transparent border-t-4 border-t-white">
+            </div>
           </div>
         </div>
       </div>
     </div>
   </footer>
-<div id="settingsPopup" class="hidden fixed inset-0 z-50">
-  <div class="content">
-    <div class="content-header">
-      <h3 class="text-2xl font-medium">Pengaturan Akun</h3>
-    </div>
-    <div class="flex justify-end">
-      <button id="closeSettings">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6 text-red-500 hover:text-red-700">
-          <path d="M5.47 5.47a.75.75 0 011.06 0L12 10.94l5.47-5.47a.75.75 0 111.06 1.06L13.06 12l5.47 5.47a.75.75 0 11-1.06 1.06L12 13.06l-5.47 5.47a.75.75 0 01-1.06-1.06L10.94 12 5.47 6.53a.75.75 0 010-1.06z" />
-        </svg>
-      </button>
-    </div>
-    <div class="form-settings">
-    <form id="settingsForm">
-    <h3 class="text-lg font-medium mb-3">Foto Profile</h3>
-    <div class="flex items-center mb-6">
-      <img id="avatarPreview" src="/img/avatar.jpg" class="w-16 h-16 rounded-full border-2 border-gray-300 mr-4">
-        <input type="file" accept=".jpg" id="avatarInput" name="avatar">
-    </div>
-    <h3 class="text-lg font-medium mb-3">Username & Password</h3>
-      <div class="mb-4">
-        <label class="block text-sm font-normal text-gray-700 mb-1">Username</label>
-        <input type="text" name="username" class="w-full p-2 text-sm bg-blue-100 hover:bg-blue-200 focus:bg-white border rounded-md" required>
-      </div>
-      <hr class="border-gray-200 mb-4">
-      <div class="mb-2">
-        <label class="block text-sm font-normal text-gray-700" mb-1>Password Baru</label>
-        <input type="password" name="password" id="password" class="w-full p-2 text-sm border rounded-md">
-      </div>
-      <div class="mb-6">
-        <label class="block text-sm font-normal text-gray-700 mb-1">Ulangi Password</label>
-        <input type="password" name="confirm_password" id="confirm_password" class="w-full p-2 text-sm border rounded-md">
-      </div>
-      <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">Simpan</button>
-      <div id="formMessage" class="mt-3 text-sm text-center hidden" style="display: none;"></div>
-    </form>
-    </div>
-  </div>
-</div>
-
   <script src="app.js"></script>
 </body>
+
 </html>
-<script>
-  let selectedAvatarFile = null;
-  let originalUsername = '';
-document.getElementById('settingsMenu').addEventListener('click', async function(e) {
-    e.preventDefault();
-    const response = await fetch('/api/user', { credentials: 'include' });
-    const data = await response.json();
-    originalUsername = data.username;
-    document.getElementById('settingsPopup').classList.add('show');
-    document.querySelector('input[name="username"]').value = originalUsername;
-});
-  document.getElementById('closeSettings').addEventListener('click', function() {
-    document.getElementById('settingsPopup').classList.remove('show');
-    resetForm();
-  });
-  document.getElementById('avatarInput').addEventListener('change', function() {
-    const file = this.files[0];
-    const preview = document.getElementById('avatarPreview');
-    const message = document.getElementById('formMessage');
-
-    if (file) {
-      if (!file.type.includes('jpeg')) {
-        showMessage('Hanya file JPG yang diperbolehkan', 'error');
-        this.value = '';
-        selectedAvatarFile = null;
-        preview.src = '/img/avatar.jpg';
-        return;
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        showMessage('Ukuran file maksimal 10MB', 'error');
-        this.value = '';
-        selectedAvatarFile = null;
-        preview.src = '/img/avatar.jpg';
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        preview.src = e.target.result;
-        selectedAvatarFile = file;
-        document.getElementById('profileMenu').src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      preview.src = '/img/avatar.jpg';
-      selectedAvatarFile = null;
-    }
-  });
-
-  document.getElementById('settingsForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  console.log('[Client] Form submission started');
-  
-  const formMessage = document.getElementById('formMessage');
-  formMessage.classList.add('hidden');
-
-  try {
-    const formData = new FormData(this);
-    console.log('[Client] Form data:', {
-      username: formData.get('username'),
-      password: formData.get('password'),
-      file: formData.get('avatar')?.name
-    });
-
-    const response = await fetch('/update-settings', {
-      method: 'POST',
-      body: formData,
-      credentials: 'include'
-    });
-    
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.message);
-    }
-
-    if (result.success) {
-      const newUrl = `/img/avatar.jpg?t=${result.timestamp}`;
-      
-      document.querySelectorAll('#avatarPreview, #profileMenu').forEach(img => {
-        img.src = newUrl;
-      });
-
-      showMessage('Perubahan berhasil disimpan!', 'success');
-      setTimeout(() => {
-        document.getElementById("formMessage").style.display = "none";
-        document.getElementById('avatarInput').value = '';
-        document.getElementById('password').value = '';
-        document.getElementById('confirm_password').value = '';
-      }, 1500);
-    }
-  } catch (error) {
-    console.error('[Client Error]', error);
-    showMessage(error.message || 'Terjadi kesalahan', 'error');
-    
-    const formMessage = document.getElementById('formMessage');
-    formMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-});
-
-  function showMessage(text, type) {
-    const formMessage = document.getElementById('formMessage');
-    formMessage.textContent = text;
-    formMessage.className = 'mt-3 text-sm p-2 rounded-lg text-center';
-    document.getElementById("formMessage").style.display = "block";
-    
-    switch(type) {
-      case 'success':
-        formMessage.classList.add('bg-green-100', 'text-green-700');
-        break;
-      case 'error':
-        formMessage.classList.add('bg-red-100', 'text-red-700');
-        break;
-      default:
-        formMessage.classList.add('bg-gray-100', 'text-gray-700');
-    }
-    
-    formMessage.classList.remove('hidden');
-  }
-
-  function resetForm() {
-    document.getElementById('settingsForm').reset();
-    selectedAvatarFile = null;
-    document.getElementById('formMessage').classList.add('hidden');
-    document.getElementById('avatarPreview').src = '/img/avatar.jpg';
-  }
-</script>
 <style>
-  #settingsPopup {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(3px);
-    z-index: 1000;
-    animation: fadeIn 0.3s ease-in-out;
+  #containers {
+    align-items: start;
   }
-  
-  #settingsPopup.show {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  
-  #settingsPopup .content {
-    background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
-    width: 90%;
-    max-width: 500px;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-    transform: scale(0.95);
-    transition: all 0.3s ease;
-  }
-  
-  #settingsPopup.show .content {
-    transform: scale(1);
-  }
-  
-  .form-settings {
-    padding: 20px 50px 40px 50px;
-  }
-  
-  .content-header {
-    border-bottom: 1px solid #e2e8f0;
-    padding: 1.1rem 2rem 1.1rem 50px;
-    background-color: white;
-  }
-  
-  .content-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1e293b;
-    margin: 0;
-  }
-  
-  #closeSettings {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: #f8fafc;
-    border-radius: 50%;
-    padding: 0.5rem;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  #closeSettings:hover {
-    transform: rotate(90deg);
-    background: #f1f5f9;
-  }
-  
-  .avatar-section {
-    display: flex;
-    align-items: center;
-    margin-bottom: 2rem;
-  }
-  
-  #avatarPreview {
-    width: 80px;
-    height: 80px;
-    border: 3px solid #fff;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    cursor: pointer;
-  }
-  
-  #avatarPreview:hover {
-    transform: scale(1.05);
-  }
-  
-  .avatar-upload {
-    margin-left: 1.5rem;
-  }
-  
-  .avatar-upload label {
-    display: inline-block;
-    background: #3b82f6;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-  
-  .avatar-upload label:hover {
-    background: #2563eb;
-  }
-  
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-    color: #64748b;
-    font-weight: 500;
-  }
-  
-  .form-group input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    background: white;
-    transition: all 0.2s ease;
-  }
-  
-  .form-group input:focus {
-    outline: none;
-    border-color: #93c5fd;
-    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.3);
-  }
-  #formMessage {
-  transition: all 0.3s ease;
-  display: block;
-  margin-top: 1rem;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-}
 
-#formMessage.error {
-  background-color: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fca5a5;
-}
-
-#formMessage.success {
-  background-color: #dcfce7;
-  color: #16a34a;
-  border: 1px solid #86efac;
-}
-  </style>
+  .bg-white {
+    height: fit-content;
+  }
+</style>

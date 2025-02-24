@@ -90,7 +90,14 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
    pm2 stop streamflow
    ```
 
-8. **Konfigurasi:**
+7. **Reset Password:**
+   
+   Jalankan perintah ini di terminal
+   ```bash
+   npm start reset-streamflow
+   ```
+
+9. **Konfigurasi:**
     * Pastikan kamu sudah mengatur URL RTMP yang sesuai untuk setiap platform yang ingin digunakan. Konfigurasi ini bisa dilakukan langsung melalui tampilan aplikasi.
     * Silahkan dapatkan Stream Key dari platform streaming yang kamu gunakan.
 

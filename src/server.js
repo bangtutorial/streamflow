@@ -879,7 +879,25 @@ app.post('/stop-stream', async (req, res) => {
       sendError(res, 'Gagal menghentikan stream: ' + error.message);
     }
   } else {
-    sendError(res, 'Stream tidak ditemukan', 404);
+    try {
+      await new Promise((resolve, reject) => {
+        database.getStreamContainerByStreamKey(stream_key, (err, container) => {
+          if (err) return reject(err);
+          if (container) {
+            database.updateStreamContainer(container.id, { is_streaming: 0 }, (err) => {
+              if (err) return reject(err);
+              resolve();
+            });
+          } else {
+            resolve();
+          }
+        });
+      });
+      sendError(res, 'Stream tidak ditemukan', 404);
+    } catch (error) {
+      console.error('Error updating stream status:', error);
+      sendError(res, 'Gagal mengupdate status stream', 500);
+    }
   }
 });
 
@@ -1310,4 +1328,3 @@ app.listen(PORT, () => {
   console.log(`\x1b[32mStreamFlow berjalan\x1b[0m\nAkses aplikasi di \x1b[34mhttp://${ipAddress}:${PORT}\x1b[0m`);
   loadScheduledStreams();
 });
-

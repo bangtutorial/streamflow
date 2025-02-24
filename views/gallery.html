@@ -339,8 +339,14 @@
                 const response = await fetch(`/api/videos?page=${page}&limit=8`);
                 const data = await response.json();
 
-                totalVideos.textContent = data.total;
-                storageUsed.textContent = `${data.totalStorage} MB`;
+                if (!data || !data.videos) {
+                    videoGrid.innerHTML = '';
+                    emptyState.classList.remove('hidden');
+                    return;
+                }
+
+                totalVideos.textContent = data.total || 0;
+                storageUsed.textContent = `${data.totalStorage || 0} MB`;
 
                 if (data.videos.length === 0) {
                     videoGrid.innerHTML = '';

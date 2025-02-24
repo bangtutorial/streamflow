@@ -13,6 +13,9 @@ const database = require('./database');
 const EventSource = require('eventsource');
 const rateLimit = require('express-rate-limit');
 const sharp = require('sharp');
+const { google } = require('googleapis');
+const drive = google.drive('v3');
+const stream = require('stream');
 const app = express();
 
 const thumbnailsDir = path.join(__dirname, 'thumbnails');
@@ -1322,6 +1325,126 @@ async function loadScheduledStreams() {
     console.error('Error loading scheduled streams:', error);
   }
 }
+
+const driveDownloads = new Map();
+
+// Endpoint untuk mendownload file dari Google Drive (server side)
+app.post('/api/download-drive-file', requireAuthAPI, async (req, res) => {
+    const { fileId, filename } = req.body;
+    const apiKey = await database.getSetting('drive_api_key');
+
+    if (!fileId || !filename || !apiKey) {
+        return res.status(400).json({ 
+            success: false, 
+            message: 'File ID, filename, dan API key diperlukan' 
+        });
+    }
+
+    try {
+        const auth = new google.auth.GoogleAuth({
+            apiKey: apiKey
+        });
+
+        const driveClient = google.drive({ version: 'v3', auth });
+        
+        const metadata = await driveClient.files.get({
+            fileId: fileId,
+            fields: 'size'
+        });
+        
+        const totalBytes = parseInt(metadata.data.size, 10);
+        const filePath = path.join(__dirname, 'uploads', filename);
+        
+        const response = await driveClient.files.get(
+            { fileId: fileId, alt: 'media' },
+            { responseType: 'stream' }
+        );
+
+        const dest = fs.createWriteStream(filePath);
+        let downloadedBytes = 0;
+
+        driveDownloads.set(fileId, {
+            total: totalBytes,
+            downloaded: 0,
+            status: 'downloading'
+        });
+
+        response.data
+            .on('data', (chunk) => {
+                downloadedBytes += chunk.length;
+                driveDownloads.set(fileId, {
+                    total: totalBytes,
+                    downloaded: downloadedBytes,
+                    status: 'downloading'
+                });
+            })
+            .on('end', () => {
+                driveDownloads.set(fileId, {
+                    total: totalBytes,
+                    downloaded: totalBytes,
+                    status: 'completed'
+                });
+            })
+            .on('error', (err) => {
+                console.error('Error downloading file:', err);
+                driveDownloads.set(fileId, {
+                    total: totalBytes,
+                    downloaded: downloadedBytes,
+                    status: 'error'
+                });
+            })
+            .pipe(dest);
+
+        res.json({ success: true, fileId });
+
+    } catch (error) {
+        console.error('Error downloading file:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to download file' 
+        });
+    }
+});
+
+// Endpoint monitoring progress bar
+app.get('/api/drive-progress/:fileId', requireAuthAPI, (req, res) => {
+    const fileId = req.params.fileId;
+
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+    });
+
+    const intervalId = setInterval(() => {
+        const download = driveDownloads.get(fileId);
+        if (!download) {
+            clearInterval(intervalId);
+            res.write(`data: error\n\n`);
+            return res.end();
+        }
+
+        if (download.status === 'error') {
+            clearInterval(intervalId);
+            res.write(`data: error\n\n`);
+            return res.end();
+        }
+
+        if (download.status === 'completed') {
+            clearInterval(intervalId);
+            res.write(`data: completed\n\n`);
+            driveDownloads.delete(fileId);
+            return res.end();
+        }
+
+        const progress = Math.round((download.downloaded * 100) / download.total);
+        res.write(`data: ${progress}\n\n`);
+    }, 1000);
+
+    res.on('close', () => {
+        clearInterval(intervalId);
+    });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -905,6 +905,57 @@
             }
         });
 
+        async function downloadDriveFile(fileId, filename) {
+            isDriveDownloading = true;
+            processDriveBtn.classList.add('hidden');
+            driveProgress.classList.remove('hidden');
+
+            try {
+                const response = await fetch('/api/download-drive-file', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fileId, filename })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to start download');
+                }
+
+                const eventSource = new EventSource(`/api/drive-progress/${fileId}`);
+
+                return new Promise((resolve, reject) => {
+                    eventSource.onmessage = (event) => {
+                        const data = event.data;
+                        
+                        if (data === 'error') {
+                            eventSource.close();
+                            reject(new Error('Download failed'));
+                        } 
+                        else if (data === 'completed') {
+                            eventSource.close();
+                            resolve();
+                        }
+                        else {
+                            const progress = parseInt(data, 10);
+                            driveProgressBar.style.width = progress + '%';
+                            drivePercentage.textContent = progress + '%';
+                        }
+                    };
+
+                    eventSource.onerror = () => {
+                        eventSource.close();
+                        reject(new Error('Connection lost'));
+                    };
+                });
+            } catch (error) {
+                throw error;
+            } finally {
+                isDriveDownloading = false;
+            }
+        }
+
         processDriveBtn.addEventListener('click', async () => {
             const url = driveUrl.value.trim();
 
@@ -936,10 +987,9 @@
                 loadVideos(1);
                 driveModal.classList.add('hidden');
                 resetDriveState();
-
             } catch (error) {
                 console.error('Drive download error:', error);
-                showError('Gagal mengunduh file, periksa URL atau API Key');
+                showError(error.message);
                 resetDriveState();
             }
         });
@@ -956,44 +1006,6 @@
             );
             if (!response.ok) throw new Error('Failed to get file metadata');
             return response.json();
-        }
-
-        async function downloadDriveFile(fileId, filename) {
-            isDriveDownloading = true;
-            const downloadUrl = `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=${DRIVE_API_KEY}`;
-
-            return new Promise((resolve, reject) => {
-                currentDriveDownload = new XMLHttpRequest();
-
-                currentDriveDownload.addEventListener('progress', (e) => {
-                    if (e.lengthComputable) {
-                        const percentComplete = Math.round((e.loaded * 100) / e.total);
-                        driveProgressBar.style.width = percentComplete + '%';
-                        drivePercentage.textContent = percentComplete + '%';
-                    }
-                });
-
-                currentDriveDownload.addEventListener('load', async () => {
-                    if (currentDriveDownload.status === 200) {
-                        const blob = new Blob([currentDriveDownload.response], { type: 'video/mp4' });
-                        const file = new File([blob], filename, { type: 'video/mp4' });
-                        await uploadFiles([file]);
-                        resolve();
-                    } else {
-                        reject(new Error('Download failed'));
-                    }
-                });
-
-                currentDriveDownload.addEventListener('error', () => {
-                    reject(new Error('Network error'));
-                });
-
-                currentDriveDownload.open('GET', downloadUrl);
-                currentDriveDownload.responseType = 'arraybuffer';
-                currentDriveDownload.send();
-            }).finally(() => {
-                isDriveDownloading = false;
-            });
         }
 
         function cancelDriveDownload() {

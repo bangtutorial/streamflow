@@ -176,7 +176,7 @@ function createContainer(containerData) {
         <div class="grid grid-cols-2 gap-4">
           <!-- Start Time -->
           <div>
-            <div class="flex items-center gap-2 mb-2">
+            <div class="flex items-center gap-2">
               <label class="switch-small hidden">
                 <input type="checkbox" class="schedule-start-switch" ${containerData?.schedule_start_enabled ? 'checked' : ''}>
                 <span class="slider-small"></span>

@@ -634,43 +634,53 @@ const streams = {};
 const monitorStreams = new Map();
 const scheduledStreams = new Map();
 
-app.post('/start-stream', uploadVideo.single('video'), async (req, res) => {
+app.post('/start-stream', async (req, res) => {
   try {
     const { 
-      rtmp_url, stream_key, bitrate, fps, resolution, loop, title,
-      schedule_enabled, schedule_start_enabled, schedule_start, schedule_duration 
+      rtmp_url, 
+      stream_key, 
+      bitrate, 
+      fps, 
+      resolution, 
+      loop, 
+      title,
+      videoPath,
+      schedule_enabled, 
+      schedule_start_enabled, 
+      schedule_start, 
+      schedule_duration 
     } = req.body;
 
-    if (!req.file) return sendError(res, 'Video tidak ditemukan');
+    if (!videoPath) return sendError(res, 'Video tidak ditemukan');
     if (!title) return sendError(res, 'Judul belum diisi');
 
-    const originalExt = path.extname(req.file.originalname).toLowerCase();
-    if (originalExt === '') return sendError(res, 'Ekstensi file video tidak ditemukan.');
-
-    const newFileName = `${generateRandomFileName()}${originalExt}`;
-    const uploadsDir = path.join(__dirname, 'uploads');
-
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
+    const sourceFilePath = path.join(__dirname, 'uploads', videoPath);
+    if (!fs.existsSync(sourceFilePath)) {
+      return sendError(res, 'Video tidak ditemukan di server');
     }
 
-    const newFilePath = path.join(uploadsDir, newFileName);
+    const streamFileName = generateRandomFileName() + path.extname(videoPath);
+    const streamFilePath = path.join(__dirname, 'uploads', streamFileName);
 
-    fs.renameSync(req.file.path, newFilePath);
+    await fs.promises.copyFile(sourceFilePath, streamFilePath);
 
     const fullRtmpUrl = `${rtmp_url}/${stream_key}`;
     console.log('Starting stream:', { rtmp_url, bitrate, fps, resolution, title });
 
+    // Handle penjadwalan streaming
     if (schedule_enabled === '1' && schedule_start_enabled === '1') {
       const startTime = new Date(schedule_start).getTime();
       const duration = schedule_duration ? parseInt(schedule_duration, 10) * 60 * 1000 : null;
 
       const containerData = {
-        title, preview_file: req.file.originalname,
-        stream_file: newFileName,
-        stream_key, stream_url: rtmp_url,
+        title,
+        preview_file: path.basename(videoPath),
+        stream_file: streamFileName,
+        stream_key,
+        stream_url: rtmp_url,
         bitrate: parseInt(bitrate, 10),
-        resolution, fps: parseInt(fps, 10),
+        resolution,
+        fps: parseInt(fps, 10),
         loop_enabled: loop === 'true' ? 1 : 0,
         container_order: Date.now(),
         is_streaming: 1,
@@ -688,11 +698,14 @@ app.post('/start-stream', uploadVideo.single('video'), async (req, res) => {
       });
 
       scheduleStream({
-        videoPath: newFilePath,
+        videoPath: streamFilePath,
         stream_key,
         rtmp_url,
         containerId: result.lastID,
-        fps, bitrate, resolution, loop
+        fps,
+        bitrate,
+        resolution,
+        loop
       }, startTime, duration);
 
       return res.json({ 
@@ -703,7 +716,7 @@ app.post('/start-stream', uploadVideo.single('video'), async (req, res) => {
       });
     }
 
-    const command = ffmpeg(newFilePath)
+    const command = ffmpeg(streamFilePath)
       .inputFormat('mp4')
       .inputOptions(['-re', ...(loop === 'true' ? ['-stream_loop -1'] : [])])
       .outputOptions([
@@ -726,7 +739,7 @@ app.post('/start-stream', uploadVideo.single('video'), async (req, res) => {
       ])
       .output(`${rtmp_url}/${stream_key}`);
 
-    const duration = parseInt(schedule_duration, 10) * 60 * 1000; // Convert menit ke ms
+    const duration = parseInt(schedule_duration, 10) * 60 * 1000;
     if (schedule_enabled === '1' && duration) {
       setTimeout(() => {
         if (streams[stream_key]) {
@@ -747,7 +760,6 @@ app.post('/start-stream', uploadVideo.single('video'), async (req, res) => {
             });
 
             delete streams[stream_key];
-
           } catch (error) {
             console.error('Error stopping stream:', error);
           }
@@ -759,10 +771,11 @@ app.post('/start-stream', uploadVideo.single('video'), async (req, res) => {
     let containerId;
 
     try {
+
       const containerData = {
         title: title,
-        preview_file: req.file.originalname,
-        stream_file: newFileName,
+        preview_file: path.basename(videoPath),
+        stream_file: streamFileName,
         stream_key: stream_key,
         stream_url: rtmp_url,
         bitrate: parseInt(bitrate, 10),
@@ -790,12 +803,12 @@ app.post('/start-stream', uploadVideo.single('video'), async (req, res) => {
       containerId = result.lastID;
 
       if (!result) throw new Error("Gagal menyimpan data ke database");
-
+      
       streams[stream_key] = {
         process: command,
         startTime: Date.now(),
         containerId: containerId,
-        videoPath: newFilePath,
+        videoPath: streamFilePath,
         duration: duration
       };
 
@@ -809,13 +822,11 @@ app.post('/start-stream', uploadVideo.single('video'), async (req, res) => {
           delete streams[stream_key];
           database.updateStreamContainer(containerId, { is_streaming: 0 }, (err) => {
             if (err) console.error('Error updating database:', err);
-            deleteFile(newFilePath);
           });
         })
         .on('error', (err) => {
           console.error('Stream error:', err);
           delete streams[stream_key];
-          deleteFile(newFilePath);
           if (!responseSent) {
             sendError(res, 'Error during streaming', 500);
             responseSent = true;

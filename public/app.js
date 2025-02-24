@@ -755,34 +755,6 @@ function addStartStream(container) {
     const filePath = container.dataset.filePath;
     let videoFile = fileInput.files[0];
 
-    if (!videoFile && filePath) {
-      const fileName = filePath.split('/').pop();
-      try {
-        const response = await fetch(`/video/${encodeURIComponent(fileName)}`);
-        if (!response.ok) {
-          throw new Error('Gagal mengambil video dari server');
-        }
-        const blob = await response.blob();
-        videoFile = new File([blob], fileName, { type: blob.type });
-      } catch (error) {
-        await Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: 'Koneksi bermasalah, coba lagi!',
-        });
-        return;
-      }
-    }
-
-    if (!videoFile) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Oops...',
-        text: 'Harap upload video!',
-      });
-      return;
-    }
-
     startStreamBtn.disabled = true;
     startStreamBtn.textContent = 'Please wait...';
     startStreamBtn.classList.remove('bg-green-500');
@@ -813,7 +785,7 @@ function addStartStream(container) {
     formData.append('schedule_duration', hasDuration ? durationInput.value : '');
 
     const scheduledTime = isScheduled ? new Date(startInput.value).getTime() : null;
-    const duration = hasDuration ? parseInt(durationInput.value) * 60 * 1000 : null; // Convert to milliseconds
+    const duration = hasDuration ? parseInt(durationInput.value) * 60 * 1000 : null; 
     
     if (isScheduled) {
       const now = new Date().getTime();
@@ -947,19 +919,43 @@ function addStartStream(container) {
   
     async function startStream(formData, duration, streamKey) {
     try {
-      if (duration) {
-        formData.append('schedule_duration', Math.round(duration/1000/60)); 
+      if (!container.dataset.filePath) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: 'Harap pilih video terlebih dahulu!',
+        });
+        return;
       }
+
+      const data = {
+        rtmp_url: formData.get('rtmp_url'),
+        stream_key: formData.get('stream_key'),
+        bitrate: formData.get('bitrate'),
+        fps: formData.get('fps'), 
+        resolution: formData.get('resolution'),
+        loop: formData.get('loop'),
+        title: formData.get('title'),
+        videoPath: container.dataset.filePath,
+        schedule_enabled: formData.get('schedule_enabled'),
+        schedule_start_enabled: formData.get('schedule_start_enabled'), 
+        schedule_duration_enabled: formData.get('schedule_duration_enabled'),
+        schedule_start: formData.get('schedule_start'),
+        schedule_duration: duration ? Math.round(duration/1000/60) : formData.get('schedule_duration')
+      };
   
       const response = await fetch('/start-stream', {
-        method: 'POST', 
-        body: formData
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
       });
   
-      const data = await response.json();
+      const responseData = await response.json();
       
-      if (!response.ok || data.error) {
-        throw new Error(data.details || 'Failed to start streaming');
+      if (!response.ok || responseData.error) {
+        throw new Error(responseData.details || 'Failed to start streaming');
       }
   
       setTimeout(() => {

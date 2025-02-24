@@ -48,10 +48,11 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
    ffmpeg -version
    ```
    
-3. **Install PM2:**
+3. **Install PM2 + Sharp:**
 
    ```bash
    npm install -g pm2
+   npm install --os=linux --cpu=x64 sharp
    ```
 
 4. **Clone Repositori:**

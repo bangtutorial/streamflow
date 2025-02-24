@@ -177,18 +177,18 @@ function createContainer(containerData) {
           <!-- Start Time -->
           <div>
             <div class="flex items-center gap-2 mb-2">
-              <label class="switch-small">
+              <label class="switch-small hidden">
                 <input type="checkbox" class="schedule-start-switch" ${containerData?.schedule_start_enabled ? 'checked' : ''}>
                 <span class="slider-small"></span>
               </label>
               <label class="block text-xs font-medium text-gray-500 flex items-center gap-1">
                 Waktu Mulai
-                <span class="px-1 py-0.2 text-[9px] bg-gray-200 text-gray-600 rounded">GMT+7</span>
+                <span class="px-1 py-0.2 text-[9px] bg-gray-200 text-gray-600 rounded">Sedang di fix</span>
               </label>
             </div>
             <input 
               type="datetime-local" 
-              class="schedule-start text-sm w-full p-2 border rounded-lg bg-gray-50"
+              class="hidden schedule-start text-sm w-full p-2 border rounded-lg bg-gray-50"
               value="${containerData?.schedule_start || ''}"
               disabled
               oninvalid="this.setCustomValidity('Waktu mulai minimal 5 menit dari sekarang')"

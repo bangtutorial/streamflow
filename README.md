@@ -27,7 +27,7 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 1. **Install Node.js dan npm melalui NodeSource PPA:**
 
    ```bash
-   curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
    sudo apt-get install -y nodejs
    sudo apt-get install -y npm
    ```

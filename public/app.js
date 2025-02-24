@@ -176,7 +176,7 @@ function createContainer(containerData) {
         <div class="grid grid-cols-2 gap-4">
           <!-- Start Time -->
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 mb-2">
               <label class="switch-small hidden">
                 <input type="checkbox" class="schedule-start-switch" ${containerData?.schedule_start_enabled ? 'checked' : ''}>
                 <span class="slider-small"></span>
@@ -725,9 +725,19 @@ function addStartStream(container) {
       return;
     }
 
+    startStreamBtn.disabled = true;
+    startStreamBtn.textContent = 'Please wait...';
+    startStreamBtn.classList.remove('bg-green-500');
+    startStreamBtn.classList.add('bg-gray-500');
+
     const streamKey = streamKeyInput.value;
     
     if (!streamKey) {
+      startStreamBtn.disabled = false;
+      startStreamBtn.textContent = 'Start';
+      startStreamBtn.classList.remove('bg-gray-500');
+      startStreamBtn.classList.add('bg-green-500');
+
       await Swal.fire({
         icon: 'error',
         title: 'Stream Key Kosong',

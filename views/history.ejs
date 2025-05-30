@@ -1,0 +1,278 @@
+<% layout('layout') -%>
+  <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+    <div>
+      <h2 class="text-2xl font-bold">Stream History</h2>
+      <p class="text-gray-400 text-sm mt-1">View and manage your past streams</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="relative flex-1 md:flex-none md:w-64">
+        <input type="text" id="history-search" placeholder="Search history..."
+          class="bg-dark-700 border border-gray-600 text-white pl-9 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary w-full">
+        <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+      </div>
+      <div class="w-32">
+        <select id="platform-filter"
+          class="bg-dark-700 border border-gray-600 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary w-full">
+          <option value="all">All Platforms</option>
+          <option value="YouTube">YouTube</option>
+          <option value="Facebook">Facebook</option>
+          <option value="Twitch">Twitch</option>
+          <option value="TikTok">TikTok</option>
+          <option value="Instagram">Instagram</option>
+          <option value="Custom">Custom</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-700">
+        <thead>
+          <tr class="bg-dark-700">
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Stream Name
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Platform
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Start Time
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Stop Time
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Duration
+            </th>
+            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody id="history-table-body" class="bg-gray-800 divide-y divide-gray-700">
+          <% if (history && history.length> 0) { %>
+            <% history.forEach(function(entry) { %>
+              <tr class="hover:bg-dark-700/50 transition-colors" data-id="<%= entry.id %>"
+                data-platform="<%= entry.platform %>" data-title="<%= entry.title %>">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="w-10 h-6 bg-dark-700 rounded flex-shrink-0 overflow-hidden mr-3">
+                      <% if (entry.thumbnail_path) { %>
+                        <img src="<%= entry.thumbnail_path %>" class="w-full h-full object-cover"
+                          onerror="this.src='/images/default-thumbnail.jpg'">
+                        <% } else { %>
+                          <div class="w-full h-full bg-dark-600 flex items-center justify-center">
+                            <i class="ti ti-video text-gray-400 text-xs"></i>
+                          </div>
+                          <% } %>
+                    </div>
+                    <div class="text-sm font-medium">
+                      <%= entry.title %>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <i
+                      class="ti ti-brand-<%= helpers.getPlatformIcon(entry.platform) %> text-<%= helpers.getPlatformColor(entry.platform) %> mr-1.5"></i>
+                    <span class="text-sm">
+                      <%= entry.platform || 'Custom' %>
+                    </span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <%= helpers.formatDateTime(entry.start_time) %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <%= helpers.formatDateTime(entry.end_time) %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                  <%= helpers.formatDuration(entry.duration) %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                  <div class="flex items-center justify-end space-x-2">
+                    <button onclick="deleteHistoryEntry('<%= entry.id %>', '<%= entry.title %>')"
+                      class="p-1.5 text-gray-400 hover:text-red-400 transition-colors">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="px-6 py-10 text-center text-gray-400">
+                      <div class="flex flex-col items-center">
+                        <i class="ti ti-history text-3xl mb-2"></i>
+                        <p>No stream history found</p>
+                        <p class="text-xs mt-1">Your completed streams will appear here</p>
+                      </div>
+                    </td>
+                  </tr>
+                  <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <script>
+    function getPlatformIcon(platform) {
+      switch (platform) {
+        case 'YouTube': return 'youtube';
+        case 'Facebook': return 'facebook';
+        case 'Twitch': return 'twitch';
+        case 'TikTok': return 'tiktok';
+        case 'Instagram': return 'instagram';
+        case 'Shopee Live': return 'shopping-bag';
+        case 'Restream.io': return 'live-photo';
+        default: return 'broadcast';
+      }
+    }
+    function getPlatformColor(platform) {
+      switch (platform) {
+        case 'YouTube': return 'red-500';
+        case 'Facebook': return 'blue-500';
+        case 'Twitch': return 'purple-500';
+        case 'TikTok': return 'gray-100';
+        case 'Instagram': return 'pink-500';
+        case 'Shopee Live': return 'orange-500';
+        case 'Restream.io': return 'teal-500';
+        default: return 'gray-400';
+      }
+    }
+    function formatDateTime(isoString) {
+      if (!isoString) return '--';
+      const date = new Date(isoString);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    function formatDuration(seconds) {
+      if (!seconds) return '--';
+      const hours = Math.floor(seconds / 3600).toString().padStart(2, '0');
+      const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+      const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${hours}:${minutes}:${secs}`;
+    }
+    function deleteHistoryEntry(id, title) {
+      if (confirm(`Are you sure you want to delete the history entry for "${title}"?`)) {
+        fetch(`/api/history/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showToast('History entry deleted successfully');
+              const row = document.querySelector(`tr[data-id="${id}"]`);
+              if (row) {
+                row.classList.add('animate-fade-out');
+                setTimeout(() => {
+                  row.remove();
+                  const tableBody = document.getElementById('history-table-body');
+                  if (tableBody.children.length === 0) {
+                    tableBody.innerHTML = `
+                  <tr>
+                    <td colspan="6" class="px-6 py-10 text-center text-gray-400">
+                      <div class="flex flex-col items-center">
+                        <i class="ti ti-history text-3xl mb-2"></i>
+                        <p>No stream history found</p>
+                        <p class="text-xs mt-1">Your completed streams will appear here</p>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+                  }
+                }, 300);
+              }
+            } else {
+              showToast('Error: ' + (data.error || 'Failed to delete history entry'));
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while deleting history entry');
+          });
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      const searchInput = document.getElementById('history-search');
+      const platformFilter = document.getElementById('platform-filter');
+      function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const platform = platformFilter.value;
+        const rows = document.querySelectorAll('#history-table-body tr');
+        rows.forEach(row => {
+          if (row.querySelector('td[colspan]')) return;
+          const title = row.getAttribute('data-title').toLowerCase();
+          const rowPlatform = row.getAttribute('data-platform');
+          const matchesSearch = !searchTerm || title.includes(searchTerm);
+          const matchesPlatform = platform === 'all' || rowPlatform === platform;
+          row.style.display = matchesSearch && matchesPlatform ? '' : 'none';
+        });
+        const visibleRows = document.querySelectorAll('#history-table-body tr:not([style*="display: none"])');
+        const emptyStateRow = document.querySelector('#history-table-body tr td[colspan]')?.parentElement;
+        if (visibleRows.length === 0 && !emptyStateRow) {
+          const tableBody = document.getElementById('history-table-body');
+          const newEmptyRow = document.createElement('tr');
+          newEmptyRow.id = 'empty-search-results';
+          newEmptyRow.innerHTML = `
+          <td colspan="6" class="px-6 py-10 text-center text-gray-400">
+            <div class="flex flex-col items-center">
+              <i class="ti ti-search text-3xl mb-2"></i>
+              <p>No matching results found</p>
+              <p class="text-xs mt-1">Try adjusting your search or filter</p>
+            </div>
+          </td>
+        `;
+          tableBody.appendChild(newEmptyRow);
+        } else if (visibleRows.length > 0 && document.getElementById('empty-search-results')) {
+          document.getElementById('empty-search-results').remove();
+        }
+      }
+      searchInput.addEventListener('input', filterTable);
+      platformFilter.addEventListener('change', filterTable);
+    });
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 right-4 bg-dark-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+      toast.innerHTML = `
+      <div class="flex items-center">
+        <i class="ti ti-check text-green-400 mr-2"></i>
+        <span>${message}</span>
+      </div>
+    `;
+      document.body.appendChild(toast);
+      const style = document.createElement('style');
+      style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(20px); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+      .animate-fade-out {
+        animation: fadeOut 0.3s ease-out forwards;
+      }
+    `;
+      document.head.appendChild(style);
+      setTimeout(() => {
+        toast.classList.remove('animate-fade-in');
+        toast.classList.add('animate-fade-out');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 3000);
+    }
+  </script>

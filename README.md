@@ -1,116 +1,243 @@
-<br>
-<div align="center">
-<img alt="LOGO" src="https://raw.githubusercontent.com/bangtutorial/streamflow/refs/heads/main/public/img/logo.png" width="420" height="auto" />
-</div>
-<br>
+# StreamFlow v2.0: Fresh From The Oven🔥
 
+StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan live streaming ke berbagai platform seperti YouTube, Facebook, dan platform lainnya menggunakan protokol RTMP. Aplikasi ini bisa berjalan di VPS (Virtual Private Server) dan mendukung streaming ke banyak platform sekaligus.
 
+## 🚀 Fitur Utama
 
-# StreamFlow: Aplikasi Live Streaming Multi-Window
+- **Multi-Platform Streaming**: Mendukung streaming ke berbagai platform populer
+- **Video Gallery**: Kelola koleksi video dengan mudah
+- **Upload Video**: Upload video dari local atau import dari Google Drive
+- **Scheduled Streaming**: Jadwalkan streaming dengan waktu tertentu
+- **Advanced Settings**: Kontrol bitrate, resolution, FPS, dan orientasi
+- **Real-time Monitoring**: Monitor status streaming secara real-time
+- **Responsive UI**: Tampilan modern yang responsive di semua device
 
-StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan live streaming ke berbagai platform seperti YouTube, Facebook, dan lainnya menggunakan protokol RTMP. Aplikasi ini berjalan di VPS (Virtual Private Server) dan mendukung streaming ke banyak platform sekaligus dengan fitur multi-window. StreamFlow juga dilengkapi dengan fitur login, gallery dan history streaming untuk melacak history streaming.
-   <p align="center">
-   <img alt="screenshot" src="https://raw.githubusercontent.com/bangtutorial/streamflow/refs/heads/main/public/img/screenshot.jpg" width="500px" height="auto" />
-   </p>
+## 📋 Requirements
 
-## Fitur Utama:
+- **Node.js** v16 atau lebih baru
+- **FFmpeg** (otomatis terinstall via dependency)
+- **SQLite3** (sudah termasuk)
+- **VPS/Server** dengan minimal 1Core & 1GB RAM
+- **Port** 7575 (dapat diubah di [.env](.env))
 
-* **Multi-Window Streaming:** Bisa melakukan streaming ke beberapa platform sekaligus dalam satu aplikasi.
-* **Dukungan Banyak Platform:** Bisa streaming ke YouTube, Facebook, dan platform lain yang mendukung RTMP.
-* **Login Page:** Ada fitur login supaya hanya pemilik akun yang bisa akses aplikasi.
-* **Riwayat Streaming:** Semua aktivitas streaming tersimpan, jadi bisa dilihat kembali kapan saja.
+## 🛠️ Instalasi di VPS
 
-## Cara Instalasi:
+### 1. Persiapan VPS
 
-**Sebelum mulai:** Pastikan server / VPS kamu sudah terinstall Node.js, npm, dan FFmpeg sebelum meng-clone repositori ini.
+Update sistem:
 
-1. **Install Node.js dan npm melalui NodeSource PPA:**
+```bash
+sudo apt update && sudo apt upgrade -y
+```
 
-   ```bash
-   curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-   sudo apt-get install -y nodejs
-   sudo apt-get install -y npm
-   ```
-   Cek apakah instalasi berhasil:
-   ```bash
-   node -v
-   npm -v
-   ```
+Install Node.js:
 
-2. **Install FFmpeg:**
+```bash
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+```
 
-   ```bash
-   sudo apt-get update
-   sudo apt-get install -y ffmpeg
-   ```
-   Cek apakah instalasi berhasil:
-   ```bash
-   ffmpeg -version
-   ```
-   
-3. **Install PM2 + Sharp:**
+```bash
+sudo apt-get install -y nodejs
+```
 
-   ```bash
-   npm install -g pm2
-   npm install --os=linux --cpu=x64 sharp
-   ```
+Verifikasi instalasi Node.js:
 
-4. **Clone Repositori:**
-   ```bash
-   git clone https://github.com/bangtutorial/streamflow/
-   cd streamflow
-   ```
+```bash
+node --version
+npm --version
+```
 
-5. **Install Dependensi:**
-   Jalankan `npm install` untuk menginstal semua modul Node.js yang dibutuhkan seperti Express.js, SQLite3, bcryptjs, dan lainnya.
+Install FFmpeg:
 
-   ```bash
-   npm install
-   ```
+```bash
+sudo apt install ffmpeg -y
+```
 
-6. **Jalankan Aplikasi:**
+Verifikasi FFmpeg:
+```bash
+ffmpeg -version
+```
 
-   Kembali ke directory root (jika masih di directory streamflow)
-   ```bash
-   cd ..
-   ```
+Install Git:
 
-   🚀 Perintah menjalankan aplikasi ✨
-   ```bash
-   pm2 start streamflow
-   pm2 logs streamflow -i 0 --lines 1
-   ```
+```bash
+sudo apt install git -y
+```
 
-   📈 Melihat status aplikasi berjalan
-   ```bash
-   pm2 status streamflow
-   ```
+### 2. Setup Projek StreamFlow
 
-   ⛔ Menghentikan aplikasi
-   ```bash
-   pm2 stop streamflow
-   ```
+Clone repository ke VPS:
 
-7. **Reset Password:**
-   
-   Jalankan perintah ini di terminal
-   ```bash
-   npm start reset-streamflow
-   ```
+```bash
+git clone https://github.com/bangtutorial/streamflow
+```
 
-9. **Konfigurasi:**
-    * Pastikan kamu sudah mengatur URL RTMP yang sesuai untuk setiap platform yang ingin digunakan. Konfigurasi ini bisa dilakukan langsung melalui tampilan aplikasi.
-    * Silahkan dapatkan Stream Key dari platform streaming yang kamu gunakan.
+Masuk ke folder project:
 
-## Informasi Tambahan:
+```bash
+cd streamflow
+```
 
-* Aplikasi ini menggunakan Express.js sebagai backend, SQLite sebagai database, dan FFmpeg untuk encoding serta streaming.
-* Antarmuka pengguna dibuat dengan HTML, CSS, dan JavaScript, serta menggunakan Tailwind CSS untuk styling.
-* Aplikasi ini dirancang untuk berjalan di server dengan Node.js, bukan di browser lokal.
+Install dependencies:
 
-## Kontribusi:
+```bash
+npm install
+```
 
-Jika teman-teman punya ide atau perbaikan koding aplikasi ini, silakan buat pull request 🤝
+Konfigurasi Environment:
+
+```bash
+nano .env
+```
+
+Konfigurasi default dalam file [.env](.env):
+
+```env
+PORT=7575
+SESSION_SECRET=secret_key_kamu_minimal_32_karakter
+```
+
+**Untuk keamanan yang lebih baik, disarankan mengganti:**
+- `PORT`: Ganti ke port lain jika diperlukan (contoh: 8080, 3300, dll)
+- `SESSION_SECRET`: Ganti dengan string acak minimal 32 karakter untuk keamanan
+
+**Contoh session secret yang aman:**
+```env
+SESSION_SECRET=e8f70e7f2b3c83d3a9b4c09e8d8f7a6b5c4d3e2f14254c8d7e6f5a4b3c2d1e0
+```
+
+### 3. Setup Firewall
+
+Buka port sesuai di .env:
+
+```bash
+sudo ufw allow 7575
+```
+
+Aktifkan firewall:
+
+```bash
+sudo ufw enable
+```
+
+Cek status firewall:
+
+```bash
+sudo ufw status
+```
+
+### 4. Install Process Manager (PM2)
+
+Install PM2:
+
+```bash
+sudo npm install -g pm2
+```
+
+### 5. Cara Jalankan Aplikasi StreamFlow
+
+Pastikan kamu masih berada di folder StreamFlow, jalankan perintah ini:
+
+```bash
+pm2 start app.js --name streamflow
+```
+
+Akses aplikasi di <b>IP_SERVER:PORT</b><br>
+Contoh:
+
+```bash
+88.12.34.56:7575
+```
+
+## 📝 Informasi Tambahan
+
+### Reset Password
+
+Jika kamu lupa password atau ingin reset password, bisa ikutin cara berikut:
+
+Masuk ke folder aplikasi:
+
+```bash
+cd streamflow
+```
+
+Jalankan perintah reset password:
+
+```bash
+node reset-password.js
+```
+
+### Setup Waktu Server (Timezone)
+
+Untuk memastikan scheduled streaming berjalan dengan waktu yang tepat, atur timezone server sesuai zona waktu kamu:
+
+#### 1. Cek Timezone Saat Ini
+
+Lihat timezone aktif:
+
+```bash
+timedatectl status
+```
+
+#### 2. Lihat Daftar Timezone Yang Tersedia
+
+Cari timezone Indonesia:
+
+```bash
+timedatectl list-timezones | grep Asia
+```
+
+Contoh set Timezone ke WIB (Jakarta):
+
+```bash
+sudo timedatectl set-timezone Asia/Jakarta
+```
+
+Verifikasi perubahan:
+
+```bash
+timedatectl status
+```
+
+Setelah mengubah timezone, restart aplikasi agar perubahan timezone berlaku:
+
+```bash
+pm2 restart streamflow
+```
+
+## 🪛 Troubleshooting
+
+### Permission Error
+
+Fix permission untuk folder uploads:
+
+```bash
+chmod -R 755 public/uploads/
+```
+
+### Port Already in Use
+
+Cek process yang menggunakan port:
+
+```bash
+sudo lsof -i :7575
+```
+
+Kill process jika perlu:
+
+```bash
+sudo kill -9 <PID>
+```
+
+### Database Error
+
+Reset database (HATI-HATI: akan menghapus semua data):
+
+```bash
+rm db/*.db
+```
+
+Restart aplikasi untuk create database baru.
 
 ## Lisensi:
 

@@ -1,0 +1,1969 @@
+<% layout('layout') -%>
+  <div class="flex md:hidden gap-3 mb-6 overflow-x-auto pb-2 px-0.5">
+    <div class="bg-gray-800 rounded-lg p-3 shadow-md min-w-[100px] flex-1">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-xs font-medium text-gray-400">Streams</p>
+        <div class="w-6 h-6 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-broadcast text-white text-sm"></i>
+        </div>
+      </div>
+      <p class="text-2xl font-semibold mt-1">0</p>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-3 shadow-md min-w-[100px] flex-1">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-xs font-medium text-gray-400">CPU</p>
+        <div class="w-6 h-6 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-cpu text-white text-sm"></i>
+        </div>
+      </div>
+      <p class="text-2xl font-semibold mt-1"><span id="cpu-usage-mobile">0%</span></p>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-3 shadow-md min-w-[100px] flex-1">
+      <div class="flex items-center justify-between mb-1">
+        <p class="text-xs font-medium text-gray-400">Memory</p>
+        <div class="w-6 h-6 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-device-laptop text-white text-sm"></i>
+        </div>
+      </div>
+      <p class="text-xl font-semibold mt-1"><span id="memory-usage-mobile">0</span></p>
+    </div>
+  </div>
+  <div class="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+    <div class="bg-gray-800 rounded-lg p-6 shadow-md">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Active Streams</h3>
+        <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-broadcast text-xl text-white"></i>
+        </div>
+      </div>
+      <p class="text-3xl font-bold mt-2">0</p>
+      <p class="text-sm text-gray-400 mt-1">No active streams</p>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 shadow-md">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">CPU Usage</h3>
+        <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-cpu text-xl text-white"></i>
+        </div>
+      </div>
+      <p class="text-3xl font-bold mt-2"><span id="cpu-usage">0</span>%</p>
+      <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+        <div id="cpu-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+      </div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 shadow-md">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Memory</h3>
+        <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-device-laptop text-xl text-white"></i>
+        </div>
+      </div>
+      <p class="text-3xl font-bold mt-2">
+        <span id="memory-usage">0 MB</span><span id="memory-total" class="text-sm text-gray-400"> / 0 MB</span>
+      </p>
+      <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+        <div id="memory-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-8">
+    <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+      <h2 class="text-xl font-bold">Status Streaming</h2>
+      <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+        <div class="relative w-full sm:w-64">
+          <input type="text" placeholder="Search streams..."
+            class="w-full bg-dark-700 border border-gray-600 text-white pl-9 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+          <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        </div>
+        <button onclick="openNewStreamModal()"
+          class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+          <i class="ti ti-plus"></i>
+          <span>New Stream</span>
+        </button>
+      </div>
+    </div>
+    <div class="block md:hidden space-y-4">
+    </div>
+    <div class="hidden md:block bg-gray-800 rounded-lg shadow-md overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="bg-gray-700 sticky top-0 z-10">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Stream Name
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Platform</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Start Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Schedule</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Duration</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700">
+            <tr id="empty-state" class="hover:bg-dark-700/50 transition-colors" style="display: none;">
+              <td colspan="7" class="px-6 py-10 text-center">
+                <div class="flex flex-col items-center">
+                  <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
+                    <i class="ti ti-broadcast text-gray-500 text-2xl"></i>
+                  </div>
+                  <p class="text-gray-400 font-medium mb-2">No streams found</p>
+                  <p class="text-gray-500 max-w-sm mb-4">Create your first stream to start broadcasting to your audience
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div id="newStreamModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+      <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
+        <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
+          <h3 class="text-lg font-semibold">Create New Stream</h3>
+          <button onclick="closeNewStreamModal()" class="text-gray-400 hover:text-white">
+            <i class="ti ti-x text-xl"></i>
+          </button>
+        </div>
+        <div class="p-4 sm:px-6 pt-1 pb-4 overflow-y-auto flex-grow">
+          <form id="newStreamForm" class="space-y-6">
+            <input type="hidden" id="selectedVideoId" name="videoId" value="">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="space-y-4">
+                <div class="relative">
+                  <label class="text-sm font-medium text-white block mb-2">Select Video</label>
+                  <div class="relative">
+                    <button type="button" onclick="toggleVideoSelector()"
+                      class="w-full flex items-center justify-between px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left">
+                      <span class="text-sm text-gray-300" id="selectedVideo">Choose a video...</span>
+                      <i class="ti ti-chevron-down text-gray-400"></i>
+                    </button>
+                    <div id="videoSelectorDropdown"
+                      class="hidden absolute z-10 mt-2 w-full bg-dark-700 rounded-lg border border-gray-600 shadow-lg">
+                      <div class="p-2 border-b border-gray-600/50">
+                        <div class="relative">
+                          <input type="text" id="videoSearchInput"
+                            class="w-full bg-dark-800 text-white pl-8 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700"
+                            placeholder="Search videos...">
+                          <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                      </div>
+                      <div id="videoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
+                  <div class="aspect-video bg-dark-900">
+                    <div id="videoPreviewMobile" class="hidden w-full h-full">
+                      <video id="videojs-preview-mobile" class="video-js vjs-default-skin vjs-big-play-centered"
+                        controls preload="auto" width="100%" height="100%"
+                        data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
+                        <source src="" type="video/mp4">
+                        <p class="vjs-no-js">Please enable JavaScript to view videos</p>
+                      </video>
+                    </div>
+                    <div id="emptyPreviewMobile" class="h-full flex flex-col items-center justify-center">
+                      <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
+                      <p class="text-sm text-gray-500">Select a video to preview</p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-white block mb-2">Stream Title</label>
+                  <input type="text"
+                    class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Enter stream title..." name="streamTitle" id="streamTitle" required>
+                </div>
+                <div class="space-y-4">
+                  <label class="text-sm font-medium text-white block">Stream Configuration</label>
+                  <div class="space-y-3">
+                    <div class="relative">
+                      <input type="text" id="rtmpUrl" name="rtmpUrl"
+                        class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                        placeholder="RTMP URL" required>
+                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <button type="button" id="platformSelector"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-dark-600 transition-colors"
+                        aria-label="Select platform">
+                        <i class="ti ti-list-check text-gray-400 hover:text-primary"></i>
+                      </button>
+                      <div id="platformDropdown"
+                        class="hidden absolute z-10 right-0 mt-1 w-48 bg-dark-700 rounded-lg border border-gray-600 shadow-lg overflow-hidden">
+                        <div class="py-1">
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmp://a.rtmp.youtube.com/live2">
+                            <i class="ti ti-brand-youtube text-red-500 text-base mr-2"></i>
+                            <span class="text-sm">YouTube</span>
+                          </button>
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmps://live-api-s.facebook.com:443/rtmp">
+                            <i class="ti ti-brand-facebook text-blue-500 text-base mr-2"></i>
+                            <span class="text-sm">Facebook</span>
+                          </button>
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmps://ingest.global.live.prod.tiktok.com/live">
+                            <i class="ti ti-brand-tiktok text-black text-base mr-2"></i>
+                            <span class="text-sm">TikTok</span>
+                          </button>
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmp://live.shopee.co.id/live">
+                            <i class="ti ti-brand-shopee text-orange-500 text-base mr-2"></i>
+                            <span class="text-sm">Shopee Live</span>
+                          </button>
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmp://live.twitch.tv/live">
+                            <i class="ti ti-brand-twitch text-purple-500 text-base mr-2"></i>
+                            <span class="text-sm">Twitch</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="relative">
+                      <input type="password" id="streamKey" name="streamKey"
+                        class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                        placeholder="Stream Key" required>
+                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <button type="button" onclick="toggleStreamKeyVisibility()"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                        <i class="ti ti-eye" id="streamKeyToggle"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="hidden lg:block">
+                <div class="overflow-hidden h-full">
+                  <div class="aspect-video rounded-lg bg-dark-900">
+                    <div id="videoPreview" class="hidden w-full h-full">
+                      <video id="videojs-preview-desktop"
+                        class="video-js vjs-default-skin vjs-big-play-centered rounded-lg" controls preload="auto"
+                        width="100%" height="100%"
+                        data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
+                        <source src="" type="video/mp4">
+                        <p class="vjs-no-js">Please enable JavaScript to view videos</p>
+                      </video>
+                    </div>
+                    <div id="emptyPreview" class="h-full flex flex-col items-center justify-center">
+                      <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
+                      <p class="text-sm text-gray-500">Select a video to preview</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex flex-col sm:flex-row sm:items-center">
+                <label class="text-sm font-medium text-white">Schedule Settings</label>
+                <span id="serverTimeDisplay"
+                  class="mt-1 sm:mt-0 sm:ml-2 block sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
+                  Server time: loading...
+                </span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="h-[42px] flex items-center justify-between">
+                  <label class="text-sm text-gray-300">Loop Video</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="loopVideo" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div
+                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
+                    </div>
+                  </label>
+                </div>
+                <div>
+                  <input type="datetime-local"
+                    class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
+                </div>
+                <div class="relative">
+                  <input type="number" min="1"
+                    class="w-full h-[42px] px-4 pr-16 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+                    placeholder="Duration">
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div class="pt-2 border-t border-gray-700">
+                <button type="button" id="advancedSettingsToggle"
+                  class="flex items-center justify-between w-full text-left">
+                  <div class="flex items-center">
+                    <span class="text-sm font-medium text-white">Advanced Settings</span>
+                    <div class="relative ml-2 group">
+                      <i class="ti ti-info-circle text-gray-400 hover:text-primary"></i>
+                      <div
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
+                        <div class="text-center">Menggunakan advanced settings, proses streaming akan menjadi lebih
+                          berat karena ada proses re-encoding video</div>
+                        <div
+                          class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
+                </button>
+                <div id="advancedSettingsContent" class="hidden space-y-6 pt-4">
+                  <div class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="text-xs text-gray-400 block mb-1">Bitrate</label>
+                        <select name="bitrate" id="bitrateSelect"
+                          class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm">
+                          <option value="2500" selected>2500 kbps</option>
+                          <option value="4000">4000 kbps</option>
+                          <option value="6000">6000 kbps</option>
+                          <option value="8000">8000 kbps</option>
+                          <option value="10000">10000 kbps</option>
+                          <option value="12000">12000 kbps</option>
+                          <option value="15000">15000 kbps</option>
+                          <option value="20000">20000 kbps</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="text-xs text-gray-400 block mb-1">Frame Rate</label>
+                        <select name="fps" id="fpsSelect"
+                          class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm">
+                          <option value="30" selected>30 FPS</option>
+                          <option value="60">60 FPS</option>
+                          <option value="120">120 FPS</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="text-xs text-gray-400 block mb-1">Resolution</label>
+                        <select id="resolutionSelect"
+                          class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm">
+                          <option value="720" selected data-horizontal="1280x720" data-vertical="720x1280">720p HD
+                          </option>
+                          <option value="1080" data-horizontal="1920x1080" data-vertical="1080x1920">1080p Full HD
+                          </option>
+                          <option value="1440" data-horizontal="2560x1440" data-vertical="1440x2560">1440p QHD</option>
+                          <option value="2160" data-horizontal="3840x2160" data-vertical="2160x3840">2160p 4K</option>
+                        </select>
+                        <div class="text-xs text-gray-500 mt-1">
+                          <span id="currentResolution">1280x720</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="text-xs text-gray-400 block mb-1">Orientation</label>
+                        <div class="flex gap-2 h-[42px]">
+                          <button type="button" onclick="setVideoOrientation('horizontal')"
+                            class="flex-1 flex items-center justify-center bg-dark-700 hover:bg-dark-600 border border-gray-600 rounded-lg transition-colors active-orientation">
+                            <i class="ti ti-rectangle text-sm mr-1"></i>
+                            <span class="text-xs">Landscape</span>
+                          </button>
+                          <button type="button" onclick="setVideoOrientation('vertical')"
+                            class="flex-1 flex items-center justify-center bg-dark-700 hover:bg-dark-600 border border-gray-600 rounded-lg transition-colors">
+                            <i class="ti ti-rectangle-vertical text-sm mr-1"></i>
+                            <span class="text-xs">Portrait</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
+          <button onclick="closeNewStreamModal()"
+            class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            Cancel
+          </button>
+          <button type="submit" form="newStreamForm"
+            class="px-5 py-2.5 text-sm font-medium bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+            Create Stream
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="editStreamModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+      <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
+        <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
+          <h3 class="text-lg font-semibold">Edit Stream</h3>
+          <button onclick="closeEditStreamModal()" class="text-gray-400 hover:text-white">
+            <i class="ti ti-x text-xl"></i>
+          </button>
+        </div>
+        <div class="p-4 sm:px-6 pt-1 pb-4 overflow-y-auto flex-grow">
+          <form id="editStreamForm" class="space-y-6">
+            <input type="hidden" id="editStreamId" name="streamId" value="">
+            <input type="hidden" id="editSelectedVideoId" name="videoId" value="">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="space-y-4">
+                <div class="relative">
+                  <label class="text-sm font-medium text-white block mb-2">Select Video</label>
+                  <div class="relative">
+                    <button type="button" onclick="toggleEditVideoSelector()"
+                      class="w-full flex items-center justify-between px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left">
+                      <span class="text-sm text-gray-300" id="editSelectedVideo">Choose a video...</span>
+                      <i class="ti ti-chevron-down text-gray-400"></i>
+                    </button>
+                    <div id="editVideoSelectorDropdown"
+                      class="hidden absolute z-10 mt-2 w-full bg-dark-700 rounded-lg border border-gray-600 shadow-lg">
+                      <div class="p-2 border-b border-gray-600/50">
+                        <div class="relative">
+                          <input type="text" id="editVideoSearchInput"
+                            class="w-full bg-dark-800 text-white pl-8 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700"
+                            placeholder="Search videos...">
+                          <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        </div>
+                      </div>
+                      <div id="editVideoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
+                  <div class="aspect-video bg-dark-900">
+                    <div id="editVideoPreviewMobile" class="hidden w-full h-full">
+                      <video id="edit-videojs-preview-mobile" class="video-js vjs-default-skin vjs-big-play-centered"
+                        controls preload="auto" width="100%" height="100%"
+                        data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
+                        <source src="" type="video/mp4">
+                        <p class="vjs-no-js">Please enable JavaScript to view videos</p>
+                      </video>
+                    </div>
+                    <div id="editEmptyPreviewMobile" class="h-full flex flex-col items-center justify-center">
+                      <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
+                      <p class="text-sm text-gray-500">Select a video to preview</p>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-sm font-medium text-white block mb-2">Stream Title</label>
+                  <input type="text"
+                    class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Enter stream title..." name="streamTitle" id="editStreamTitle" required>
+                </div>
+                <div class="space-y-4">
+                  <label class="text-sm font-medium text-white block mb-3">Stream Configuration</label>
+                  <div class="space-y-3">
+                    <div class="relative">
+                      <input type="text" id="editRtmpUrl" name="rtmpUrl"
+                        class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                        placeholder="RTMP URL" required>
+                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <button type="button" id="editPlatformSelector"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-dark-600 transition-colors"
+                        aria-label="Select platform">
+                        <i class="ti ti-list-check text-gray-400 hover:text-primary"></i>
+                      </button>
+                      <div id="editPlatformDropdown"
+                        class="hidden absolute z-10 right-0 mt-1 w-48 bg-dark-700 rounded-lg border border-gray-600 shadow-lg overflow-hidden">
+                        <div class="py-1">
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmp://a.rtmp.youtube.com/live2">
+                            <i class="ti ti-brand-youtube text-red-500 text-base mr-2"></i>
+                            <span class="text-sm">YouTube</span>
+                          </button>
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmps://live-api-s.facebook.com:443/rtmp">
+                            <i class="ti ti-brand-facebook text-blue-500 text-base mr-2"></i>
+                            <span class="text-sm">Facebook</span>
+                          </button>
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmps://ingest.global.live.prod.tiktok.com/live">
+                            <i class="ti ti-brand-tiktok text-black text-base mr-2"></i>
+                            <span class="text-sm">TikTok</span>
+                          </button>
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmp://live.shopee.co.id/live">
+                            <i class="ti ti-brand-shopee text-orange-500 text-base mr-2"></i>
+                            <span class="text-sm">Shopee Live</span>
+                          </button>
+                          <button type="button"
+                            class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
+                            data-url="rtmp://live.twitch.tv/live">
+                            <i class="ti ti-brand-twitch text-purple-500 text-base mr-2"></i>
+                            <span class="text-sm">Twitch</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="relative">
+                      <input type="password" id="editStreamKey" name="streamKey"
+                        class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                        placeholder="Stream Key" required>
+                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <button type="button" onclick="toggleEditStreamKeyVisibility()"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                        <i class="ti ti-eye" id="editStreamKeyToggle"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="hidden lg:block">
+                <div class="overflow-hidden h-full">
+                  <div class="aspect-video rounded-lg bg-dark-900">
+                    <div id="editVideoPreview" class="hidden w-full h-full">
+                      <video id="edit-videojs-preview-desktop"
+                        class="video-js vjs-default-skin vjs-big-play-centered rounded-lg" controls preload="auto"
+                        width="100%" height="100%"
+                        data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
+                        <source src="" type="video/mp4">
+                        <p class="vjs-no-js">Please enable JavaScript to view videos</p>
+                      </video>
+                    </div>
+                    <div id="editEmptyPreview" class="h-full flex flex-col items-center justify-center">
+                      <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
+                      <p class="text-sm text-gray-500">Select a video to preview</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="flex flex-col sm:flex-row sm:items-center">
+                <label class="text-sm font-medium text-white">Schedule Settings</label>
+                <span id="editServerTimeDisplay"
+                  class="mt-1 sm:mt-0 sm:ml-2 block sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
+                  Server time: loading...
+                </span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="h-[42px] flex items-center justify-between">
+                  <label class="text-sm text-gray-300">Loop Video</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="loopVideo" id="editLoopVideo" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div
+                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
+                    </div>
+                  </label>
+                </div>
+                <div>
+                  <input type="datetime-local" id="editScheduleTime"
+                    class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
+                </div>
+                <div class="relative">
+                  <input type="number" id="editDuration" min="1"
+                    class="w-full h-[42px] px-4 pr-16 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm"
+                    placeholder="Duration">
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-4">
+              <div class="pt-2 border-t border-gray-700">
+                <button type="button" id="editAdvancedSettingsToggle"
+                  class="flex items-center justify-between w-full text-left">
+                  <div class="flex items-center">
+                    <span class="text-sm font-medium text-white">Advanced Settings</span>
+                    <div class="relative ml-2 group">
+                      <i class="ti ti-info-circle text-gray-400 hover:text-primary"></i>
+                      <div
+                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
+                        <div class="text-center">Menggunakan advanced settings, proses streaming akan menjadi lebih
+                          berat karena ada proses re-encoding video</div>
+                        <div
+                          class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
+                </button>
+                <div id="editAdvancedSettingsContent" class="hidden space-y-6 pt-4">
+                  <div class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label class="text-xs text-gray-400 block mb-1">Bitrate</label>
+                        <select name="bitrate" id="editBitrate"
+                          class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm">
+                          <option value="2500">2500 kbps</option>
+                          <option value="4000">4000 kbps</option>
+                          <option value="6000">6000 kbps</option>
+                          <option value="8000">8000 kbps</option>
+                          <option value="10000">10000 kbps</option>
+                          <option value="12000">12000 kbps</option>
+                          <option value="15000">15000 kbps</option>
+                          <option value="20000">20000 kbps</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="text-xs text-gray-400 block mb-1">Frame Rate</label>
+                        <select name="fps" id="editFps"
+                          class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm">
+                          <option value="30">30 FPS</option>
+                          <option value="60">60 FPS</option>
+                          <option value="120">120 FPS</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="text-xs text-gray-400 block mb-1">Resolution</label>
+                        <select id="editResolutionSelect"
+                          class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm">
+                          <option value="720" selected data-horizontal="1280x720" data-vertical="720x1280">720p HD
+                          </option>
+                          <option value="1080" data-horizontal="1920x1080" data-vertical="1080x1920">1080p Full HD
+                          </option>
+                          <option value="1440" data-horizontal="2560x1440" data-vertical="1440x2560">1440p QHD</option>
+                          <option value="2160" data-horizontal="3840x2160" data-vertical="2160x3840">2160p 4K</option>
+                        </select>
+                        <div class="text-xs text-gray-500 mt-1">
+                          <span id="editCurrentResolution">1280x720</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="text-xs text-gray-400 block mb-1">Orientation</label>
+                        <div class="flex gap-2 h-[42px]">
+                          <button type="button" onclick="setEditVideoOrientation('horizontal')"
+                            class="flex-1 flex items-center justify-center bg-dark-700 hover:bg-dark-600 border border-gray-600 rounded-lg transition-colors active-orientation">
+                            <i class="ti ti-rectangle text-sm mr-1"></i>
+                            <span class="text-xs">Landscape</span>
+                          </button>
+                          <button type="button" onclick="setEditVideoOrientation('vertical')"
+                            class="flex-1 flex items-center justify-center bg-dark-700 hover:bg-dark-600 border border-gray-600 rounded-lg transition-colors">
+                            <i class="ti ti-rectangle-vertical text-sm mr-1"></i>
+                            <span class="text-xs">Portrait</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
+          <button onclick="closeEditStreamModal()"
+            class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            Cancel
+          </button>
+          <button type="submit" form="editStreamForm"
+            class="px-5 py-2.5 text-sm font-medium bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <style>
+    .video-js {
+      background-color: #1f2937;
+      width: 100%;
+      height: 100%;
+    }
+    .video-js .vjs-big-play-button {
+      background-color: rgba(59, 130, 246, 0.7);
+      border-color: rgba(59, 130, 246, 0.7);
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      line-height: 60px;
+      left: 50%;
+      top: 50%;
+      margin-left: -30px;
+      margin-top: -30px;
+    }
+    .video-js:hover .vjs-big-play-button {
+      background-color: rgb(59, 130, 246);
+    }
+    .video-js .vjs-control-bar {
+      background-color: rgba(31, 41, 55, 0.7);
+    }
+    .video-js .vjs-slider {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    .video-js .vjs-play-progress,
+    .video-js .vjs-volume-level {
+      background-color: rgb(59, 130, 246);
+    }
+    .video-js .vjs-load-progress {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .aspect-video .video-js {
+      aspect-ratio: 16/9;
+      height: auto !important;
+    }
+    .video-js .vjs-control-bar {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      transition: visibility 0.1s, opacity 0.1s !important;
+    }
+    .video-js.vjs-user-inactive:not(.vjs-paused) .vjs-control-bar {
+      visibility: visible !important;
+      opacity: 0.7 !important;
+    }
+    .video-js .vjs-progress-control {
+      min-width: 4em !important;
+      flex: 1 !important;
+    }
+    .video-js .vjs-progress-control .vjs-progress-holder {
+      margin: 0 10px !important;
+      height: 0.3em !important;
+    }
+    .video-js .vjs-progress-control:hover .vjs-progress-holder {
+      height: 0.5em !important;
+    }
+    .vjs-icon-placeholder:before {
+      position: absolute !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+    }
+    #videoListContainer {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+    }
+    #videoListContainer::-webkit-scrollbar {
+      width: 6px;
+    }
+    #videoListContainer::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    #videoListContainer::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.3);
+      border-radius: 20px;
+    }
+    #videoSearchInput::placeholder {
+      color: rgba(156, 163, 175, 0.7);
+    }
+    .highlight {
+      background-color: rgba(59, 130, 246, 0.2);
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+    #platformDropdown {
+      transform-origin: top right;
+      transition: transform 0.2s, opacity 0.2s;
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    #platformDropdown:not(.hidden) {
+      transform: scale(1);
+      opacity: 1;
+    }
+    .platform-option:hover i {
+      transform: scale(1.1);
+    }
+    .platform-option i {
+      transition: transform 0.2s;
+    }
+    #platformSelector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #platformSelector i {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+    #platformDropdown {
+      transform-origin: top right;
+      transition: transform 0.2s, opacity 0.2s;
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    #platformDropdown:not(.hidden) {
+      transform: scale(1);
+      opacity: 1;
+    }
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+    }
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.3);
+      border-radius: 20px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: rgba(156, 163, 175, 0.5);
+    }
+    .modal-overlay,
+    .overflow-y-auto,
+    .overflow-x-auto {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+    }
+    .modal-overlay::-webkit-scrollbar,
+    .overflow-y-auto::-webkit-scrollbar,
+    .overflow-x-auto::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .bg-dark-800::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.2);
+    }
+    .group:hover .group-hover\:block {
+      display: block;
+    }
+    .group .group-hover\:block {
+      transition-delay: 200ms;
+    }
+    .group:hover .group-hover\:block {
+      animation: fadeIn 0.2s;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, 5px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    }
+  </style>
+  <script src="/js/stream-modal.js"></script>
+  <script>
+    function formatMemory(value) {
+      return typeof value === 'string' ? value : '0 MB';
+    }
+    function updateSystemStats() {
+      fetch('/api/system-stats')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('cpu-usage').textContent = data.cpu.usage;
+          document.getElementById('cpu-usage-mobile').textContent = data.cpu.usage + '%';
+          document.getElementById('cpu-bar').style.width = data.cpu.usage + '%';
+          document.getElementById('memory-usage').textContent = formatMemory(data.memory.used);
+          document.getElementById('memory-usage-mobile').textContent = formatMemory(data.memory.used);
+          document.getElementById('memory-total').textContent = ' / ' + formatMemory(data.memory.total);
+          document.getElementById('memory-bar').style.width = data.memory.usagePercent + '%';
+        })
+        .catch(error => console.error('Error fetching system stats:', error));
+    }
+    updateSystemStats();
+    setInterval(updateSystemStats, 5000);
+    document.getElementById('newStreamForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const videoId = document.getElementById('selectedVideoId').value;
+      if (!videoId) {
+        alert('Please select a video before creating the stream');
+        const videoSelector = document.querySelector('[onclick="toggleVideoSelector()"]');
+        videoSelector.classList.add('border-red-500');
+        videoSelector.classList.remove('border-gray-600');
+        videoSelector.animate([
+          { transform: 'translateX(0px)' },
+          { transform: 'translateX(-5px)' },
+          { transform: 'translateX(5px)' },
+          { transform: 'translateX(-5px)' },
+          { transform: 'translateX(0px)' }
+        ], {
+          duration: 300,
+          iterations: 1
+        });
+        return;
+      }
+      if (!isStreamKeyValid) {
+        alert('Please use a different stream key. This one is already in use.');
+        return;
+      }
+      const formData = {
+        streamTitle: document.getElementById('streamTitle').value,
+        videoId: document.getElementById('selectedVideoId').value,
+        rtmpUrl: document.getElementById('rtmpUrl').value,
+        streamKey: document.getElementById('streamKey').value,
+        bitrate: document.querySelector('select[name="bitrate"]').value,
+        fps: document.querySelector('select[name="fps"]').value,
+        loopVideo: document.querySelector('input[name="loopVideo"]').checked,
+        orientation: currentOrientation,
+        resolution: document.getElementById('currentResolution').textContent.split(' ')[0],
+        useAdvancedSettings: !document.getElementById('advancedSettingsContent').classList.contains('hidden')
+      };
+      const scheduleTime = document.querySelector('input[type="datetime-local"]').value;
+      const duration = document.querySelector('input[type="number"]').value;
+      if (scheduleTime) {
+        formData.scheduleTime = scheduleTime;
+      }
+      if (duration) {
+        formData.duration = duration;
+      }
+      const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+      fetch('/api/streams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+        },
+        body: JSON.stringify(formData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Stream created successfully!');
+            closeNewStreamModal();
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          } else {
+            alert(`Error: ${data.error || 'Failed to create stream'}`);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while creating the stream');
+        });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+      fetch('/api/streams')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            displayStreams(data.streams);
+            updateStreamCounters(data.streams);
+          } else {
+            console.error('Error fetching streams:', data.error);
+            showEmptyState();
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching streams:', error);
+          showEmptyState();
+        });
+      function updateStreamCounters(streams) {
+        const liveStreams = streams.filter(stream => stream.status === 'live').length;
+        document.querySelector('.mb-6 .bg-gray-800:nth-child(1) p.text-2xl').textContent = liveStreams;
+        document.querySelector('.hidden.md\\:grid .bg-gray-800:nth-child(1) p.text-3xl').textContent = liveStreams;
+        const statusText = document.querySelector('.hidden.md\\:grid .bg-gray-800:nth-child(1) p.text-sm');
+        statusText.textContent = liveStreams === 0 ? 'No active streams' :
+          liveStreams === 1 ? '1 active stream' :
+            `${liveStreams} active streams`;
+      }
+      function displayStreams(streams) {
+        if (!streams || streams.length === 0) {
+          showEmptyState();
+          return;
+        }
+        displayMobileStreams(streams);
+        displayDesktopStreams(streams);
+      }
+      function displayMobileStreams(streams) {
+        const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-4');
+        mobileContainer.innerHTML = '';
+        streams.forEach(stream => {
+          const card = createMobileStreamCard(stream);
+          mobileContainer.appendChild(card);
+        });
+      }
+      function displayDesktopStreams(streams) {
+        const tableBody = document.querySelector('.hidden.md\\:block table tbody');
+        Array.from(tableBody.querySelectorAll('tr:not(#empty-state)')).forEach(row => {
+          row.remove();
+        });
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) {
+          emptyState.style.display = 'none';
+        }
+        streams.forEach(stream => {
+          const row = createStreamTableRow(stream);
+          tableBody.insertBefore(row, emptyState);
+        });
+      }
+      function createMobileStreamCard(stream) {
+        const card = document.createElement('div');
+        card.className = 'bg-gray-800 rounded-lg overflow-hidden shadow-md';
+        card.dataset.streamId = stream.id;
+        const thumbnail = stream.video_thumbnail ?
+          stream.video_thumbnail :
+          'https://via.placeholder.com/320x180?text=No+Preview';
+        let durationDisplay = '';
+        if (stream.status === 'live' && stream.start_time) {
+          const startTime = new Date(stream.start_time);
+          const now = new Date();
+          const durationMs = now - startTime;
+          const hours = Math.floor(durationMs / (1000 * 60 * 60)).toString().padStart(2, '0');
+          const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+          const seconds = Math.floor((durationMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
+          durationDisplay = `${hours}:${minutes}:${seconds}`;
+        }
+        const statusBadge = getStatusBadgeHTML(stream.status);
+        const startDate = stream.start_time ? formatDate(new Date(stream.start_time)) : '';
+        const scheduleDate = stream.schedule_time ? formatDate(new Date(stream.schedule_time)) : '';
+        const scheduleTime = stream.schedule_time ? formatTime(new Date(stream.schedule_time)) : '';
+        let settingsDisplay = '';
+        if (stream.use_advanced_settings) {
+          settingsDisplay = `${stream.resolution || '1280x720'} • ${stream.bitrate || '2500'} kbps • ${stream.fps || '30'} FPS`;
+        } else {
+          const videoRes = stream.video_resolution || stream.resolution || '1280x720';
+          const videoBitrate = stream.video_bitrate || stream.bitrate || '2500';
+          const videoFps = stream.video_fps || stream.fps || '30';
+          settingsDisplay = `${videoRes} • ${videoBitrate} kbps • ${videoFps} FPS`;
+        }
+        let formattedDuration = '—';
+        if (stream.duration) {
+          if (stream.duration >= 60) {
+            const hours = Math.floor(stream.duration / 60);
+            const minutes = stream.duration % 60;
+            formattedDuration = `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
+          } else {
+            formattedDuration = `${stream.duration} min`;
+          }
+        }
+        card.innerHTML = `
+        <div class="relative">
+          <div class="bg-dark-700 aspect-video relative">
+            <img src="${thumbnail}" class="w-full h-full object-cover" alt="${stream.title}">
+            <div class="absolute top-2 right-2">
+              ${statusBadge}
+            </div>
+            ${stream.status === 'live' ? `
+            <div class="absolute bottom-2 right-2 bg-black/70 rounded px-1.5 py-0.5">
+              <span class="text-xs font-medium text-white">
+                <span class="live-duration" data-start-time="${stream.start_time}">${durationDisplay}</span>
+              </span>
+            </div>` : ''}
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-medium">${stream.title}</div>
+            <div class="flex items-center text-sm">
+              <i class="ti ti-brand-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1"></i>
+              <span>${stream.platform || 'Custom'}</span>
+            </div>
+          </div>
+          <div class="text-xs text-gray-400 mb-2">
+            ${settingsDisplay}
+          </div>
+          <div class="flex items-center text-sm text-gray-400 mb-2">
+            <i class="ti ti-clock mr-1.5"></i>
+            <span>Duration: ${formattedDuration}</span>
+          </div>
+          ${stream.status === 'scheduled' ? `
+          <div class="flex items-center text-sm text-yellow-500 mb-3">
+            <i class="ti ti-calendar-event mr-1.5"></i>
+            <span>Starts ${scheduleDate} • ${scheduleTime}</span>
+          </div>` : `
+          <div class="flex items-center text-sm text-gray-400 mb-3">
+            <i class="ti ti-calendar mr-1.5"></i>
+            <span>${startDate || 'Not started'}</span>
+          </div>`}
+          <div class="flex justify-between items-center">
+            ${getActionButtonHTML(stream.status, stream.id, 'mobile')}
+            <div class="flex items-center gap-3 text-gray-400">
+              <button class="hover:text-white transition-colors" onclick="editStream('${stream.id}')">
+                <i class="ti ti-edit"></i>
+              </button>
+              <button class="hover:text-red-400 transition-colors" onclick="deleteStream('${stream.id}')">
+                <i class="ti ti-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+        return card;
+      }
+      function createStreamTableRow(stream) {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-dark-700/50 transition-colors';
+        row.dataset.streamId = stream.id;
+        const thumbnail = stream.video_thumbnail ?
+          stream.video_thumbnail :
+          'https://via.placeholder.com/320x180?text=No+Preview';
+        const startDate = stream.start_time ? new Date(stream.start_time) : null;
+        const scheduleDate = stream.schedule_time ? new Date(stream.schedule_time) : null;
+        let settingsDisplay = '';
+        if (stream.use_advanced_settings) {
+          settingsDisplay = `${stream.resolution || '1280x720'} • ${stream.bitrate || '2500'} kbps • ${stream.fps || '30'} FPS`;
+        } else {
+          const videoRes = stream.video_resolution || stream.resolution || '1280x720';
+          const videoBitrate = stream.video_bitrate || stream.bitrate || '2500';
+          const videoFps = stream.video_fps || stream.fps || '30';
+          settingsDisplay = `${videoRes} • ${videoBitrate} kbps • ${videoFps} FPS`;
+        }
+        let durationDisplay = '';
+        let statusBadge = '';
+        if (stream.status === 'live' && stream.start_time) {
+          const startTime = new Date(stream.start_time);
+          const now = new Date();
+          const durationMs = now - startTime;
+          const hours = Math.floor(durationMs / (1000 * 60 * 60)).toString().padStart(2, '0');
+          const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+          const seconds = Math.floor((durationMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
+          durationDisplay = `${hours}:${minutes}:${seconds}`;
+          statusBadge = `
+            <span class="flex items-center bg-red-400/10 text-red-400 rounded-full px-2.5 py-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
+              <span class="text-xs font-medium">Live • <span class="live-duration" data-start-time="${stream.start_time}">
+                ${durationDisplay}</span></span>
+            </span>
+          `;
+        } else {
+          statusBadge = getStatusBadgeHTML(stream.status);
+        }
+        let formattedDuration = '—';
+        if (stream.duration) {
+          if (stream.duration >= 60) {
+            const hours = Math.floor(stream.duration / 60);
+            const minutes = stream.duration % 60;
+            formattedDuration = `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
+          } else {
+            formattedDuration = `${stream.duration} min`;
+          }
+        }
+        row.innerHTML = `
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            <div class="w-20 h-12 bg-dark-700 rounded flex-shrink-0 overflow-hidden mr-3">
+              <img src="${thumbnail}" class="w-full h-full object-cover" alt="${stream.title}">
+            </div>
+            <div>
+              <div class="text-sm font-medium">${stream.title}</div>
+              <div class="text-xs text-gray-400">${settingsDisplay}</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            <i class="ti ti-brand-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1.5"></i>
+            <span class="text-sm">${stream.platform || 'Custom'}</span>
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="text-sm text-gray-400">${formatDate(startDate) || '--'}</div>
+          ${startDate ? `<div class="text-xs text-gray-500">Started: ${formatTime(startDate)}</div>` : ''}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          ${scheduleDate
+            ? `<div class="text-sm text-yellow-500 font-medium">${formatDate(scheduleDate)}</div>
+               <div class="text-xs text-gray-400">${formatTime(scheduleDate)}</div>`
+            : `<div class="text-sm">--</div>`}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            <i class="ti ti-clock text-gray-400 mr-1.5"></i>
+            <span class="text-sm">${formattedDuration}</span>
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            ${statusBadge}
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right">
+          <div class="flex items-center justify-end space-x-2">
+            ${getActionButtonHTML(stream.status, stream.id, 'desktop')}
+            <div class="ml-2 flex items-center gap-1">
+              <button class="p-1.5 hover:bg-dark-700 rounded transition-colors" onclick="editStream('${stream.id}')">
+                <i class="ti ti-edit text-gray-400 hover:text-white"></i>
+              </button>
+              <button class="p-1.5 hover:bg-dark-700 rounded transition-colors" onclick="deleteStream('${stream.id}')">
+                <i class="ti ti-trash text-gray-400 hover:text-red-400"></i>
+              </button>
+            </div>
+          </div>
+        </td>
+      `;
+        return row;
+      }
+      function showEmptyState() {
+        document.querySelectorAll('tbody tr:not(#empty-state)').forEach(el => {
+          el.style.display = 'none';
+        });
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) {
+          emptyState.style.display = 'table-row';
+        }
+        document.querySelectorAll('.block.md\\:hidden.space-y-4 > div').forEach(el => {
+          el.style.display = 'none';
+        });
+        const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-4');
+        mobileContainer.innerHTML = `
+        <div class="bg-gray-800 rounded-lg p-6 text-center">
+          <div class="flex flex-col items-center">
+            <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
+              <i class="ti ti-broadcast text-gray-500 text-2xl"></i>
+            </div>
+            <p class="text-gray-400 font-medium mb-2">No streams found</p>
+            <p class="text-gray-500 mb-4">Create your first stream to start broadcasting</p>
+          </div>
+        </div>
+      `;
+      }
+      function formatDate(date) {
+        if (!date) return '';
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+      function formatTime(date) {
+        if (!date) return '';
+        const hours = String(date.getUTCHours()).padStart(2, '0');
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+      }
+      function getPlatformIcon(platform) {
+        switch (platform) {
+          case 'YouTube': return 'youtube';
+          case 'Facebook': return 'facebook';
+          case 'Twitch': return 'twitch';
+          case 'TikTok': return 'tiktok';
+          case 'Instagram': return 'instagram';
+          case 'Shopee Live': return 'shopping-bag';
+          case 'Restream.io': return 'live-photo';
+          default: return 'broadcast';
+        }
+      }
+      function getPlatformColor(platform) {
+        switch (platform) {
+          case 'YouTube': return 'red-500';
+          case 'Facebook': return 'blue-500';
+          case 'Twitch': return 'purple-500';
+          case 'TikTok': return 'gray-100';
+          case 'Instagram': return 'pink-500';
+          case 'Shopee Live': return 'orange-500';
+          case 'Restream.io': return 'teal-500';
+          default: return 'gray-400';
+        }
+      }
+      function getStatusBadgeHTML(status, duration = '') {
+        switch (status) {
+          case 'live':
+            return `
+            <span class="flex items-center bg-red-400/10 text-red-400 rounded-full px-2.5 py-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
+              <span class="text-xs font-medium">Live${duration ? ' • ' + duration : ''}</span>
+            </span>
+          `;
+          case 'scheduled':
+            return `
+            <span class="flex items-center bg-yellow-500/10 text-yellow-500 rounded-full px-2.5 py-1">
+              <i class="ti ti-calendar-event text-xs mr-1.5"></i>
+              <span class="text-xs font-medium">Scheduled</span>
+            </span>
+          `;
+          case 'offline':
+          default:
+            return `
+            <span class="flex items-center bg-gray-700 text-gray-400 rounded-full px-2.5 py-1">
+              <i class="ti ti-circle-dot text-xs mr-1.5"></i>
+              <span class="text-xs font-medium">Offline</span>
+            </span>
+          `;
+        }
+      }
+      function getActionButtonHTML(status, streamId, view = 'desktop') {
+        const btnClass = view === 'mobile'
+          ? 'px-4 py-1.5 text-white text-xs font-medium rounded transition-colors'
+          : 'inline-flex items-center px-2.5 py-1.5 text-white text-xs font-medium rounded transition-colors';
+        switch (status) {
+          case 'live':
+            return `
+            <button 
+              onclick="stopStream('${streamId}')"
+              class="${btnClass} bg-red-500 hover:bg-red-600">
+              Stop
+            </button>
+          `;
+          case 'scheduled':
+            return `
+            <button
+              onclick="cancelSchedule('${streamId}')"
+              class="${btnClass} bg-yellow-500 hover:bg-yellow-600">
+              Cancel
+            </button>
+          `;
+          case 'offline':
+          default:
+            return `
+            <button
+              onclick="startStream('${streamId}')"
+              class="${btnClass} bg-primary hover:bg-blue-600">
+              Start
+            </button>
+          `;
+        }
+      }
+    });
+    function startStream(streamId) {
+      if (!streamId) return;
+      const actionBtns = document.querySelectorAll(`[data-stream-id="${streamId}"] .action-btn`);
+      const originalBtnStates = [];
+      actionBtns.forEach(btn => {
+        originalBtnStates.push({
+          element: btn,
+          html: btn.innerHTML,
+          disabled: btn.disabled
+        });
+        btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Starting...';
+        btn.disabled = true;
+      });
+      function restoreButtons() {
+        originalBtnStates.forEach(state => {
+          state.element.innerHTML = state.html;
+          state.element.disabled = state.disabled;
+        });
+      }
+      fetch(`/api/streams/${streamId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'live' })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const streamMode = data.isAdvancedMode ? "Advanced mode" : "Simple mode";
+            alert(`Stream started successfully! (${streamMode})`);
+            window.location.reload();
+          } else {
+            alert(`Error: ${data.error || 'Failed to start stream'}`);
+            restoreButtons();
+          }
+        })
+        .catch(error => {
+          console.error('Error starting stream:', error);
+          alert(`An error occurred while starting the stream: ${error.message}`);
+          restoreButtons();
+        });
+    }
+    function stopStream(streamId) {
+      if (!streamId) return;
+      const actionBtns = document.querySelectorAll(`[data-stream-id="${streamId}"] .action-btn`);
+      const originalBtnStates = [];
+      actionBtns.forEach(btn => {
+        originalBtnStates.push({
+          element: btn,
+          html: btn.innerHTML,
+          disabled: btn.disabled
+        });
+        btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Stopping...';
+        btn.disabled = true;
+      });
+      function restoreButtons() {
+        originalBtnStates.forEach(state => {
+          state.element.innerHTML = state.html;
+          state.element.disabled = state.disabled;
+        });
+      }
+      fetch(`/api/streams/${streamId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'offline' })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Stream stopped successfully!');
+            window.location.reload();
+          } else {
+            alert(`Error: ${data.error || 'Failed to stop stream'}`);
+            restoreButtons();
+          }
+        })
+        .catch(error => {
+          console.error('Error stopping stream:', error);
+          alert(`An error occurred while stopping the stream: ${error.message}`);
+          restoreButtons();
+        });
+    }
+    function cancelSchedule(streamId) {
+      if (!streamId) return;
+      const actionBtns = document.querySelectorAll(`[data-stream-id="${streamId}"] .action-btn`);
+      const originalBtnStates = [];
+      actionBtns.forEach(btn => {
+        originalBtnStates.push({
+          element: btn,
+          html: btn.innerHTML,
+          disabled: btn.disabled
+        });
+        btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Cancelling...';
+        btn.disabled = true;
+      });
+      function restoreButtons() {
+        originalBtnStates.forEach(state => {
+          state.element.innerHTML = state.html;
+          state.element.disabled = state.disabled;
+        });
+      }
+      fetch(`/api/streams/${streamId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'offline' })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            alert('Schedule cancelled successfully!');
+            window.location.reload();
+          } else {
+            alert(`Error: ${data.error || 'Failed to cancel schedule'}`);
+            restoreButtons();
+          }
+        })
+        .catch(error => {
+          console.error('Error cancelling schedule:', error);
+          alert(`An error occurred while cancelling the schedule: ${error.message}`);
+          restoreButtons();
+        });
+    }
+    function editStream(streamId) {
+      console.log('Edit stream:', streamId);
+    }
+    function deleteStream(streamId) {
+      if (!streamId) return;
+      if (confirm('Are you sure you want to delete this stream?')) {
+        fetch(`/api/streams/${streamId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              window.location.reload();
+            } else {
+              alert('Error: ' + (data.error || 'Failed to delete stream'));
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting stream:', error);
+            alert('An error occurred while deleting the stream');
+          });
+      }
+    }
+    function startCountdowns() {
+      const updateTimers = () => {
+        document.querySelectorAll('[data-schedule-time]').forEach(el => {
+          const scheduleTime = new Date(el.dataset.scheduleTime);
+          const now = new Date();
+          const diff = scheduleTime - now;
+          if (diff <= 0) {
+            el.textContent = 'Starting soon...';
+            return;
+          }
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          let timeText = '';
+          if (days > 0) timeText = `${days}d ${hours}h ${minutes}m`;
+          else if (hours > 0) timeText = `${hours}h ${minutes}m ${seconds}s`;
+          else timeText = `${minutes}m ${seconds}s`;
+          el.textContent = `Starts in: ${timeText}`;
+        });
+      };
+      updateTimers();
+      setInterval(updateTimers, 1000);
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      startCountdowns();
+    });
+    let editSelectedVideoData = null;
+    let currentEditOrientation = 'horizontal';
+    let editDesktopVideoPlayer = null;
+    let editMobileVideoPlayer = null;
+    let isEditStreamKeyValid = true;
+    let originalStreamKey = '';
+    function editStream(streamId) {
+      if (!streamId) return;
+      fetch(`/api/streams/${streamId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            openEditStreamModal(data.stream);
+          } else {
+            alert('Error: ' + (data.error || 'Failed to fetch stream data'));
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching stream data:', error);
+          alert('An error occurred while fetching stream data');
+        });
+    }
+    function openEditStreamModal(stream) {
+      originalStreamKey = stream.stream_key;
+      document.getElementById('editStreamId').value = stream.id;
+      document.getElementById('editStreamTitle').value = stream.title;
+      document.getElementById('editRtmpUrl').value = stream.rtmp_url || '';
+      document.getElementById('editStreamKey').value = stream.stream_key || '';
+      if (stream.video_id) {
+        document.getElementById('editSelectedVideoId').value = stream.video_id;
+        document.getElementById('editSelectedVideo').textContent = stream.video_title || 'Selected Video';
+        if (stream.video_filepath) {
+          const videoData = {
+            id: stream.video_id,
+            name: stream.video_title,
+            url: `/stream/${stream.video_id}`,
+            thumbnail: stream.video_thumbnail
+          };
+          selectEditVideo(videoData);
+        }
+      }
+      document.getElementById('editLoopVideo').checked = stream.loop_video;
+      const bitrateSelect = document.getElementById('editBitrate');
+      for (let i = 0; i < bitrateSelect.options.length; i++) {
+        if (bitrateSelect.options[i].value == stream.bitrate) {
+          bitrateSelect.selectedIndex = i;
+          break;
+        }
+      }
+      currentEditOrientation = stream.orientation || 'horizontal';
+      setEditVideoOrientation(currentEditOrientation);
+      const resolutionSelect = document.getElementById('editResolutionSelect');
+      if (stream.resolution) {
+        let found = false;
+        for (let i = 0; i < resolutionSelect.options.length; i++) {
+          const option = resolutionSelect.options[i];
+          const resValue = option.getAttribute(`data-${currentEditOrientation}`);
+          if (resValue === stream.resolution) {
+            resolutionSelect.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          resolutionSelect.value = "720";
+        }
+        updateEditResolutionDisplay();
+      }
+      const fpsSelect = document.getElementById('editFps');
+      for (let i = 0; i < fpsSelect.options.length; i++) {
+        if (fpsSelect.options[i].value == stream.fps) {
+          fpsSelect.selectedIndex = i;
+          break;
+        }
+      }
+      if (stream.schedule_time) {
+        const scheduleDate = new Date(stream.schedule_time);
+        const formattedDate = scheduleDate.toISOString().slice(0, 16);
+        document.getElementById('editScheduleTime').value = formattedDate;
+      } else {
+        document.getElementById('editScheduleTime').value = '';
+      }
+      if (stream.duration) {
+        document.getElementById('editDuration').value = stream.duration;
+      } else {
+        document.getElementById('editDuration').value = '';
+      }
+      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
+      const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
+      const icon = advancedSettingsToggle.querySelector('i');
+      if (stream.use_advanced_settings) {
+        advancedSettingsContent.classList.remove('hidden');
+        icon.style.transform = 'rotate(180deg)';
+      } else {
+        advancedSettingsContent.classList.add('hidden');
+        icon.style.transform = '';
+      }
+      const modal = document.getElementById('editStreamModal');
+      document.body.style.overflow = 'hidden';
+      modal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        modal.classList.add('active');
+      });
+    }
+    function closeEditStreamModal() {
+      const modal = document.getElementById('editStreamModal');
+      document.body.style.overflow = 'auto';
+      resetEditModalForm();
+      modal.classList.remove('active');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 200);
+      if (editDesktopVideoPlayer) {
+        editDesktopVideoPlayer.pause();
+        editDesktopVideoPlayer.dispose();
+        editDesktopVideoPlayer = null;
+      }
+      if (editMobileVideoPlayer) {
+        editMobileVideoPlayer.pause();
+        editMobileVideoPlayer.dispose();
+        editMobileVideoPlayer = null;
+      }
+    }
+    function resetEditModalForm() {
+      document.getElementById('editStreamForm').reset();
+      document.getElementById('editStreamId').value = '';
+      document.getElementById('editSelectedVideoId').value = '';
+      document.getElementById('editSelectedVideo').textContent = 'Choose a video...';
+      const desktopPreview = document.getElementById('editVideoPreview');
+      const desktopEmptyPreview = document.getElementById('editEmptyPreview');
+      const mobilePreview = document.getElementById('editVideoPreviewMobile');
+      const mobileEmptyPreview = document.getElementById('editEmptyPreviewMobile');
+      desktopPreview.classList.add('hidden');
+      mobilePreview.classList.add('hidden');
+      desktopEmptyPreview.classList.remove('hidden');
+      mobileEmptyPreview.classList.remove('hidden');
+      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
+      const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
+      if (advancedSettingsContent && advancedSettingsToggle) {
+        advancedSettingsContent.classList.add('hidden');
+        const icon = advancedSettingsToggle.querySelector('i');
+        if (icon) icon.style.transform = '';
+      }
+    }
+    function toggleEditVideoSelector() {
+      const dropdown = document.getElementById('editVideoSelectorDropdown');
+      if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        if (!dropdown.dataset.loaded) {
+          loadEditGalleryVideos();
+          dropdown.dataset.loaded = 'true';
+        }
+      } else {
+        dropdown.classList.add('hidden');
+      }
+    }
+    async function loadEditGalleryVideos() {
+      const container = document.getElementById('editVideoListContainer');
+      if (!container) {
+        console.error("Edit video list container not found");
+        return;
+      }
+      container.innerHTML = '<div class="text-center py-3"><i class="ti ti-loader animate-spin mr-2"></i>Loading videos...</div>';
+      try {
+        const response = await fetch('/api/stream/videos');
+        const videos = await response.json();
+        displayEditFilteredVideos(videos);
+        const searchInput = document.getElementById('editVideoSearchInput');
+        if (searchInput) {
+          searchInput.removeEventListener('input', handleEditVideoSearch);
+          searchInput.addEventListener('input', handleEditVideoSearch);
+          setTimeout(() => searchInput.focus(), 10);
+        }
+      } catch (error) {
+        console.error('Error loading gallery videos:', error);
+        container.innerHTML = '<div class="text-center py-5 text-red-400"><i class="ti ti-alert-circle text-2xl mb-2"></i><p>Failed to load videos</p></div>';
+      }
+    }
+    function handleEditVideoSearch(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      const filteredVideos = window.allStreamVideos.filter(video =>
+        video.name.toLowerCase().includes(searchTerm)
+      );
+      displayEditFilteredVideos(filteredVideos);
+    }
+    function displayEditFilteredVideos(videos) {
+      const container = document.getElementById('editVideoListContainer');
+      if (!videos || !videos.length) {
+        container.innerHTML = '<div class="text-center py-5 text-gray-400"><p>No videos found</p></div>';
+        return;
+      }
+      container.innerHTML = '';
+      videos.forEach(video => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'w-full flex items-center space-x-3 p-2 rounded hover:bg-dark-600 transition-colors';
+        button.onclick = () => selectEditVideo(video);
+        button.innerHTML = `
+      <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
+        <img src="${video.thumbnail || '/images/default-thumbnail.jpg'}" alt="" 
+          class="w-full h-full object-cover rounded" 
+          onerror="this.src='/images/default-thumbnail.jpg'">
+      </div>
+      <div class="flex-1 min-w-0 ml-3">
+        <p class="text-sm font-medium text-white truncate">${video.name}</p>
+        <p class="text-xs text-gray-400">${video.resolution || 'Unknown'} • ${video.duration || '00:00'}</p>
+      </div>
+    `;
+        container.appendChild(button);
+      });
+    }
+    function selectEditVideo(video) {
+      editSelectedVideoData = video;
+      document.getElementById('editSelectedVideo').textContent = video.name;
+      document.getElementById('editSelectedVideoId').value = video.id;
+      const desktopPreview = document.getElementById('editVideoPreview');
+      const desktopEmptyPreview = document.getElementById('editEmptyPreview');
+      const mobilePreview = document.getElementById('editVideoPreviewMobile');
+      const mobileEmptyPreview = document.getElementById('editEmptyPreviewMobile');
+      desktopPreview.classList.remove('hidden');
+      mobilePreview.classList.remove('hidden');
+      desktopEmptyPreview.classList.add('hidden');
+      mobileEmptyPreview.classList.add('hidden');
+      createEditVideoPreview(video);
+      document.getElementById('editVideoSelectorDropdown').classList.add('hidden');
+    }
+    function createEditVideoPreview(video) {
+      if (editDesktopVideoPlayer) {
+        editDesktopVideoPlayer.pause();
+        editDesktopVideoPlayer.dispose();
+        editDesktopVideoPlayer = null;
+      }
+      if (editMobileVideoPlayer) {
+        editMobileVideoPlayer.pause();
+        editMobileVideoPlayer.dispose();
+        editMobileVideoPlayer = null;
+      }
+      const desktopVideoContainer = document.getElementById('editVideoPreview');
+      const mobileVideoContainer = document.getElementById('editVideoPreviewMobile');
+      desktopVideoContainer.innerHTML = `
+    <video id="edit-videojs-preview-desktop" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
+      <source src="${video.url}" type="video/mp4">
+    </video>
+  `;
+      mobileVideoContainer.innerHTML = `
+    <video id="edit-videojs-preview-mobile" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
+      <source src="${video.url}" type="video/mp4">
+    </video>
+  `;
+      setTimeout(() => {
+        try {
+          editDesktopVideoPlayer = videojs('edit-videojs-preview-desktop', {
+            controls: true,
+            autoplay: false,
+            preload: 'auto',
+            fluid: true
+          });
+          editMobileVideoPlayer = videojs('edit-videojs-preview-mobile', {
+            controls: true,
+            autoplay: false,
+            preload: 'auto',
+            fluid: true
+          });
+        } catch (e) {
+          console.warn('Error initializing video players:', e);
+        }
+      }, 10);
+    }
+    function setEditVideoOrientation(orientation) {
+      currentEditOrientation = orientation;
+      const horizontalBtn = document.querySelector('[onclick="setEditVideoOrientation(\'horizontal\')"]');
+      const verticalBtn = document.querySelector('[onclick="setEditVideoOrientation(\'vertical\')"]');
+      horizontalBtn.classList.remove('edit-active-orientation', 'bg-primary');
+      horizontalBtn.classList.add('bg-dark-700');
+      verticalBtn.classList.remove('edit-active-orientation', 'bg-primary');
+      verticalBtn.classList.add('bg-dark-700');
+      if (orientation === 'horizontal') {
+        horizontalBtn.classList.add('edit-active-orientation', 'bg-primary');
+        horizontalBtn.classList.remove('bg-dark-700');
+      } else {
+        verticalBtn.classList.add('edit-active-orientation', 'bg-primary');
+        verticalBtn.classList.remove('bg-dark-700');
+      }
+      updateEditResolutionDisplay();
+    }
+    function updateEditResolutionDisplay() {
+      const select = document.getElementById('editResolutionSelect');
+      const selected = select.options[select.selectedIndex];
+      const resValue = selected.getAttribute(`data-${currentEditOrientation}`);
+      if (resValue) {
+        document.getElementById('editCurrentResolution').textContent = resValue;
+      }
+    }
+    function toggleEditStreamKeyVisibility() {
+      const keyInput = document.getElementById('editStreamKey');
+      const eyeIcon = document.getElementById('editStreamKeyToggle');
+      if (keyInput.type === 'password') {
+        keyInput.type = 'text';
+        eyeIcon.classList.remove('ti-eye');
+        eyeIcon.classList.add('ti-eye-off');
+      } else {
+        keyInput.type = 'password';
+        eyeIcon.classList.remove('ti-eye-off');
+        eyeIcon.classList.add('ti-eye');
+      }
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      const editResolutionSelect = document.getElementById('editResolutionSelect');
+      if (editResolutionSelect) {
+        editResolutionSelect.addEventListener('change', updateEditResolutionDisplay);
+      }
+      const editForm = document.getElementById('editStreamForm');
+      if (editForm) {
+        editForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          const streamId = document.getElementById('editStreamId').value;
+          if (!streamId) {
+            alert('Stream ID is missing.');
+            return;
+          }
+          const videoId = document.getElementById('editSelectedVideoId').value;
+          if (!videoId) {
+            alert('Please select a video before updating the stream.');
+            return;
+          }
+          const formData = {
+            streamTitle: document.getElementById('editStreamTitle').value,
+            videoId: videoId,
+            rtmpUrl: document.getElementById('editRtmpUrl').value,
+            streamKey: document.getElementById('editStreamKey').value,
+            bitrate: document.getElementById('editBitrate').value,
+            fps: document.getElementById('editFps').value,
+            loopVideo: document.getElementById('editLoopVideo').checked,
+            orientation: currentEditOrientation,
+            resolution: document.getElementById('editCurrentResolution').textContent,
+            useAdvancedSettings: !document.getElementById('editAdvancedSettingsContent').classList.contains('hidden')
+          };
+          const scheduleTime = document.getElementById('editScheduleTime').value;
+          const duration = document.getElementById('editDuration').value;
+          if (scheduleTime) {
+            formData.scheduleTime = scheduleTime;
+          }
+          if (duration) {
+            formData.duration = parseInt(duration);
+          }
+          const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+          fetch(`/api/streams/${streamId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+            },
+            body: JSON.stringify(formData)
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                alert('Stream updated successfully!');
+                closeEditStreamModal();
+                setTimeout(() => {
+                  window.location.reload();
+                }, 500);
+              } else {
+                alert(`Error: ${data.error || 'Failed to update stream'}`);
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              alert('An error occurred while updating the stream');
+            });
+        });
+      }
+      startLiveTimers();
+      startCountdowns();
+    });
+    const editPlatformSelector = document.getElementById('editPlatformSelector');
+    const editPlatformDropdown = document.getElementById('editPlatformDropdown');
+    if (editPlatformSelector && editPlatformDropdown) {
+      editPlatformSelector.addEventListener('click', function () {
+        editPlatformDropdown.classList.toggle('hidden');
+      });
+      document.addEventListener('click', function (e) {
+        if (!editPlatformSelector.contains(e.target) && !editPlatformDropdown.contains(e.target)) {
+          editPlatformDropdown.classList.add('hidden');
+        }
+      });
+      const editPlatformOptions = editPlatformDropdown.querySelectorAll('.platform-option');
+      editPlatformOptions.forEach(option => {
+        option.addEventListener('click', function () {
+          document.getElementById('editRtmpUrl').value = this.getAttribute('data-url');
+          editPlatformDropdown.classList.add('hidden');
+        });
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      setupAdvancedSettings('advancedSettingsToggle', 'advancedSettingsContent');
+      setupAdvancedSettings('editAdvancedSettingsToggle', 'editAdvancedSettingsContent');
+    });
+    function setupAdvancedSettings(toggleId, contentId) {
+      const toggle = document.getElementById(toggleId);
+      const content = document.getElementById(contentId);
+      if (toggle && content) {
+        toggle.addEventListener('click', function () {
+          content.classList.toggle('hidden');
+          const icon = this.querySelector('i');
+          if (content.classList.contains('hidden')) {
+            icon.style.transform = '';
+          } else {
+            icon.style.transform = 'rotate(180deg)';
+          }
+        });
+      }
+    }
+    function startLiveTimers() {
+      setInterval(() => {
+        document.querySelectorAll('.live-duration').forEach(el => {
+          const startTime = new Date(el.dataset.startTime);
+          const now = new Date();
+          const durationMs = now - startTime;
+          const hours = Math.floor(durationMs / (1000 * 60 * 60)).toString().padStart(2, '0');
+          const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+          const seconds = Math.floor((durationMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
+          el.textContent = `${hours}:${minutes}:${seconds}`;
+        });
+      }, 1000);
+    }
+    function updateServerTime() {
+      fetch('/api/server-time')
+        .then(response => response.json())
+        .then(data => {
+          if (data.formattedTime) {
+            const timeDisplay = `Server time: ${data.formattedTime}`;
+            const createModalDisplay = document.getElementById('serverTimeDisplay');
+            if (createModalDisplay) {
+              createModalDisplay.textContent = timeDisplay;
+            }
+            const editModalDisplay = document.getElementById('editServerTimeDisplay');
+            if (editModalDisplay) {
+              editModalDisplay.textContent = timeDisplay;
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching server time:', error);
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      updateServerTime();
+      setInterval(updateServerTime, 1000);
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+      const searchInput = document.querySelector('input[placeholder="Search streams..."]');
+      if (searchInput) {
+        searchInput.addEventListener('input', function () {
+          const searchTerm = this.value.toLowerCase().trim();
+          const streamRows = document.querySelectorAll('table tbody tr:not(#empty-state)');
+          const streamCards = document.querySelectorAll('.block.md\\:hidden.space-y-4 > div');
+          streamRows.forEach(row => {
+            const streamTitle = row.querySelector('.text-sm.font-medium')?.textContent.toLowerCase() || '';
+            const isMatch = streamTitle.includes(searchTerm);
+            row.style.display = isMatch ? '' : 'none';
+          });
+          streamCards.forEach(card => {
+            const streamTitle = card.querySelector('.font-medium')?.textContent.toLowerCase() || '';
+            const isMatch = streamTitle.includes(searchTerm);
+            card.style.display = isMatch ? '' : 'none';
+          });
+          const visibleRows = [...streamRows].filter(row => row.style.display !== 'none');
+          const visibleCards = [...streamCards].filter(card => card.style.display !== 'none');
+          const emptyStateRow = document.getElementById('empty-state');
+          if (visibleRows.length === 0 && emptyStateRow) {
+            emptyStateRow.style.display = 'table-row';
+            const emptyStateMessage = emptyStateRow.querySelector('p.text-gray-500');
+            if (emptyStateMessage) {
+              emptyStateMessage.textContent = searchTerm ? 'No streams match your search' : 'Create your first stream to start broadcasting to your audience';
+            }
+          } else if (emptyStateRow) {
+            emptyStateRow.style.display = 'none';
+          }
+          if (visibleCards.length === 0) {
+            const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-4');
+            if (mobileContainer && visibleCards.length === 0 && streamCards.length > 0) {
+              const searchMessage = searchTerm ? 'No streams match your search' : 'Create your first stream to start broadcasting';
+              mobileContainer.innerHTML = `
+            <div class="bg-gray-800 rounded-lg p-6 text-center">
+              <div class="flex flex-col items-center">
+                <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
+                  <i class="ti ti-search text-gray-500 text-2xl"></i>
+                </div>
+                <p class="text-gray-400 font-medium mb-2">${searchMessage}</p>
+              </div>
+            </div>
+          `;
+            }
+          }
+        });
+      }
+    });
+  </script>

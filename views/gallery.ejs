@@ -1,0 +1,1374 @@
+<% layout('layout') -%>
+  <% function formatFileSize(bytes) { if (bytes < 1024) return bytes + ' B' ; else if (bytes < 1048576) return (bytes /
+    1024).toFixed(1) + ' KB' ; else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB' ; else return
+    (bytes / 1073741824).toFixed(1) + ' GB' ; } function formatDate(dateString) { const date=new Date(dateString); const
+    options={ day: 'numeric' , month: 'short' , year: 'numeric' }; return date.toLocaleDateString('en-US', options); }
+    function formatDuration(seconds) { if (!seconds) return '00:00' ; const minutes=Math.floor(seconds / 60); const
+    remainingSeconds=Math.floor(seconds % 60); return `${minutes.toString().padStart(2, '0'
+    )}:${remainingSeconds.toString().padStart(2, '0' )}`; } %>
+
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+      <div>
+        <h2 class="text-2xl font-bold">Video Gallery</h2>
+        <p class="text-gray-400 text-sm mt-1">Manage your videos for streaming</p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <button onclick="openUploadModal()"
+          class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+          <i class="ti ti-upload"></i>
+          <span>Upload Video</span>
+        </button>
+        <button onclick="openGDriveModal()"
+          class="flex items-center gap-2 bg-[#4285F4]/20 border border-[#4285F4]/50 hover:bg-[#4285F4]/30 text-white px-4 py-2 rounded-lg transition-colors">
+          <i class="ti ti-brand-google-drive text-[#4285F4]"></i>
+          <span>Import from Drive</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-gray-800 rounded-lg p-4 mb-6">
+      <div class="flex flex-row items-center gap-3">
+
+        <div class="relative w-full sm:w-80 md:w-96">
+          <input type="text" placeholder="Search videos..."
+            class="w-full bg-dark-700 text-white pl-9 pr-4 py-2.5 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+          <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        </div>
+
+        <div class="w-32">
+          <select
+            class="w-full bg-dark-700 border border-gray-600 text-white px-3 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+            <option selected>Newest</option>
+            <option>Oldest</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <% if (videos && videos.length> 0) { %>
+        <% videos.forEach(function(video) { %>
+          <div class="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+            <div class="aspect-video relative group">
+
+              <img src="<%= video.thumbnail_path %>" alt="<%= video.title %>" class="w-full h-full object-cover">
+
+              <div
+                class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  class="play-button bg-black/50 hover:bg-primary/80 w-12 h-12 rounded-full flex items-center justify-center transition-colors transform hover:scale-110"
+                  data-video-id="<%= video.id %>" data-video-title="<%= video.title %>"
+                  onclick="playVideo('<%= video.id %>', '<%= video.title %>')">
+                  <i class="ti ti-player-play-filled text-2xl text-white"></i>
+                </button>
+              </div>
+
+              <span class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                <%= typeof formatDuration==='function' ? formatDuration(video.duration) : (video.duration ?
+                  Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0' )
+                  : '0:00' ) %>
+              </span>
+            </div>
+
+            <div class="p-3">
+              <h3 class="font-medium truncate mb-0.5">
+                <%= video.title %>
+              </h3>
+              <div class="flex items-center justify-between">
+                <div class="text-xs text-gray-400 flex items-center">
+                  <span>
+                    <%= new Date(video.upload_date).toLocaleDateString() %>
+                  </span>
+                  <span class="mx-1">•</span>
+                  <span>
+                    <%= typeof formatFileSize==='function' ? formatFileSize(video.file_size) : (video.file_size / (1024
+                      * 1024)).toFixed(1) + ' MB' %>
+                  </span>
+                </div>
+
+                <div class="flex">
+                  <button class="text-gray-400 hover:text-white p-1"
+                    onclick="showRenameDialog('<%= video.id %>', '<%= video.title %>')">
+                    <i class="ti ti-pencil text-sm"></i>
+                  </button>
+                  <button class="text-gray-400 hover:text-red-400 p-1 ml-1"
+                    onclick="showDeleteDialog('<%= video.id %>', '<%= video.title %>')">
+                    <i class="ti ti-trash text-sm"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <% }); %>
+            <% } else { %>
+              <div class="col-span-full text-center py-12">
+                <div class="text-gray-500 mb-3">
+                  <i class="ti ti-file-video text-6xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-300 mb-1">No videos yet</h3>
+                <p class="text-gray-500 mb-4">Upload your first video to get started</p>
+              </div>
+              <% } %>
+    </div>
+
+    <div class="mt-6 flex items-center justify-between">
+      <p class="text-sm text-gray-400">Showing 1-4 of 12 videos</p>
+      <div class="flex items-center gap-2">
+        <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 text-gray-400">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white">
+          1
+        </button>
+        <button
+          class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors">
+          2
+        </button>
+        <button
+          class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors">
+          3
+        </button>
+        <button
+          class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+
+
+    <div id="uploadModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div
+          class="bg-dark-800 rounded-lg shadow-xl w-full max-w-lg border border-gray-600/50 transform transition-all opacity-0 scale-95"
+          id="uploadModalContent">
+
+          <div class="flex items-center justify-between p-4 border-b border-gray-600/50">
+            <div class="flex items-center">
+              <h3 class="text-lg font-medium">Upload Video</h3>
+            </div>
+            <button onclick="closeUploadModal()"
+              class="rounded-full w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+          <div class="p-6">
+            <form id="videoUploadForm" enctype="multipart/form-data">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+              <div id="uploadDropzone"
+                class="border-2 border-dashed border-gray-600 hover:border-primary/70 rounded-lg p-8 text-center transition-all cursor-pointer"
+                data-state="idle">
+                <div class="flex flex-col items-center justify-center">
+
+                  <div class="mb-3 transition-all" id="dropzoneIconContainer">
+                    <i class="ti ti-upload text-4xl text-gray-500"></i>
+                  </div>
+                  <p class="text-gray-300 mb-2">Drag and drop video files here</p>
+                  <p class="text-gray-500 text-sm mb-4">Or click to browse</p>
+                  <label
+                    class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors inline-block cursor-pointer">
+                    <span>Select files</span>
+                    <input type="file" name="video" accept="video/mp4,video/avi,video/quicktime" class="hidden"
+                      id="videoFileInput">
+                  </label>
+                  <p class="text-gray-500 text-xs mt-4">Supported formats: MP4, AVI, MOV</p>
+                </div>
+              </div>
+
+              <div id="selectedFileInfo" class="mt-4 hidden">
+                <div class="bg-dark-700/50 p-4 rounded-lg border border-gray-600/50">
+                  <div class="flex items-start">
+                    <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
+                      <i class="ti ti-file-video text-blue-400"></i>
+                    </div>
+                    <div class="flex-1">
+                      <p id="selectedFileName" class="font-medium truncate"></p>
+                      <p id="selectedFileSize" class="text-xs text-gray-400 mt-1"></p>
+                    </div>
+                    <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white ml-2">
+                      <i class="ti ti-x"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 hidden" id="uploadProgress">
+                <div class="flex justify-between text-sm mb-1.5">
+                  <span id="uploadProgressFilename" class="truncate mr-2 max-w-[80%]">Uploading...</span>
+                  <span id="uploadProgressPercent" class="text-blue-400">0%</span>
+                </div>
+                <div class="w-full bg-dark-700 rounded-full h-2.5 overflow-hidden">
+                  <div id="uploadProgressBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
+                    style="width: 0%"></div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="flex justify-end p-4 border-t border-gray-600/50">
+            <button onclick="closeUploadModal()"
+              class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors flex items-center mr-3">
+              <i class="ti ti-x mr-1.5"></i>
+              <span>Cancel</span>
+            </button>
+            <button id="uploadButton"
+              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center disabled:bg-gray-600 disabled:cursor-not-allowed"
+              disabled>
+              <i class="ti ti-upload mr-1.5"></i>
+              <span>Upload</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast"
+      class="fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden flex items-center">
+      <i id="toast-icon" class="mr-2"></i>
+      <span id="toast-message"></span>
+    </div>
+
+    <div id="gDriveModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div id="gdriveModalContent"
+          class="bg-dark-800 rounded-lg shadow-xl w-full max-w-md border border-gray-600/50 transform transition-all opacity-0 scale-95">
+
+          <div class="flex items-center justify-between p-4 border-b border-gray-600/50">
+            <h3 class="text-lg font-medium">Google Drive Import</h3>
+            <button id="closeGDriveBtn"
+              class="rounded-full w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+
+          <div id="gdriveModalBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="videoPreviewModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden">
+      <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl">
+
+          <div class="flex items-center justify-between p-4 border-b border-gray-600">
+            <div>
+              <h3 class="text-lg font-semibold video-title">Video Title</h3>
+            </div>
+            <div class="flex items-center gap-4">
+              <button onclick="closeVideoPreviewModal()" class="text-gray-400 hover:text-white">
+                <i class="ti ti-x text-xl"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative bg-black aspect-video">
+            <video id="previewPlayer" class="w-full h-full" controls>
+              <source src="" type="video/mp4" id="videoSource">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function formatDuration(seconds) {
+        if (!seconds) return '0:00';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+        if (hours > 0) {
+          return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+      }
+      function formatDate(dateString) {
+        if (!dateString) return 'Unknown date';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      }
+      function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      }
+      function showToast(type, message) {
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastMessage = document.getElementById('toast-message');
+        if (type === 'success') {
+          toastIcon.className = 'ti ti-check text-green-400 mr-2';
+          toast.classList.add('border-l-4', 'border-green-400');
+          toast.classList.remove('border-l-4', 'border-red-400', 'border-yellow-400');
+        } else if (type === 'error') {
+          toastIcon.className = 'ti ti-x text-red-400 mr-2';
+          toast.classList.add('border-l-4', 'border-red-400');
+          toast.classList.remove('border-l-4', 'border-green-400', 'border-yellow-400');
+        } else if (type === 'warning') {
+          toastIcon.className = 'ti ti-alert-triangle text-yellow-400 mr-2';
+          toast.classList.add('border-l-4', 'border-yellow-400');
+          toast.classList.remove('border-l-4', 'border-green-400', 'border-red-400');
+        }
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+          toast.classList.add('hidden');
+        }, 3000);
+      }
+      function openUploadModal() {
+        const modal = document.getElementById('uploadModal');
+        const modalContent = document.getElementById('uploadModalContent');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+          modalContent.classList.remove('opacity-0', 'scale-95');
+          modalContent.classList.add('opacity-100', 'scale-100');
+        }, 10);
+        document.body.classList.add('overflow-hidden');
+        resetUploadForm();
+      }
+      function closeUploadModal() {
+        const modal = document.getElementById('uploadModal');
+        const modalContent = document.getElementById('uploadModalContent');
+        modalContent.classList.remove('opacity-100', 'scale-100');
+        modalContent.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          document.body.classList.remove('overflow-hidden');
+        }, 200);
+        resetUploadForm();
+      }
+      function resetUploadForm() {
+        document.getElementById('videoUploadForm').reset();
+        document.getElementById('selectedFileInfo').classList.add('hidden');
+        document.getElementById('uploadDropzone').classList.remove('hidden');
+        document.getElementById('uploadProgress').classList.add('hidden');
+        document.getElementById('uploadButton').disabled = true;
+        document.getElementById('uploadProgressBar').style.width = '0%';
+        const dropzone = document.getElementById('uploadDropzone');
+        dropzone.setAttribute('data-state', 'idle');
+        dropzone.classList.remove('border-primary', 'bg-primary/5');
+        dropzone.classList.add('border-gray-600');
+        document.querySelector('#dropzoneIconContainer i').className = 'ti ti-upload text-4xl text-gray-500';
+      }
+      function openGDriveModal() {
+        const modal = document.getElementById('gDriveModal');
+        const modalContent = document.getElementById('gdriveModalContent');
+        if (!modal || !modalContent) {
+          console.error('GDrive modal elements not found');
+          return;
+        }
+        modal.classList.remove('hidden');
+        void modal.offsetWidth;
+        setTimeout(() => {
+          modalContent.classList.remove('opacity-0', 'scale-95');
+          modalContent.classList.add('opacity-100', 'scale-100');
+        }, 10);
+        document.body.classList.add('overflow-hidden');
+        checkGDriveAPIKey();
+        document.getElementById('closeGDriveBtn').addEventListener('click', closeGDriveModal);
+      }
+      function closeGDriveModal() {
+        const modal = document.getElementById('gDriveModal');
+        const modalContent = document.getElementById('gdriveModalContent');
+        if (!modal || !modalContent) {
+          console.error('GDrive modal elements not found for closing');
+          return;
+        }
+        console.log('Closing GDrive modal');
+        modalContent.classList.remove('opacity-100', 'scale-100');
+        modalContent.classList.add('opacity-0', 'scale-95');
+        setTimeout(() => {
+          modal.classList.add('hidden');
+          document.body.classList.remove('overflow-hidden');
+        }, 200);
+      }
+      async function checkGDriveAPIKey() {
+        try {
+          const response = await fetch('/api/settings/gdrive-status');
+          const data = await response.json();
+          const modalContent = document.getElementById('gdriveModalBody');
+          if (data.hasApiKey) {
+            modalContent.innerHTML = `
+        <div class="p-6">
+          
+          <div class="text-center mb-5">
+            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
+            </div>
+            <h4 class="text-lg font-medium mb-1">Import from Google Drive</h4>
+            <p class="text-gray-400 text-sm">Enter a Google Drive link to your video</p>
+          </div>
+          
+          <div class="relative mb-2">
+            <input 
+              type="text" 
+              id="gdrive-link" 
+              class="bg-dark-700 text-white pl-10 pr-4 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+              placeholder="https://drive.google.com/file/d/..."
+            >
+            <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+          </div>
+          <p class="text-xs text-gray-500 mb-4">Make sure the file is shared with <strong>Anyone with the link</strong></p>
+          
+          <button id="import-drive-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+            <i class="ti ti-download mr-2"></i>
+            <span>Import Video</span>
+          </button>
+        </div>
+      `;
+            document.getElementById('import-drive-button').addEventListener('click', async function () {
+              const link = document.getElementById('gdrive-link').value;
+              if (!link) {
+                showToast('error', 'Please enter a Google Drive link');
+                return;
+              }
+              this.disabled = true;
+              this.innerHTML = `
+          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Processing...
+        `;
+              try {
+                const response = await fetch('/api/videos/import-drive', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+                  },
+                  body: JSON.stringify({ driveUrl: link })
+                });
+                const result = await response.json();
+                if (result.success) {
+                  showImportProgressModal(result.jobId);
+                  closeGDriveModal();
+                } else {
+                  showToast('error', result.error || 'Failed to import video');
+                  this.disabled = false;
+                  this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
+                }
+              } catch (error) {
+                showToast('error', 'An error occurred while importing the video');
+                this.disabled = false;
+                this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
+              }
+            });
+          } else {
+            modalContent.innerHTML = `
+        <div class="p-6">
+          
+          <div class="text-center mb-5">
+            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+              <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
+            </div>
+            <h4 class="text-lg font-medium mb-1">Connect Google Drive</h4>
+            <p class="text-gray-400 text-sm">API key needed to access Drive videos</p>
+          </div>
+          
+          <div class="relative mb-2">
+            <input 
+              type="password" 
+              id="gdrive-api-key-setup" 
+              class="bg-dark-700 text-white pl-10 pr-10 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+              placeholder="Enter your Google Drive API key"
+            >
+            <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <button type="button" id="toggle-api-key-visibility" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 mb-4 flex items-center justify-between">
+            <span>Get your API key from the <a href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google Cloud Console</a>.</span> 
+            <a href="https://youtu.be/SS-uOm-ysFE" target="_blank" class="inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-1.5 py-0.5 rounded-md">
+              <i class="ti ti-brand-youtube"></i>
+              <span>Tutorial</span>
+            </a>
+          </p>
+          
+          <button id="save-api-key-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+            <i class="ti ti-device-floppy mr-2"></i>
+            <span>Save API Key</span>
+          </button>
+        </div>
+      `;
+            document.getElementById('toggle-api-key-visibility').addEventListener('click', function () {
+              const apiKeyField = document.getElementById('gdrive-api-key-setup');
+              const toggleBtn = this.querySelector('i');
+              if (apiKeyField.type === 'password') {
+                apiKeyField.type = 'text';
+                toggleBtn.classList.remove('ti-eye');
+                toggleBtn.classList.add('ti-eye-off');
+              } else {
+                apiKeyField.type = 'password';
+                toggleBtn.classList.remove('ti-eye-off');
+                toggleBtn.classList.add('ti-eye');
+              }
+            });
+            document.getElementById('save-api-key-button').addEventListener('click', async function () {
+              const apiKey = document.getElementById('gdrive-api-key-setup').value;
+              if (!apiKey) {
+                showToast('error', 'Please enter a Google Drive API key');
+                return;
+              }
+              this.disabled = true;
+              this.innerHTML = `
+          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Saving...
+        `;
+              try {
+                const response = await fetch('/api/settings/gdrive-api-key', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+                  },
+                  body: JSON.stringify({ apiKey })
+                });
+                const result = await response.json();
+                if (result.success) {
+                  showToast('success', 'API key saved successfully');
+                  setTimeout(() => {
+                    closeGDriveModal();
+                    setTimeout(() => openGDriveModal(), 300);
+                  }, 1000);
+                } else {
+                  showToast('error', result.error || 'Failed to save API key');
+                  this.disabled = false;
+                  this.innerHTML = `<i class="ti ti-device-floppy mr-2"></i><span>Save API Key</span>`;
+                }
+              } catch (error) {
+                showToast('error', 'An error occurred while saving the API key');
+                this.disabled = false;
+                this.innerHTML = `<i class="ti ti-device-floppy mr-2"></i><span>Save API Key</span>`;
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error checking Google Drive API key status:', error);
+          showToast('error', 'Failed to check API key status');
+        }
+      }
+      function openVideoPreviewModal(title, videoSrc, details) {
+        document.querySelector('#videoPreviewModal .video-title').textContent = title;
+        const videoSource = document.getElementById('videoSource');
+        videoSource.src = videoSrc;
+        const videoPlayer = document.getElementById('previewPlayer');
+        videoPlayer.load();
+        document.getElementById('videoPreviewModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeVideoPreviewModal() {
+        const videoPlayer = document.getElementById('previewPlayer');
+        videoPlayer.pause();
+        document.getElementById('videoPreviewModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+      }
+
+      function playVideo(videoId, videoTitle) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity';
+        modal.id = 'video-player-modal';
+        modal.innerHTML = `
+        <div class="relative w-full max-w-4xl mx-auto">
+          <div class="bg-dark-800 rounded-lg overflow-hidden shadow-xl">
+            
+            <div class="flex items-center justify-between p-4 border-b border-gray-600">
+              <div class="flex items-center">
+                <h3 class="text-lg font-medium">${videoTitle || 'Now Playing'}</h3>
+              </div>
+              <button id="close-player-btn" class="rounded-full w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+            
+            <div class="bg-dark-700 flex justify-center" style="height: 53vh; max-height: 600px;">
+              <video 
+                id="native-player"
+                class="h-full max-h-full max-w-full object-contain"
+                controls 
+                preload="auto"
+                autoplay
+              >
+                <source src="/stream/${videoId}" type="video/mp4">
+                Your browser does not support HTML5 video.
+              </video>
+            </div>
+          </div>
+        </div>
+      `;
+        document.body.appendChild(modal);
+        document.body.classList.add('overflow-hidden');
+        document.getElementById('close-player-btn').addEventListener('click', function () {
+          const videoElement = document.getElementById('native-player');
+          if (videoElement) videoElement.pause();
+          document.getElementById('video-player-modal').remove();
+          document.body.classList.remove('overflow-hidden');
+        });
+        document.addEventListener('keydown', function escapeHandler(e) {
+          if (e.key === 'Escape') {
+            const videoElement = document.getElementById('native-player');
+            if (videoElement) videoElement.pause();
+            document.getElementById('video-player-modal').remove();
+            document.body.classList.remove('overflow-hidden');
+            document.removeEventListener('keydown', escapeHandler);
+          }
+        });
+        modal.addEventListener('click', function (e) {
+          if (e.target === modal) {
+            const videoElement = document.getElementById('native-player');
+            if (videoElement) videoElement.pause();
+            document.getElementById('video-player-modal').remove();
+            document.body.classList.remove('overflow-hidden');
+          }
+        });
+      }
+
+      function deleteVideo(videoId, videoTitle) {
+        if (confirm(`Are you sure you want to delete "${videoTitle}"?`)) {
+          fetch(`/api/videos/${videoId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                showToast('success', 'Video deleted successfully');
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                showToast('error', data.error || 'Failed to delete video');
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              showToast('error', 'An error occurred while deleting the video');
+            });
+        }
+      }
+      function renameVideo(videoId, currentTitle) {
+        const newTitle = prompt('Enter a new title for the video:', currentTitle);
+        if (newTitle && newTitle !== currentTitle) {
+          fetch(`/api/videos/${videoId}/rename`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ title: newTitle })
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                showToast('success', 'Video renamed successfully');
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                showToast('error', data.error || 'Failed to rename video');
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              showToast('error', 'An error occurred while renaming the video');
+            });
+        }
+      }
+      document.addEventListener('DOMContentLoaded', function () {
+        function formatFileSize(bytes) {
+          if (bytes === 0) return '0 Bytes';
+          const k = 1024;
+          const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        const videoFileInput = document.getElementById('videoFileInput');
+        const selectedFileInfo = document.getElementById('selectedFileInfo');
+        const selectedFileName = document.getElementById('selectedFileName');
+        const selectedFileSize = document.getElementById('selectedFileSize');
+        const clearFileButton = document.getElementById('clearFileButton');
+        const uploadDropzone = document.getElementById('uploadDropzone');
+        const uploadButton = document.getElementById('uploadButton');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const uploadProgressBar = document.getElementById('uploadProgressBar');
+        const uploadProgressPercent = document.getElementById('uploadProgressPercent');
+        const uploadProgressFilename = document.getElementById('uploadProgressFilename');
+        videoFileInput.addEventListener('change', function () {
+          if (this.files.length > 0) {
+            const file = this.files[0];
+            selectedFileName.textContent = file.name;
+            selectedFileSize.textContent = formatFileSize(file.size);
+            uploadDropzone.classList.add('hidden');
+            selectedFileInfo.classList.remove('hidden');
+            uploadButton.disabled = false;
+          }
+        });
+        uploadButton.addEventListener('click', function () {
+          if (videoFileInput.files.length === 0) {
+            return;
+          }
+          const file = videoFileInput.files[0];
+          const formData = new FormData();
+          formData.append('video', file);
+          uploadDropzone.classList.add('hidden');
+          selectedFileInfo.classList.add('hidden');
+          uploadProgress.classList.remove('hidden');
+          uploadProgressFilename.textContent = file.name;
+          uploadButton.disabled = true;
+          const xhr = new XMLHttpRequest();
+          xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable) {
+              const percentComplete = Math.round((event.loaded / event.total) * 100);
+              uploadProgressBar.style.width = percentComplete + '%';
+              uploadProgressPercent.textContent = percentComplete + '%';
+            }
+          });
+          xhr.addEventListener('load', function () {
+            if (xhr.status === 200) {
+              try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                  showToast('success', 'Video uploaded successfully');
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 1000);
+                } else {
+                  showToast('error', response.error || 'Upload failed');
+                  resetUploadForm();
+                }
+              } catch (error) {
+                showToast('error', 'Failed to parse server response');
+                resetUploadForm();
+              }
+            } else {
+              showToast('error', 'Upload failed with status: ' + xhr.status);
+              resetUploadForm();
+            }
+          });
+          xhr.addEventListener('error', function () {
+            showToast('error', 'An error occurred during upload');
+            resetUploadForm();
+          });
+          xhr.addEventListener('abort', function () {
+            showToast('warning', 'Upload aborted');
+            resetUploadForm();
+          });
+          xhr.open('POST', '/api/videos/upload', true);
+          xhr.send(formData);
+        });
+        clearFileButton.addEventListener('click', function () {
+          resetUploadForm();
+        });
+        document.querySelectorAll('.play-button').forEach(button => {
+          button.addEventListener('click', function () {
+            const videoId = this.dataset.videoId;
+            const videoTitle = this.dataset.videoTitle;
+            playVideo(videoId, videoTitle);
+          });
+        });
+      });
+      function createModalDialog(options) {
+        const dialog = document.createElement('div');
+        dialog.id = 'custom-modal';
+        dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300';
+        const themes = {
+          'info': {
+            icon: options.icon || 'ti-info-circle',
+            color: 'text-blue-600',
+            bg: 'bg-blue-600/10',
+            border: 'border-gray-600/50',
+            button: 'bg-blue-600 hover:bg-blue-700',
+            buttonIcon: 'ti-check'
+          },
+          'danger': {
+            icon: options.icon || 'ti-alert-triangle',
+            color: 'text-red-400',
+            bg: 'bg-red-500/10',
+            border: 'border-gray-600/50',
+            button: 'bg-red-500 hover:bg-red-600',
+            buttonIcon: 'ti-trash'
+          },
+          'warning': {
+            icon: options.icon || 'ti-alert-triangle',
+            color: 'text-yellow-400',
+            bg: 'bg-yellow-500/10',
+            border: 'border-yellow-500/50',
+            button: 'bg-yellow-500 hover:bg-yellow-600',
+            buttonIcon: 'ti-alert-circle'
+          },
+          'success': {
+            icon: options.icon || 'ti-check-circle',
+            color: 'text-green-400',
+            bg: 'bg-green-500/10',
+            border: 'border-green-500/50',
+            button: 'bg-green-500 hover:bg-green-600',
+            buttonIcon: 'ti-check'
+          }
+        };
+        const theme = themes[options.type || 'info'];
+        dialog.innerHTML = `
+      <div class="transform transition-all duration-300 opacity-0 scale-95 modal-content max-w-md w-full mx-4">
+        <div class="bg-dark-800 rounded-lg shadow-xl border ${theme.border} overflow-hidden">
+          
+          <div class="px-6 py-5 flex items-center">
+            <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mr-4 shrink-0">
+              <i class="ti ${theme.icon} ${theme.color} text-2xl"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-medium text-white">${options.title}</h3>
+              <p class="text-gray-400 text-sm mt-1">${options.message}</p>
+            </div>
+          </div>
+          
+          ${options.hasInput ? `
+          <div class="px-6 pb-4">
+            <input 
+              type="text" 
+              id="modal-input" 
+              class="bg-dark-900 text-white px-4 py-3 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+              value="${options.inputValue || ''}"
+              placeholder="Enter new title..."
+              autofocus
+            >
+          </div>
+          ` : ''}
+          
+          <div class="px-6 py-4 flex justify-end space-x-3 border-t border-gray-600/50">
+            <button id="modal-cancel-btn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+              <i class="ti ti-x mr-1.5"></i>
+              ${options.cancelText || 'Cancel'}
+            </button>
+            <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
+              <i class="ti ${theme.buttonIcon} mr-1.5"></i>
+              ${options.confirmText || 'Confirm'}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+        document.body.appendChild(dialog);
+        document.body.classList.add('overflow-hidden');
+        setTimeout(() => {
+          const modalContent = dialog.querySelector('.modal-content');
+          if (modalContent) {
+            modalContent.classList.replace('opacity-0', 'opacity-100');
+            modalContent.classList.replace('scale-95', 'scale-100');
+          }
+        }, 10);
+        return new Promise((resolve) => {
+          document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+            const inputValue = options.hasInput ? document.getElementById('modal-input').value : null;
+            resolve({ confirmed: true, value: inputValue, closeNow: false });
+          });
+          document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+            closeModalWithAnimation();
+          });
+          document.addEventListener('keydown', function escapeHandler(e) {
+            if (e.key === 'Escape') {
+              closeModalWithAnimation();
+              document.removeEventListener('keydown', escapeHandler);
+            }
+          });
+          dialog.addEventListener('click', function (e) {
+            if (e.target === dialog) {
+              closeModalWithAnimation();
+            }
+          });
+          if (options.hasInput) {
+            const input = document.getElementById('modal-input');
+            input.focus();
+            input.select();
+            input.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                closeModalWithAnimation(true, input.value);
+              }
+            });
+          }
+          function closeModalWithAnimation(confirmed = false, value = null) {
+            const modalContent = dialog.querySelector('.modal-content');
+            if (modalContent) {
+              modalContent.classList.replace('opacity-100', 'opacity-0');
+              modalContent.classList.replace('scale-100', 'scale-95');
+            }
+            setTimeout(() => {
+              document.body.classList.remove('overflow-hidden');
+              dialog.remove();
+              resolve({ confirmed, value, closeNow: true });
+            }, 200);
+          }
+        });
+      }
+      async function showRenameDialog(videoId, currentTitle) {
+        const result = await createModalDialog({
+          type: 'info',
+          icon: 'ti-pencil',
+          title: 'Rename Video',
+          message: 'Enter a new title for your video:',
+          hasInput: true,
+          inputValue: currentTitle,
+          confirmText: 'Save',
+          cancelText: 'Cancel'
+        });
+        if (result.confirmed && result.value && result.value !== currentTitle) {
+          setModalButtonState('modal-confirm-btn', 'loading', 'Saving...');
+          const headerEl = document.querySelector('#custom-modal .flex.items-center');
+          const originalHeader = headerEl.innerHTML;
+          try {
+            const response = await fetch(`/api/videos/${videoId}/rename`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ title: result.value })
+            });
+            const data = await response.json();
+            if (data.success) {
+              setModalButtonState('modal-confirm-btn', 'success', 'Saved!');
+              headerEl.innerHTML = `
+            <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mr-4 shrink-0 animate-pulse">
+              <i class="ti ti-check text-blue-400 text-2xl"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-medium text-white">Rename Successful</h3>
+              <p class="text-gray-400 text-sm mt-1">Your video has been renamed</p>
+            </div>`;
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } else {
+              setModalButtonState('modal-confirm-btn', 'normal', 'Try Again');
+              showToast('error', data.error || 'Failed to rename video');
+            }
+          } catch (error) {
+            setModalButtonState('modal-confirm-btn', 'normal', 'Try Again');
+            showToast('error', 'An error occurred while renaming the video');
+          }
+          return false;
+        }
+        return true;
+      }
+      async function showDeleteDialog(videoId, videoTitle) {
+        const result = await createModalDialog({
+          type: 'danger',
+          icon: 'ti-alert-triangle',
+          title: 'Delete Video',
+          message: `Are you sure you want to delete "${videoTitle}"? This action cannot be undone.`,
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          confirmClass: 'bg-red-500 hover:bg-red-600'
+        });
+        if (result.confirmed) {
+          try {
+            const response = await fetch(`/api/videos/${videoId}`, {
+              method: 'DELETE'
+            });
+            const data = await response.json();
+            if (data.success) {
+              showToast('success', 'Video deleted successfully');
+              setTimeout(() => window.location.reload(), 1000);
+            } else {
+              showToast('error', data.error || 'Failed to delete video');
+            }
+          } catch (error) {
+            showToast('error', 'An error occurred while deleting the video');
+          }
+        }
+      }
+      function setModalButtonState(buttonId, state, text) {
+        const button = document.getElementById(buttonId);
+        if (state === 'loading') {
+          button.disabled = true;
+          button.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg> ${text || 'Processing...'}`;
+        } else if (state === 'success') {
+          button.disabled = false;
+          button.innerHTML = `<i class="ti ti-check mr-1.5"></i> ${text || 'Done'}`;
+          button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+          button.classList.add('bg-blue-600', 'hover:bg-blue-700');
+        } else {
+          button.disabled = false;
+          button.innerHTML = `<i class="ti ti-check mr-1.5"></i> ${text || 'Save'}`;
+        }
+      }
+      const dropzone = document.getElementById('uploadDropzone');
+      const fileInput = document.getElementById('videoFileInput');
+      dropzone.addEventListener('click', () => {
+        fileInput.click();
+      });
+      dropzone.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.setAttribute('data-state', 'active');
+        dropzone.classList.remove('border-gray-600');
+        dropzone.classList.add('border-primary', 'bg-primary/5');
+        document.querySelector('#dropzoneIconContainer i').className = 'ti ti-upload text-4xl text-blue-400';
+      });
+      dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (dropzone.getAttribute('data-state') !== 'active') {
+          dropzone.setAttribute('data-state', 'active');
+          dropzone.classList.remove('border-gray-600');
+          dropzone.classList.add('border-primary', 'bg-primary/5');
+          document.querySelector('#dropzoneIconContainer i').className = 'ti ti-upload text-4xl text-blue-400';
+        }
+      });
+      dropzone.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.currentTarget === e.target) {
+          dropzone.setAttribute('data-state', 'idle');
+          dropzone.classList.remove('border-primary', 'bg-primary/5');
+          dropzone.classList.add('border-gray-600');
+          document.querySelector('#dropzoneIconContainer i').className = 'ti ti-upload text-4xl text-gray-500';
+        }
+      });
+      dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.setAttribute('data-state', 'idle');
+        dropzone.classList.remove('border-primary', 'bg-primary/5');
+        dropzone.classList.add('border-gray-600');
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+          const file = files[0];
+          const validTypes = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-msvideo'];
+          if (validTypes.includes(file.type)) {
+            fileInput.files = files;
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+          } else {
+            showToast('error', 'Please upload a valid video file (MP4, AVI, MOV)');
+          }
+        }
+      });
+      function showImportProgressModal(jobId) {
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm';
+        modal.id = 'import-progress-modal';
+        modal.innerHTML = `
+      <div class="bg-dark-800 rounded-lg p-6 w-full max-w-md">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-medium">Importing Video</h3>
+          <button id="close-import-progress" class="text-gray-400 hover:text-white">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+        <div class="text-center mb-4">
+          <div class="w-16 h-16 mb-4 rounded-full bg-blue-500/10 mx-auto flex items-center justify-center">
+            <i id="progress-icon" class="ti ti-download text-blue-400 text-2xl"></i>
+          </div>
+          <p id="progress-status" class="text-sm text-gray-300 mb-2">Starting download...</p>
+        </div>
+        <div class="w-full bg-dark-700 rounded-full h-2 mb-4">
+          <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+        <p class="text-xs text-gray-500">
+          <i class="ti ti-info-circle mr-1"></i>
+          You can close this window and the import will continue in the background
+        </p>
+      </div>
+    `;
+        document.body.appendChild(modal);
+        document.getElementById('close-import-progress').addEventListener('click', function () {
+          document.getElementById('import-progress-modal').remove();
+        });
+        monitorImportProgress(jobId);
+      }
+      function monitorImportProgress(jobId) {
+        const progressInterval = setInterval(async () => {
+          try {
+            const response = await fetch(`/api/videos/import-status/${jobId}`);
+            if (!response.ok) {
+              clearInterval(progressInterval);
+              return;
+            }
+            const data = await response.json();
+            if (!data.success) {
+              clearInterval(progressInterval);
+              return;
+            }
+            const status = data.status;
+            const progressBar = document.getElementById('progress-bar');
+            const progressStatus = document.getElementById('progress-status');
+            const progressIcon = document.getElementById('progress-icon');
+            if (progressBar && progressStatus) {
+              progressBar.style.width = `${status.progress}%`;
+              progressStatus.textContent = status.message;
+              if (status.status === 'downloading') {
+                progressIcon.className = 'ti ti-download text-blue-400 text-2xl';
+              } else if (status.status === 'processing') {
+                progressIcon.className = 'ti ti-settings text-blue-400 text-2xl animate-spin';
+              } else if (status.status === 'complete') {
+                progressIcon.className = 'ti ti-check text-green-400 text-2xl';
+                progressBar.classList.remove('bg-blue-500');
+                progressBar.classList.add('bg-green-500');
+                showToast('success', 'Video imported successfully');
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+                clearInterval(progressInterval);
+              } else if (status.status === 'failed') {
+                progressIcon.className = 'ti ti-alert-triangle text-red-400 text-2xl';
+                progressBar.classList.remove('bg-blue-500');
+                progressBar.classList.add('bg-red-500');
+                showToast('error', status.message || 'Failed to import video');
+                clearInterval(progressInterval);
+              }
+            }
+          } catch (error) {
+            console.error('Error monitoring import progress:', error);
+          }
+        }, 1000);
+      }
+      document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.querySelector('input[placeholder="Search videos..."]');
+        const sortSelect = document.querySelector('select');
+        const videoGrid = document.querySelector('.grid');
+        const allVideosElements = Array.from(document.querySelectorAll('.grid > div:not(.col-span-full)'));
+        const paginationContainer = document.querySelector('.mt-6.flex.items-center.justify-between');
+        const paginationButtons = document.querySelectorAll('.mt-6.flex.items-center.justify-between button');
+
+        const itemsPerPage = 12;
+        let currentPage = 1;
+        let totalPages = 1;
+
+        if (allVideosElements.length === 0) return;
+
+        window.allVideosData = allVideosElements.map(videoEl => {
+          const dateText = videoEl.querySelector('.text-xs.text-gray-400 span:first-child').textContent.trim();
+          let dateObj;
+          try {
+            const parts = dateText.split(/[\/,\s-]/);
+            if (parts.length === 3) {
+              const day = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10);
+              const year = parseInt(parts[2], 10);
+
+              if (!isNaN(day) && !isNaN(month) && !isNaN(year) &&
+                year >= 1000 && year <= 9999 &&
+                month >= 1 && month <= 12 &&
+                day >= 1 && day <= 31) {
+                dateObj = new Date(year, month - 1, day);
+              } else {
+                dateObj = new Date(0);
+              }
+            } else {
+              dateObj = new Date(0);
+            }
+
+            if (!dateObj || isNaN(dateObj.getTime())) {
+              dateObj = new Date(0);
+            }
+          } catch (e) {
+            dateObj = new Date(0);
+          }
+
+          return {
+            element: videoEl,
+            title: videoEl.querySelector('h3').textContent.toLowerCase(),
+            date: dateObj,
+            size: videoEl.querySelector('.text-xs.text-gray-400 span:last-child').textContent
+          };
+        });
+
+        const initialSortOrder = sortSelect.value;
+        filterAndDisplayVideos('', initialSortOrder, 1);
+
+        searchInput.addEventListener('input', function () {
+          const searchTerm = this.value.toLowerCase().trim();
+          currentPage = 1;
+          filterAndDisplayVideos(searchTerm, sortSelect.value, currentPage);
+        });
+
+        sortSelect.addEventListener('change', function () {
+          currentPage = 1;
+          filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), this.value, currentPage);
+        });
+
+        function setupPaginationControls(filteredVideos) {
+          if (!paginationContainer) return;
+
+          const paginationButtonsContainer = paginationContainer.querySelector('div.flex.items-center.gap-2');
+          if (!paginationButtonsContainer) return;
+
+          paginationButtonsContainer.innerHTML = '';
+
+          const prevButton = document.createElement('button');
+          prevButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${currentPage === 1 ? 'bg-dark-700 text-gray-400 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
+          prevButton.innerHTML = '<i class="ti ti-chevron-left"></i>';
+          prevButton.disabled = currentPage === 1;
+          prevButton.addEventListener('click', () => {
+            if (currentPage > 1) {
+              currentPage--;
+              filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
+            }
+          });
+          paginationButtonsContainer.appendChild(prevButton);
+
+          totalPages = Math.ceil(filteredVideos.length / itemsPerPage);
+
+          let startPage = Math.max(1, currentPage - 2);
+          let endPage = Math.min(totalPages, startPage + 4);
+
+          if (endPage - startPage < 4 && startPage > 1) {
+            startPage = Math.max(1, endPage - 4);
+          }
+
+          for (let i = startPage; i <= endPage; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${i === currentPage ? 'bg-primary text-white' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
+            pageButton.textContent = i;
+            pageButton.addEventListener('click', () => {
+              if (i !== currentPage) {
+                currentPage = i;
+                filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
+              }
+            });
+            paginationButtonsContainer.appendChild(pageButton);
+          }
+
+          const nextButton = document.createElement('button');
+          nextButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${currentPage === totalPages ? 'bg-dark-700 text-gray-400 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
+          nextButton.innerHTML = '<i class="ti ti-chevron-right"></i>';
+          nextButton.disabled = currentPage === totalPages;
+          nextButton.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+              currentPage++;
+              filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
+            }
+          });
+          paginationButtonsContainer.appendChild(nextButton);
+        }
+
+        function filterAndDisplayVideos(searchTerm, sortOrder, page) {
+          let filteredVideos = window.allVideosData.filter(video =>
+            video.title.includes(searchTerm)
+          );
+
+          filteredVideos.forEach(video => {
+            if (!(video.date instanceof Date) || isNaN(video.date.getTime())) {
+              video.date = new Date(0);
+            }
+          });
+
+          if (sortOrder === 'Oldest') {
+            filteredVideos.sort((a, b) => a.date.getTime() - b.date.getTime());
+          } else {
+            filteredVideos.sort((a, b) => b.date.getTime() - a.date.getTime());
+          }
+
+          videoGrid.innerHTML = '';
+
+          if (filteredVideos.length === 0) {
+            videoGrid.innerHTML = `
+              <div class="col-span-full text-center py-12">
+                <div class="text-gray-500 mb-3">
+                  <i class="ti ti-search text-6xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-300 mb-1">No videos found</h3>
+                <p class="text-gray-500 mb-4">Try adjusting your search criteria</p>
+              </div>
+            `;
+          } else {
+            totalPages = Math.ceil(filteredVideos.length / itemsPerPage);
+            currentPage = Math.min(page, totalPages);
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredVideos.length);
+            const currentPageVideos = filteredVideos.slice(startIndex, endIndex);
+
+            currentPageVideos.forEach(video => {
+              videoGrid.appendChild(video.element.cloneNode(true));
+            });
+
+            videoGrid.querySelectorAll('.play-button').forEach(button => {
+              const videoId = button.getAttribute('data-video-id');
+              const videoTitle = button.getAttribute('data-video-title');
+              button.onclick = function () {
+                playVideo(videoId, videoTitle);
+              };
+            });
+
+            videoGrid.querySelectorAll('button[onclick^="showRenameDialog"]').forEach(button => {
+              const onclick = button.getAttribute('onclick');
+              button.onclick = function () {
+                const match = onclick.match(/showRenameDialog\('([^']+)',\s*'([^']+)'\)/);
+                if (match) {
+                  showRenameDialog(match[1], match[2]);
+                }
+              };
+            });
+
+            videoGrid.querySelectorAll('button[onclick^="showDeleteDialog"]').forEach(button => {
+              const onclick = button.getAttribute('onclick');
+              button.onclick = function () {
+                const match = onclick.match(/showDeleteDialog\('([^']+)',\s*'([^']+)'\)/);
+                if (match) {
+                  showDeleteDialog(match[1], match[2]);
+                }
+              };
+            });
+          }
+
+          setupPaginationControls(filteredVideos);
+          updatePaginationInfo(filteredVideos);
+        }
+
+        function updatePaginationInfo(filteredVideos) {
+          if (!paginationContainer) return;
+          const paginationInfo = paginationContainer.querySelector('p.text-sm.text-gray-400');
+          if (paginationInfo) {
+            const totalVideos = filteredVideos.length;
+
+            if (totalVideos === 0) {
+              paginationInfo.textContent = 'No videos found';
+            } else {
+              const startIndex = (currentPage - 1) * itemsPerPage + 1;
+              const endIndex = Math.min(currentPage * itemsPerPage, totalVideos);
+              paginationInfo.textContent = `Showing ${startIndex}-${endIndex} of ${totalVideos} videos`;
+            }
+          }
+        }
+      });
+    </script>
+    <style>
+      .video-js {
+        margin: 0 auto;
+        height: 100% !important;
+        width: auto !important;
+        max-width: 100%;
+      }
+
+      .vjs-poster {
+        background-size: contain !important;
+      }
+
+      .video-js.vjs-9-16,
+      .video-js.vjs-4-5 {
+        max-width: 56.25% !important;
+      }
+
+      .video-js.vjs-16-9 {
+        max-width: 100% !important;
+      }
+
+      .video-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 53vh;
+        max-height: 600px;
+        background-color: black;
+      }
+    </style>

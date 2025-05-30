@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    <%= title %> - StreamFlow Lite
+  </title>
+  <link rel="icon" href="/images/logo_mobile.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        fontFamily: {
+          'inter': ['Inter', 'sans-serif'],
+          'sans': ['Inter', 'system-ui', 'sans-serif']
+        },
+        extend: {
+          colors: {
+            'primary': '#0055FF',
+            'secondary': '#0043CA',
+            'dark': {
+              '900': '#121212',
+              '800': '#252525',
+              '700': '#2D2D2D',
+              '600': '#3D3D3D',
+              '500': '#6E6E6E',
+              '400': '#8F8F8F',
+              '100': '#E5E5E5',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-dark-900 text-white font-inter">
+  <div class="min-h-screen flex items-center justify-center px-6">
+    <div class="w-full max-w-md bg-dark-800 rounded-xl shadow-xl p-8 text-center">
+      
+      <div class="flex justify-center mb-8">
+        <img src="/images/logo_mobile.svg" alt="StreamFlow Logo" class="h-10">
+      </div>
+
+      <div class="mt-4">
+        <div class="flex justify-center mb-6">
+          <div class="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center">
+            <i class="ti ti-alert-triangle text-red-500 text-3xl"></i>
+          </div>
+        </div>
+
+        <h2 class="text-xl font-bold mb-4">Error</h2>
+        <p class="text-gray-400 mb-6">
+          <%= error %>
+        </p>
+
+        <a href="/"
+          class="inline-block bg-primary hover:bg-blue-600 text-white py-2.5 px-6 rounded-lg font-medium transition-colors">
+          Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

@@ -1,0 +1,337 @@
+<% layout('layout') -%>
+  
+  <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+    <div>
+      <h2 class="text-2xl font-bold">Settings</h2>
+      <p class="text-gray-400 text-sm mt-1">Manage your account and preferences</p>
+    </div>
+  </div>
+  
+  <div class="mb-6 border-b border-gray-700">
+    <div class="flex flex-wrap -mb-px">
+      <button class="settings-tab active mr-2 py-2 px-4 text-primary border-b-2 border-primary font-medium"
+        data-tab="profile">
+        <i class="ti ti-user mr-2"></i>Profile
+      </button>
+      <button
+        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-white border-b-2 border-transparent hover:border-gray-700 font-medium"
+        data-tab="security">
+        <i class="ti ti-shield-lock mr-2"></i>Security
+      </button>
+      <button
+        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-white border-b-2 border-transparent hover:border-gray-700 font-medium"
+        data-tab="integrations">
+        <i class="ti ti-plug mr-2"></i>Integrations
+      </button>
+    </div>
+  </div>
+  
+  <div class="bg-gray-800 rounded-lg overflow-hidden">
+    
+    <div id="profile-tab" class="settings-content">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold mb-6">Profile Settings</h3>
+        <form id="profile-form" class="space-y-6" action="/settings/profile" method="post"
+          enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="activeTab" value="profile">
+          
+          <div class="space-y-4">
+            <label class="block text-sm font-medium text-gray-300">Profile Photo</label>
+            <div class="flex items-center space-x-6">
+              <div class="relative">
+                <div class="w-24 h-24 rounded-full bg-dark-700 overflow-hidden border-2 border-gray-700">
+                  <img id="profile-preview" src="<%= user.avatar_path || '/images/default-avatar.jpg' %>"
+                    class="w-full h-full object-cover" alt="Profile Photo"
+                    onerror="this.src='/images/default-avatar.jpg'">
+                </div>
+                <div class="absolute bottom-0 right-0">
+                  <label for="profile-upload"
+                    class="flex items-center justify-center w-8 h-8 rounded-full bg-primary hover:bg-blue-600 cursor-pointer shadow-lg transition-colors">
+                    <i class="ti ti-pencil text-white text-sm"></i>
+                  </label>
+                  <input id="profile-upload" name="avatar" type="file" accept="image/*" class="hidden">
+                </div>
+              </div>
+              <div class="text-sm text-gray-400">
+                <p>Upload a new photo</p>
+                <p class="mt-1">Maximum file size: 2MB</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="space-y-2">
+            <label for="username" class="block text-sm font-medium text-gray-300">Username</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                <i class="ti ti-user"></i>
+              </span>
+              <input type="text" id="username" name="username"
+                class="bg-dark-900 text-white pl-10 pr-4 py-2 rounded-lg block w-full sm:max-w-md focus:outline-none focus:ring-1 focus:ring-primary"
+                value="<%= user.username %>">
+            </div>
+          </div>
+          
+          <div class="pt-4">
+            <button type="submit"
+              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+              Save Profile Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <div id="security-tab" class="settings-content hidden">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold mb-6">Security Settings</h3>
+        <form id="password-form" class="space-y-6" action="/settings/password" method="post">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="activeTab" value="security">
+          
+          <div class="space-y-2">
+            <label for="current-password" class="block text-sm font-medium text-gray-300">Current Password</label>
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                <i class="ti ti-lock"></i>
+              </span>
+              <input type="password" id="current-password" name="currentPassword"
+                class="bg-dark-900 text-white pl-10 pr-4 py-2 rounded-lg block w-full sm:max-w-md focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Enter your current password">
+            </div>
+          </div>
+          
+          <div class="space-y-2">
+            <label for="new-password" class="block text-sm font-medium text-gray-300">New Password</label>
+            <div class="relative sm:max-w-md">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                <i class="ti ti-lock"></i>
+              </span>
+              <input type="password" id="new-password" name="newPassword"
+                class="bg-dark-900 text-white pl-10 pr-10 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Enter new password">
+              <button type="button"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white"
+                id="toggle-password">
+                <i class="ti ti-eye"></i>
+              </button>
+            </div>
+            <div class="text-xs text-gray-400 mt-1">
+              Password must be at least 8 characters and include uppercase, lowercase and a number
+            </div>
+          </div>
+          
+          <div class="space-y-2">
+            <label for="confirm-password" class="block text-sm font-medium text-gray-300">Confirm New Password</label>
+            <div class="relative sm:max-w-md">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                <i class="ti ti-lock"></i>
+              </span>
+              <input type="password" id="confirm-password" name="confirmPassword"
+                class="bg-dark-900 text-white pl-10 pr-4 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Confirm new password">
+            </div>
+          </div>
+          
+          <div class="pt-4">
+            <button type="submit"
+              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+              Change Password
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+    
+    <div id="integrations-tab" class="settings-content hidden">
+      <div class="p-6">
+        <h3 class="text-lg font-semibold mb-6">Integration Settings</h3>
+        
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center">
+            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center mr-3">
+              <i class="ti ti-brand-google-drive text-xl" style="color: #4285F4;"></i>
+            </div>
+            <div>
+              <h4 class="font-medium">Google Drive</h4>
+              <p class="text-sm text-gray-400">Connect to import and manage videos</p>
+            </div>
+          </div>
+          <span id="gdrive-status"
+            class="<%= user.gdrive_api_key ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400' %> px-2 py-1 text-xs rounded">
+            <%= user.gdrive_api_key ? 'Connected' : 'Not Connected' %>
+          </span>
+        </div>
+        
+        <form id="gdrive-form" class="space-y-4" action="/settings/integrations/gdrive" method="post">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="activeTab" value="integrations">
+          <div class="space-y-2">
+            <label for="gdrive-api-key" class="block text-sm font-medium text-gray-300">API Key</label>
+            <div class="relative sm:max-w-md">
+              <input type="password" id="gdrive-api-key" name="apiKey"
+                class="bg-dark-900 text-white pl-4 pr-10 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Enter your Google Drive API key" value="<%= user.gdrive_api_key || '' %>">
+              <button type="button"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white"
+                id="toggle-api-key">
+                <i class="ti ti-eye"></i>
+              </button>
+            </div>
+            <p class="text-xs text-gray-400">You can get your API key from the <a
+                href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google
+                Cloud Console</a></p>
+          </div>
+          <div class="pt-2">
+            <button type="submit"
+              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+              Save & Connect
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <div id="toast"
+    class="fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden flex items-center">
+    <i id="toast-icon" class="mr-2"></i>
+    <span id="toast-message"></span>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const tabs = document.querySelectorAll('.settings-tab');
+      const tabContents = document.querySelectorAll('.settings-content');
+      function activateTab(tabName) {
+        tabs.forEach(tab => tab.classList.remove('active', 'text-primary', 'border-primary'));
+        tabs.forEach(tab => tab.classList.add('text-gray-400', 'border-transparent'));
+        tabContents.forEach(content => content.classList.add('hidden'));
+        const selectedTab = document.querySelector(`.settings-tab[data-tab="${tabName}"]`);
+        if (selectedTab) {
+          selectedTab.classList.add('active', 'text-primary', 'border-primary');
+          selectedTab.classList.remove('text-gray-400', 'border-transparent');
+          const selectedContent = document.getElementById(`${tabName}-tab`);
+          if (selectedContent) {
+            selectedContent.classList.remove('hidden');
+          }
+        }
+      }
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabName = tab.getAttribute('data-tab');
+          activateTab(tabName);
+        });
+      });
+    <% if (typeof activeTab !== 'undefined' && activeTab) { %>
+        activateTab('<%= activeTab %>');
+    <% } else { %>
+        activateTab('profile');
+    <% } %>
+    const profileUpload = document.getElementById('profile-upload');
+      const profilePreview = document.getElementById('profile-preview');
+      profileUpload.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          if (file.size > 2 * 1024 * 1024) {
+            showToast('error', 'Image too large. Maximum size is 2MB.');
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = function (event) {
+            profilePreview.src = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+      const profileForm = document.getElementById('profile-form');
+      profileForm.addEventListener('submit', (e) => {
+        const fileInput = document.getElementById('profile-upload');
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          if (file.size > 2 * 1024 * 1024) {
+            e.preventDefault();
+            showToast('error', 'Image too large. Maximum size is 2MB.');
+            return false;
+          }
+        }
+      });
+      const passwordForm = document.getElementById('password-form');
+      passwordForm.addEventListener('submit', (e) => {
+        const currentPassword = document.getElementById('current-password').value;
+        const newPassword = document.getElementById('new-password').value;
+        const confirmPassword = document.getElementById('confirm-password').value;
+        if (!currentPassword) {
+          e.preventDefault();
+          showToast('error', 'Please enter your current password.');
+          return false;
+        }
+        if (!newPassword) {
+          e.preventDefault();
+          showToast('error', 'Please enter a new password.');
+          return false;
+        }
+        if (newPassword !== confirmPassword) {
+          e.preventDefault();
+          showToast('error', 'New passwords do not match.');
+          return false;
+        }
+      });
+      const gdriveForm = document.getElementById('gdrive-form');
+      gdriveForm.addEventListener('submit', (e) => {
+        const apiKey = document.getElementById('gdrive-api-key').value;
+        if (!apiKey) {
+          e.preventDefault();
+          showToast('error', 'Please enter your Google Drive API key.');
+          return false;
+        }
+      });
+      const togglePassword = document.getElementById('toggle-password');
+      const newPasswordField = document.getElementById('new-password');
+      togglePassword.addEventListener('click', () => {
+        if (newPasswordField.type === 'password') {
+          newPasswordField.type = 'text';
+          togglePassword.innerHTML = '<i class="ti ti-eye-off"></i>';
+        } else {
+          newPasswordField.type = 'password';
+          togglePassword.innerHTML = '<i class="ti ti-eye"></i>';
+        }
+      });
+      const toggleApiKey = document.getElementById('toggle-api-key');
+      const apiKeyField = document.getElementById('gdrive-api-key');
+      toggleApiKey.addEventListener('click', () => {
+        if (apiKeyField.type === 'password') {
+          apiKeyField.type = 'text';
+          toggleApiKey.innerHTML = '<i class="ti ti-eye-off"></i>';
+        } else {
+          apiKeyField.type = 'password';
+          toggleApiKey.innerHTML = '<i class="ti ti-eye"></i>';
+        }
+      });
+      function showToast(type, message) {
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toast-icon');
+        const toastMessage = document.getElementById('toast-message');
+        if (type === 'success') {
+          toastIcon.className = 'ti ti-check text-green-400 mr-2';
+          toast.classList.add('border-l-4', 'border-green-400');
+          toast.classList.remove('border-l-4', 'border-red-400');
+        } else if (type === 'error') {
+          toastIcon.className = 'ti ti-x text-red-400 mr-2';
+          toast.classList.add('border-l-4', 'border-red-400');
+          toast.classList.remove('border-l-4', 'border-green-400');
+        }
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+        setTimeout(() => {
+          toast.classList.add('hidden');
+        }, 3000);
+      }
+    <% if (typeof success !== 'undefined' && success) { %>
+        showToast('success', '<%= success %>');
+    <% } %>
+    <% if (typeof error !== 'undefined' && error) { %>
+        showToast('error', '<%= error %>');
+    <% } %>
+  });
+  </script>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account Setup - StreamFlow Lite</title>
+  <link rel="icon" href="/images/logo_mobile.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        fontFamily: {
+          'inter': ['Inter', 'sans-serif'],
+          'sans': ['Inter', 'system-ui', 'sans-serif']
+        },
+        extend: {
+          colors: {
+            'primary': '#0055FF',
+            'secondary': '#0043CA',
+            'dark': {
+              '900': '#121212',
+              '800': '#252525',
+              '700': '#2D2D2D',
+              '600': '#3D3D3D',
+              '500': '#6E6E6E',
+              '400': '#8F8F8F',
+              '100': '#E5E5E5',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-dark-900 text-white font-inter">
+  <div class="min-h-screen flex flex-col">
+    <div class="flex-1 flex items-center justify-center px-6 py-10">
+      <div class="w-full max-w-lg bg-dark-800 rounded-xl shadow-xl p-6 sm:p-8">
+        <div class="text-center mb-8">
+          <h1 class="text-2xl font-bold">Complete Your Account</h1>
+          <p class="text-gray-400 mt-1">Set up your profile to get started with StreamFlow</p>
+        </div>
+        <% if (typeof error !=='undefined' && error) { %>
+          <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded mb-6">
+            <p><i class="ti ti-alert-circle mr-2"></i>
+              <%= error %>
+            </p>
+          </div>
+          <% } %>
+            <form id="setupForm" action="/setup-account" method="post" enctype="multipart/form-data" class="space-y-6">
+              
+              <div class="flex flex-col items-center justify-center">
+                <div class="relative group">
+                  <div id="avatar-preview"
+                    class="w-28 h-28 rounded-full bg-dark-700 border-2 border-gray-600 group-hover:border-primary flex items-center justify-center text-gray-400 overflow-hidden transition-colors">
+                    <i class="ti ti-user text-4xl"></i>
+                  </div>
+                  <div class="absolute bottom-0 right-0">
+                    <label for="avatar-upload"
+                      class="flex items-center justify-center w-8 h-8 rounded-full bg-primary cursor-pointer shadow-lg">
+                      <i class="ti ti-camera text-white"></i>
+                    </label>
+                    <input id="avatar-upload" name="avatar" type="file" accept="image/*" class="hidden"
+                      onchange="previewAvatar(event)">
+                  </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-2">Upload a profile picture</p>
+              </div>
+              
+              <div>
+                <label for="username" class="text-sm font-medium block mb-2">Username</label>
+                <div class="relative">
+                  <input type="text" id="username" name="username"
+                    class="w-full pl-10 pr-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Choose a username" required>
+                  <i class="ti ti-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <p id="username-error" class="hidden text-red-400 text-xs mt-1"></p>
+              </div>
+              
+              <div>
+                <label for="password" class="text-sm font-medium block mb-2">Password</label>
+                <div class="relative">
+                  <input type="password" id="password" name="password"
+                    class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Create a strong password" required>
+                  <i class="ti ti-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                  <button type="button" onclick="togglePasswordVisibility('password', 'passwordToggle')"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                    <i class="ti ti-eye text-base" id="passwordToggle"></i>
+                  </button>
+                </div>
+                <div class="mt-1">
+                  <div class="w-full bg-gray-600 rounded-full h-1.5 mt-2">
+                    <div id="password-strength" class="bg-red-500 h-1.5 rounded-full" style="width: 0%"></div>
+                  </div>
+                  <p id="password-feedback" class="text-xs text-gray-400 mt-1">Use 8+ characters with letters, numbers &
+                    symbols</p>
+                </div>
+              </div>
+              
+              <div class="pb-3">
+                <label for="confirm-password" class="text-sm font-medium block mb-2">Confirm Password</label>
+                <div class="relative">
+                  <input type="password" id="confirm-password" name="confirmPassword"
+                    class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+                    placeholder="Confirm your password" required>
+                  <i class="ti ti-lock-check absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                  <button type="button" onclick="togglePasswordVisibility('confirm-password', 'confirmPasswordToggle')"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                    <i class="ti ti-eye text-base" id="confirmPasswordToggle"></i>
+                  </button>
+                </div>
+                <p id="password-match" class="hidden text-green-400 text-xs mt-1">
+                  <i class="ti ti-check mr-1"></i> Passwords match
+                </p>
+                <p id="password-mismatch" class="hidden text-red-400 text-xs mt-1">
+                  <i class="ti ti-x mr-1"></i> Passwords don't match
+                </p>
+              </div>
+              
+              <button type="submit"
+                class="w-full bg-primary hover:bg-blue-600 text-white py-2.5 rounded-lg font-medium transition-colors">
+                Complete Setup
+              </button>
+            </form>
+      </div>
+    </div>
+  </div>
+  <script>
+    function previewAvatar(event) {
+      const input = event.target;
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const preview = document.getElementById('avatar-preview');
+          preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+    function togglePasswordVisibility(inputId, toggleId) {
+      const input = document.getElementById(inputId);
+      const toggle = document.getElementById(toggleId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        toggle.classList.remove('ti-eye');
+        toggle.classList.add('ti-eye-off');
+      } else {
+        input.type = 'password';
+        toggle.classList.remove('ti-eye-off');
+        toggle.classList.add('ti-eye');
+      }
+    }
+    document.getElementById('password').addEventListener('input', function (e) {
+      const password = e.target.value;
+      const strength = calculatePasswordStrength(password);
+      const strengthBar = document.getElementById('password-strength');
+      const feedback = document.getElementById('password-feedback');
+      strengthBar.style.width = strength.score * 25 + '%';
+      if (strength.score === 0) {
+        strengthBar.className = 'bg-gray-500 h-1.5 rounded-full';
+        feedback.textContent = 'Use 8+ characters with letters, numbers & symbols';
+        feedback.className = 'text-xs text-gray-400 mt-1';
+      } else if (strength.score === 1) {
+        strengthBar.className = 'bg-red-500 h-1.5 rounded-full';
+        feedback.textContent = 'Too weak - password needs improvement';
+        feedback.className = 'text-xs text-red-400 mt-1';
+      } else if (strength.score === 2) {
+        strengthBar.className = 'bg-yellow-500 h-1.5 rounded-full';
+        feedback.textContent = 'Could be stronger - add more variety';
+        feedback.className = 'text-xs text-yellow-500 mt-1';
+      } else if (strength.score === 3) {
+        strengthBar.className = 'bg-green-500 h-1.5 rounded-full';
+        feedback.textContent = 'Good password';
+        feedback.className = 'text-xs text-green-500 mt-1';
+      } else {
+        strengthBar.className = 'bg-green-500 h-1.5 rounded-full';
+        feedback.textContent = 'Strong password - excellent!';
+        feedback.className = 'text-xs text-green-500 mt-1';
+      }
+    });
+    document.getElementById('confirm-password').addEventListener('input', function (e) {
+      const password = document.getElementById('password').value;
+      const confirmPassword = e.target.value;
+      if (confirmPassword === '') {
+        document.getElementById('password-match').classList.add('hidden');
+        document.getElementById('password-mismatch').classList.add('hidden');
+      } else if (password === confirmPassword) {
+        document.getElementById('password-match').classList.remove('hidden');
+        document.getElementById('password-mismatch').classList.add('hidden');
+      } else {
+        document.getElementById('password-match').classList.add('hidden');
+        document.getElementById('password-mismatch').classList.remove('hidden');
+      }
+    });
+    function calculatePasswordStrength(password) {
+      let score = 0;
+      if (password.length >= 8) score += 1;
+      if (password.length >= 12) score += 1;
+      if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+      if (/[0-9]/.test(password)) score += 0.5;
+      if (/[^a-zA-Z0-9]/.test(password)) score += 0.5;
+      return {
+        score: Math.min(4, Math.floor(score))
+      };
+    }
+    document.getElementById('setupForm').addEventListener('submit', function (e) {
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      if (password !== confirmPassword) {
+        e.preventDefault();
+        document.getElementById('password-mismatch').classList.remove('hidden');
+        document.getElementById('password-match').classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>

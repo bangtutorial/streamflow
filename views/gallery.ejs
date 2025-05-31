@@ -181,11 +181,11 @@
                     <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
                       <i class="ti ti-file-video text-blue-400"></i>
                     </div>
-                    <div class="flex-1">
-                      <p id="selectedFileName" class="font-medium truncate"></p>
+                    <div class="flex-1 min-w-0">
+                      <p id="selectedFileName" class="font-medium break-words"></p>
                       <p id="selectedFileSize" class="text-xs text-gray-400 mt-1"></p>
                     </div>
-                    <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white ml-2">
+                    <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white ml-2 shrink-0">
                       <i class="ti ti-x"></i>
                     </button>
                   </div>
@@ -193,9 +193,9 @@
               </div>
 
               <div class="mt-6 hidden" id="uploadProgress">
-                <div class="flex justify-between text-sm mb-1.5">
-                  <span id="uploadProgressFilename" class="truncate mr-2 max-w-[80%]">Uploading...</span>
-                  <span id="uploadProgressPercent" class="text-blue-400">0%</span>
+                <div class="flex justify-between items-start text-sm mb-1.5">
+                  <span id="uploadProgressFilename" class="break-words mr-2 flex-1 min-w-0">Uploading...</span>
+                  <span id="uploadProgressPercent" class="text-blue-400 ml-2 shrink-0">0%</span>
                 </div>
                 <div class="w-full bg-dark-700 rounded-full h-2.5 overflow-hidden">
                   <div id="uploadProgressBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
@@ -1001,7 +1001,11 @@
       }
       const dropzone = document.getElementById('uploadDropzone');
       const fileInput = document.getElementById('videoFileInput');
-      dropzone.addEventListener('click', () => {
+      dropzone.addEventListener('click', (event) => {
+        const labelElement = fileInput.parentElement;
+        if (event.target === fileInput || (labelElement && labelElement.contains(event.target))) {
+          return;
+        }
         fileInput.click();
       });
       dropzone.addEventListener('dragenter', (e) => {

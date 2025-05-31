@@ -9,7 +9,6 @@ const fs = require('fs');
 const csrf = require('csrf');
 const { v4: uuidv4 } = require('uuid');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
 const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
@@ -83,13 +82,17 @@ app.locals.helpers = {
   },
   formatDateTime: function (isoString) {
     if (!isoString) return '--';
-    const date = new Date(isoString);
-    return date.toLocaleString('en-US', {
+    
+    const utcDate = new Date(isoString);
+    
+    return utcDate.toLocaleString('en-US', {
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      hour12: false
     });
   },
   formatDuration: function (seconds) {
@@ -101,11 +104,6 @@ app.locals.helpers = {
   }
 };
 app.use(session({
-  store: new SQLiteStore({
-    db: 'sessions.db',
-    table: 'sessions',
-    dir: path.join(__dirname, 'db')
-  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
@@ -1229,7 +1227,15 @@ app.post('/api/streams', isAuthenticated, [
       user_id: req.session.userId
     };
     if (req.body.scheduleTime) {
-      streamData.schedule_time = new Date(req.body.scheduleTime).toISOString();
+      const scheduleDate = new Date(req.body.scheduleTime);
+      
+      const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      console.log(`[CREATE STREAM] Server timezone: ${serverTimezone}`);
+      console.log(`[CREATE STREAM] Input time: ${req.body.scheduleTime}`);
+      console.log(`[CREATE STREAM] Parsed time: ${scheduleDate.toISOString()}`);
+      console.log(`[CREATE STREAM] Local display: ${scheduleDate.toLocaleString('en-US', { timeZone: serverTimezone })}`);
+      
+      streamData.schedule_time = scheduleDate.toISOString();
     }
     if (req.body.duration) {
       streamData.duration = parseInt(req.body.duration);
@@ -1282,18 +1288,21 @@ app.put('/api/streams/:id', isAuthenticated, async (req, res) => {
       updateData.use_advanced_settings = req.body.useAdvancedSettings === 'true' || req.body.useAdvancedSettings === true;
     }
     if (req.body.scheduleTime) {
-      updateData.schedule_time = new Date(req.body.scheduleTime).toISOString();
-    }
-    if (req.body.duration) {
-      updateData.duration = parseInt(req.body.duration);
-    }
-    if (req.body.scheduleTime) {
-      updateData.schedule_time = new Date(req.body.scheduleTime).toISOString();
+      const scheduleDate = new Date(req.body.scheduleTime);
+      
+      const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      console.log(`[UPDATE STREAM] Server timezone: ${serverTimezone}`);
+      console.log(`[UPDATE STREAM] Input time: ${req.body.scheduleTime}`);
+      console.log(`[UPDATE STREAM] Parsed time: ${scheduleDate.toISOString()}`);
+      console.log(`[UPDATE STREAM] Local display: ${scheduleDate.toLocaleString('en-US', { timeZone: serverTimezone })}`);
+      
+      updateData.schedule_time = scheduleDate.toISOString();
       updateData.status = 'scheduled';
     } else if ('scheduleTime' in req.body && !req.body.scheduleTime) {
       updateData.schedule_time = null;
       updateData.status = 'offline';
     }
+    
     const updatedStream = await Stream.update(req.params.id, updateData);
     res.json({ success: true, stream: updatedStream });
   } catch (error) {

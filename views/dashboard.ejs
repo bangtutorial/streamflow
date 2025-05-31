@@ -1105,7 +1105,7 @@
           statusBadge = `
             <span class="flex items-center bg-red-400/10 text-red-400 rounded-full px-2.5 py-1">
               <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
-              <span class="text-xs font-medium">Live • <span class="live-duration" data-start-time="${stream.start_time}">
+              <span class="text-xs font-medium">Live • <span class="live-duration tabular-nums" data-start-time="${stream.start_time}">
                 ${durationDisplay}</span></span>
             </span>
           `;
@@ -1156,7 +1156,7 @@
             <span class="text-sm">${formattedDuration}</span>
           </div>
         </td>
-        <td class="px-6 py-4 whitespace-nowrap">
+        <td class="px-6 py-4 whitespace-nowrap min-w-[150px]">
           <div class="flex items-center">
             ${statusBadge}
           </div>

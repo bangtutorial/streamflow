@@ -1207,9 +1207,13 @@
       }
       function formatTime(date) {
         if (!date) return '';
-        const hours = String(date.getUTCHours()).padStart(2, '0');
-        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-        return `${hours}:${minutes}`;
+        
+        return date.toLocaleTimeString('en-US', {
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
       }
       function getPlatformIcon(platform) {
         switch (platform) {

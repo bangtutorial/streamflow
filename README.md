@@ -4,7 +4,8 @@
 
 StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan live streaming ke berbagai platform seperti YouTube, Facebook, dan platform lainnya menggunakan protokol RTMP. Aplikasi ini bisa berjalan di VPS (Virtual Private Server) dan mendukung streaming ke banyak platform sekaligus.
 
-![image](https://github.com/user-attachments/assets/bc280024-e215-4880-ac25-b3bb7ac2c68b)
+![Untitled-2](https://github.com/user-attachments/assets/3d7bb367-a1b2-43a5-839b-b6aa8dd5de90)
+
 
 
 

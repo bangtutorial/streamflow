@@ -9,6 +9,7 @@ const fs = require('fs');
 const csrf = require('csrf');
 const { v4: uuidv4 } = require('uuid');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
@@ -100,6 +101,11 @@ app.locals.helpers = {
   }
 };
 app.use(session({
+  store: new SQLiteStore({
+    db: 'sessions.db',
+    table: 'sessions',
+    dir: path.join(__dirname, 'db')
+  }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,

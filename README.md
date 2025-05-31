@@ -4,7 +4,8 @@
 
 StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan live streaming ke berbagai platform seperti YouTube, Facebook, dan platform lainnya menggunakan protokol RTMP. Aplikasi ini bisa berjalan di VPS (Virtual Private Server) dan mendukung streaming ke banyak platform sekaligus.
 
-![Untitled-1](https://github.com/user-attachments/assets/9319fa1b-0b9a-42e7-8e9e-e6a7806d3e7c)
+![image](https://github.com/user-attachments/assets/bc280024-e215-4880-ac25-b3bb7ac2c68b)
+
 
 
 ## 🚀 Fitur Utama
@@ -20,7 +21,7 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 ## 📋 Requirements
 
 - **Node.js** v16 atau lebih baru
-- **FFmpeg** (otomatis terinstall via dependency)
+- **FFmpeg**
 - **SQLite3** (sudah termasuk)
 - **VPS/Server** dengan minimal 1Core & 1GB RAM
 - **Port** 7575 (dapat diubah di [.env](.env))

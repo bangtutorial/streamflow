@@ -91,31 +91,28 @@ Install dependencies:
 npm install
 ```
 
-Konfigurasi Environment:
+Generate session secret:
+
+```bash
+npm run generate-secret
+```
+
+**Konfigurasi tambahan (opsional):**
+
+Port default aplikasi adalah **7575**. Jika perlu ubah port, edit file [.env](.env):
 
 ```bash
 nano .env
 ```
 
-Konfigurasi default dalam file [.env](.env):
-
+Ubah port jika diperlukan (contoh: 8080, 3300, dll):
 ```env
-PORT=7575
-SESSION_SECRET=secret_key_kamu_minimal_32_karakter
-```
-
-**Untuk keamanan yang lebih baik, disarankan mengganti:**
-- `PORT`: Ganti ke port lain jika diperlukan (contoh: 8080, 3300, dll)
-- `SESSION_SECRET`: Ganti dengan string acak minimal 32 karakter untuk keamanan
-
-**Contoh session secret yang aman:**
-```env
-SESSION_SECRET=e8f70e7f2b3c83d3a9b4c09e8d8f7a6b5c4d3e2f14254c8d7e6f5a4b3c2d1e0
+PORT=8080
 ```
 
 ### 3. Setup Firewall
 
-Buka port sesuai di .env:
+Buka port sesuai dengan yang ada di .env (default: 7575):
 
 ```bash
 sudo ufw allow 7575

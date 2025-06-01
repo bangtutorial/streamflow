@@ -147,21 +147,25 @@
     <div id="integrations-tab" class="settings-content hidden">
       <div class="p-6">
         <h3 class="text-lg font-semibold mb-6">Integration Settings</h3>
-        
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center">
-            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center mr-3">
+          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0">
               <i class="ti ti-brand-google-drive text-xl" style="color: #4285F4;"></i>
             </div>
-            <div>
+            <div class="min-w-0 flex-1">
               <h4 class="font-medium">Google Drive</h4>
-              <p class="text-sm text-gray-400">Connect to import and manage videos</p>
+              <!-- Hide description text on mobile -->
+              <p class="text-sm text-gray-400 hidden sm:block">Connect to import and manage videos</p>
+              <!-- Show shorter text on mobile -->
+              <p class="text-sm text-gray-400 sm:hidden">Connect to Drive</p>
             </div>
           </div>
-          <span id="gdrive-status"
-            class="<%= user.gdrive_api_key ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400' %> px-2 py-1 text-xs rounded">
-            <%= user.gdrive_api_key ? 'Connected' : 'Not Connected' %>
-          </span>
+          <div class="flex-shrink-0 ml-3">
+            <span id="gdrive-status"
+              class="<%= user.gdrive_api_key ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400' %> px-2 py-1 text-xs rounded whitespace-nowrap">
+              <%= user.gdrive_api_key ? 'Connected' : 'Not Connected' %>
+            </span>
+          </div>
         </div>
         
         <form id="gdrive-form" class="space-y-4" action="/settings/integrations/gdrive" method="post">

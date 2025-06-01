@@ -2,10 +2,11 @@
   "name": "streamflow",
   "version": "2.0.0",
   "description": "Cloud streaming solution with FFmpeg",
-  "main": "app.js",
+  "main": "app.js",  
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "generate-secret": "node generate-secret.js"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

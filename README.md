@@ -37,7 +37,7 @@ sudo apt update && sudo apt upgrade -y
 Install Node.js:
 
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 ```
 
 ```bash

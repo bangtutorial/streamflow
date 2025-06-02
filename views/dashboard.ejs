@@ -1,43 +1,67 @@
-<% layout('layout') -%>
-  <div class="flex md:hidden gap-3 mb-6 overflow-x-auto pb-2 px-0.5">
-    <div class="bg-gray-800 rounded-lg p-3 shadow-md min-w-[100px] flex-1">
-      <div class="flex items-center justify-between mb-1">
-        <p class="text-xs font-medium text-gray-400">Streams</p>
-        <div class="w-6 h-6 bg-dark-700 rounded-lg flex items-center justify-center">
+<% layout('layout') -%>  <div class="grid grid-cols-2 md:hidden gap-3 mb-6">
+    <div class="bg-gray-800 rounded-lg p-4 shadow-md">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold">Active Streams</h3>
+        <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
           <i class="ti ti-broadcast text-white text-sm"></i>
         </div>
       </div>
-      <p class="text-2xl font-semibold mt-1">0</p>
+      <p class="text-xl font-bold">0</p>
     </div>
-    <div class="bg-gray-800 rounded-lg p-3 shadow-md min-w-[100px] flex-1">
-      <div class="flex items-center justify-between mb-1">
-        <p class="text-xs font-medium text-gray-400">CPU</p>
-        <div class="w-6 h-6 bg-dark-700 rounded-lg flex items-center justify-center">
+    <div class="bg-gray-800 rounded-lg p-4 shadow-md">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold">CPU Usage</h3>
+        <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
           <i class="ti ti-cpu text-white text-sm"></i>
         </div>
       </div>
-      <p class="text-2xl font-semibold mt-1"><span id="cpu-usage-mobile">0%</span></p>
-    </div>
-    <div class="bg-gray-800 rounded-lg p-3 shadow-md min-w-[100px] flex-1">
-      <div class="flex items-center justify-between mb-1">
-        <p class="text-xs font-medium text-gray-400">Memory</p>
-        <div class="w-6 h-6 bg-dark-700 rounded-lg flex items-center justify-center">
+      <p class="text-xl font-bold"><span id="cpu-usage-mobile">0</span>%</p>
+      <div class="w-full bg-gray-700 rounded-full h-1.5 mt-1">
+        <div id="cpu-bar-mobile" class="bg-primary h-1.5 rounded-full" style="width: 0%"></div>
+      </div>
+    </div>    
+    <div class="bg-gray-800 rounded-lg p-4 shadow-md">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold">Memory</h3>
+        <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
           <i class="ti ti-device-laptop text-white text-sm"></i>
         </div>
+      </div>      
+      <p class="text-lg font-bold">
+        <span id="memory-usage-mobile">0 MB</span><span id="memory-total-mobile" class="text-xs text-gray-400"> / 0 MB</span>
+      </p>
+      <div class="w-full bg-gray-700 rounded-full h-1.5 mt-1">
+        <div id="memory-bar-mobile" class="bg-primary h-1.5 rounded-full" style="width: 0%"></div>
       </div>
-      <p class="text-xl font-semibold mt-1"><span id="memory-usage-mobile">0</span></p>
+    </div>    
+    <div class="bg-gray-800 rounded-lg p-4 shadow-md">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold">Internet Speed</h3>
+        <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-wifi text-white text-sm"></i>
+        </div>
+      </div>        
+      <div class="space-y-1">
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400">↑ U</span>
+          <span id="upload-speed-mobile" class="text-sm font-bold text-blue-400">0 Mbps</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-xs text-gray-400">↓ D</span>
+          <span id="download-speed-mobile" class="text-sm font-bold text-green-400">0 Mbps</span>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+  <div class="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
     <div class="bg-gray-800 rounded-lg p-6 shadow-md">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Active Streams</h3>
         <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
           <i class="ti ti-broadcast text-xl text-white"></i>
         </div>
-      </div>
+      </div>      
       <p class="text-3xl font-bold mt-2">0</p>
-      <p class="text-sm text-gray-400 mt-1">No active streams</p>
     </div>
     <div class="bg-gray-800 rounded-lg p-6 shadow-md">
       <div class="flex items-center justify-between">
@@ -50,7 +74,7 @@
       <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
         <div id="cpu-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
       </div>
-    </div>
+    </div>    
     <div class="bg-gray-800 rounded-lg p-6 shadow-md">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Memory</h3>
@@ -65,10 +89,28 @@
         <div id="memory-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
       </div>
     </div>
+    <div class="bg-gray-800 rounded-lg p-6 shadow-md">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Internet Speed</h3>
+        <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-wifi text-xl text-white"></i>
+        </div>
+      </div>      
+      <div class="mt-2 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-400">↑ Upload</span>
+          <span id="upload-speed" class="text-lg font-bold text-blue-400">0 Mbps</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-400">↓ Download</span>
+          <span id="download-speed" class="text-lg font-bold text-green-400">0 Mbps</span>
+        </div>
+      </div>
+    </div>
   </div>
   <div class="mt-8">
     <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-      <h2 class="text-xl font-bold">Status Streaming</h2>
+      <h2 class="text-xl font-bold">Streaming Status</h2>
       <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
         <div class="relative w-full sm:w-64">
           <input type="text" placeholder="Search streams..."
@@ -838,18 +880,28 @@
   <script>
     function formatMemory(value) {
       return typeof value === 'string' ? value : '0 MB';
-    }
-    function updateSystemStats() {
+    }    function updateSystemStats() {
       fetch('/api/system-stats')
         .then(response => response.json())
         .then(data => {
           document.getElementById('cpu-usage').textContent = data.cpu.usage;
-          document.getElementById('cpu-usage-mobile').textContent = data.cpu.usage + '%';
           document.getElementById('cpu-bar').style.width = data.cpu.usage + '%';
           document.getElementById('memory-usage').textContent = formatMemory(data.memory.used);
-          document.getElementById('memory-usage-mobile').textContent = formatMemory(data.memory.used);
           document.getElementById('memory-total').textContent = ' / ' + formatMemory(data.memory.total);
           document.getElementById('memory-bar').style.width = data.memory.usagePercent + '%';
+          
+          document.getElementById('cpu-usage-mobile').textContent = data.cpu.usage;
+          document.getElementById('cpu-bar-mobile').style.width = data.cpu.usage + '%';
+          document.getElementById('memory-usage-mobile').textContent = formatMemory(data.memory.used);
+          document.getElementById('memory-total-mobile').textContent = ' / ' + formatMemory(data.memory.total);
+          document.getElementById('memory-bar-mobile').style.width = data.memory.usagePercent + '%';
+          
+          if (data.network) {
+            document.getElementById('upload-speed').textContent = data.network.uploadFormatted;
+            document.getElementById('download-speed').textContent = data.network.downloadFormatted;
+            document.getElementById('upload-speed-mobile').textContent = data.network.uploadFormatted;
+            document.getElementById('download-speed-mobile').textContent = data.network.downloadFormatted;
+          }
         })
         .catch(error => console.error('Error fetching system stats:', error));
     }
@@ -940,15 +992,10 @@
         .catch(error => {
           console.error('Error fetching streams:', error);
           showEmptyState();
-        });
-      function updateStreamCounters(streams) {
+        });      function updateStreamCounters(streams) {
         const liveStreams = streams.filter(stream => stream.status === 'live').length;
-        document.querySelector('.mb-6 .bg-gray-800:nth-child(1) p.text-2xl').textContent = liveStreams;
         document.querySelector('.hidden.md\\:grid .bg-gray-800:nth-child(1) p.text-3xl').textContent = liveStreams;
-        const statusText = document.querySelector('.hidden.md\\:grid .bg-gray-800:nth-child(1) p.text-sm');
-        statusText.textContent = liveStreams === 0 ? 'No active streams' :
-          liveStreams === 1 ? '1 active stream' :
-            `${liveStreams} active streams`;
+        document.querySelector('.grid.grid-cols-2.md\\:hidden .bg-gray-800:nth-child(1) p.text-xl').textContent = liveStreams;
       }
       function displayStreams(streams) {
         if (!streams || streams.length === 0) {
@@ -1026,10 +1073,9 @@
             <img src="${thumbnail}" class="w-full h-full object-cover" alt="${stream.title}">
             <div class="absolute top-2 right-2">
               ${statusBadge}
-            </div>
-            ${stream.status === 'live' ? `
-            <div class="absolute bottom-2 right-2 bg-black/70 rounded px-1.5 py-0.5">
-              <span class="text-xs font-medium text-white">
+            </div>            ${stream.status === 'live' ? `
+            <div class="absolute bottom-2 right-2 bg-black/70 rounded px-1.5 py-0.5 min-w-[4rem] text-center">
+              <span class="text-xs font-medium text-white tabular-nums">
                 <span class="live-duration" data-start-time="${stream.start_time}">${durationDisplay}</span>
               </span>
             </div>` : ''}

@@ -6,9 +6,6 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 
 ![Untitled-2](https://github.com/user-attachments/assets/3d7bb367-a1b2-43a5-839b-b6aa8dd5de90)
 
-
-
-
 ## 🚀 Fitur Utama
 
 - **Multi-Platform Streaming**: Mendukung streaming ke berbagai platform populer
@@ -99,15 +96,10 @@ npm run generate-secret
 
 **Konfigurasi tambahan (opsional):**
 
-Port default aplikasi adalah **7575**. Jika perlu ubah port, edit file [.env](.env):
+Port default aplikasi adalah **7575**. Jika perlu ubah port, edit file [.env](.env) (contoh: 8080, 3300, dll):
 
 ```bash
 nano .env
-```
-
-Ubah port jika diperlukan (contoh: 8080, 3300, dll):
-```env
-PORT=8080
 ```
 
 ### 3. Setup Firewall
@@ -140,7 +132,7 @@ sudo npm install -g pm2
 
 ### 5. Cara Jalankan Aplikasi StreamFlow
 
-Pastikan kamu masih berada di folder StreamFlow, jalankan perintah ini:
+Pastikan kamu masih berada di folder **streamflow**, jalankan perintah ini:
 
 ```bash
 pm2 start app.js --name streamflow
@@ -151,6 +143,12 @@ Contoh:
 
 ```bash
 88.12.34.56:7575
+```
+
+Buat username dan password. Setelah masuk Dashboard, **Sign Out**. Lalu restart aplikasi dengan:
+
+```bash
+pm2 restart streamflow
 ```
 
 ## 📝 Informasi Tambahan

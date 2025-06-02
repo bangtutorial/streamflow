@@ -24,7 +24,7 @@
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-sm font-semibold">Memory</h3>
         <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-device-laptop text-white text-sm"></i>
+          <i class="ti ti-device-sd-card text-white text-sm"></i>
         </div>
       </div>      
       <p class="text-lg font-bold">
@@ -33,15 +33,15 @@
       <div class="w-full bg-gray-700 rounded-full h-1.5 mt-1">
         <div id="memory-bar-mobile" class="bg-primary h-1.5 rounded-full" style="width: 0%"></div>
       </div>
-    </div>    
-    <div class="bg-gray-800 rounded-lg p-4 shadow-md">
+    </div>      
+    <div class="bg-gray-800 rounded-lg p-4 shadow-md">        
       <div class="flex items-center justify-between mb-2">
-        <h3 class="text-sm font-semibold">Internet Speed</h3>
-        <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-wifi text-white text-sm"></i>
+        <h3 class="text-sm font-semibold" id="network-disk-title-mobile">Internet Speed</h3>
+        <div class="w-7 h-7 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('mobile')">
+          <i class="ti ti-wifi text-white text-sm" id="toggle-icon-mobile"></i>
         </div>
-      </div>        
-      <div class="space-y-1">
+      </div>
+      <div id="network-content-mobile" class="space-y-1">
         <div class="flex justify-between items-center">
           <span class="text-xs text-gray-400">↑ U</span>
           <span id="upload-speed-mobile" class="text-sm font-bold text-blue-400">0 Mbps</span>
@@ -49,6 +49,14 @@
         <div class="flex justify-between items-center">
           <span class="text-xs text-gray-400">↓ D</span>
           <span id="download-speed-mobile" class="text-sm font-bold text-green-400">0 Mbps</span>
+        </div>
+      </div>
+      <div id="disk-content-mobile" style="display: none;">
+        <p class="text-lg font-bold">
+          <span id="disk-used-mobile">0 GB</span><span id="disk-total-mobile" class="text-xs text-gray-400"> / 0 GB</span>
+        </p>        
+        <div class="w-full bg-gray-700 rounded-full h-1.5 mt-1">
+          <div id="disk-bar-mobile" class="bg-primary h-1.5 rounded-full transition-colors duration-300" style="width: 0%"></div>
         </div>
       </div>
     </div>
@@ -79,7 +87,7 @@
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Memory</h3>
         <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-device-laptop text-xl text-white"></i>
+          <i class="ti ti-device-sd-card text-xl text-white"></i>
         </div>
       </div>
       <p class="text-3xl font-bold mt-2">
@@ -88,15 +96,15 @@
       <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
         <div id="memory-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
       </div>
-    </div>
-    <div class="bg-gray-800 rounded-lg p-6 shadow-md">
+    </div>    
+    <div class="bg-gray-800 rounded-lg p-6 shadow-md">      
       <div class="flex items-center justify-between">
-        <h3 class="text-lg font-semibold">Internet Speed</h3>
-        <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-wifi text-xl text-white"></i>
+        <h3 class="text-lg font-semibold" id="network-disk-title">Internet Speed</h3>
+        <div class="w-10 h-10 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('desktop')" title="Click to switch between Internet Speed and Disk Usage">
+          <i class="ti ti-wifi text-xl text-white" id="toggle-icon-desktop"></i>
         </div>
-      </div>      
-      <div class="mt-2 space-y-2">
+      </div>
+      <div id="network-content-desktop" class="mt-2 space-y-2">
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-400">↑ Upload</span>
           <span id="upload-speed" class="text-lg font-bold text-blue-400">0 Mbps</span>
@@ -104,6 +112,14 @@
         <div class="flex justify-between items-center">
           <span class="text-sm text-gray-400">↓ Download</span>
           <span id="download-speed" class="text-lg font-bold text-green-400">0 Mbps</span>
+        </div>
+      </div>
+      <div id="disk-content-desktop" class="mt-2" style="display: none;">
+        <p class="text-3xl font-bold">
+          <span id="disk-used">0 GB</span><span id="disk-total" class="text-sm text-gray-400"> / 0 GB</span>
+        </p>        
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+          <div id="disk-bar" class="bg-primary h-2.5 rounded-full transition-colors duration-300" style="width: 0%"></div>
         </div>
       </div>
     </div>
@@ -876,11 +892,59 @@
       }
     }
   </style>
-  <script src="/js/stream-modal.js"></script>
+  <script src="/js/stream-modal.js"></script>  
   <script>
     function formatMemory(value) {
       return typeof value === 'string' ? value : '0 MB';
-    }    function updateSystemStats() {
+    }
+
+    let showingNetwork = true;
+      function toggleNetworkDiskDisplay(device) {
+      const currentPreference = localStorage.getItem('networkDiskToggle') || 'network';
+      const newPreference = currentPreference === 'network' ? 'disk' : 'network';
+      
+      localStorage.setItem('networkDiskToggle', newPreference);
+      showingNetwork = newPreference === 'network';
+      
+      updateToggleDisplay('both');
+    }
+      function updateToggleDisplay(device = 'both') {
+      const preference = localStorage.getItem('networkDiskToggle') || 'network';
+      showingNetwork = preference === 'network';
+      
+      const devices = device === 'both' ? ['mobile', 'desktop'] : [device];
+      
+      devices.forEach(dev => {
+        const networkContent = document.getElementById(`network-content-${dev}`);
+        const diskContent = document.getElementById(`disk-content-${dev}`);
+        const toggleIcon = document.getElementById(`toggle-icon-${dev}`);
+        
+        if (networkContent && diskContent && toggleIcon) {
+          if (showingNetwork) {
+            networkContent.style.display = 'block';
+            diskContent.style.display = 'none';
+            toggleIcon.className = dev === 'mobile' ? 'ti ti-wifi text-white text-sm' : 'ti ti-wifi text-xl text-white';
+          } else {
+            networkContent.style.display = 'none';
+            diskContent.style.display = 'block';
+            toggleIcon.className = dev === 'mobile' ? 'ti ti-database text-white text-sm' : 'ti ti-database text-xl text-white';
+          }
+        }
+      });
+      
+      const titleElement = document.getElementById('network-disk-title');
+      const titleMobileElement = document.getElementById('network-disk-title-mobile');
+      const newTitle = showingNetwork ? 'Internet Speed' : 'Disk Usage';
+      
+      if (titleElement) {
+        titleElement.textContent = newTitle;
+      }
+      if (titleMobileElement) {
+        titleMobileElement.textContent = newTitle;
+      }
+    }
+    
+    function updateSystemStats() {
       fetch('/api/system-stats')
         .then(response => response.json())
         .then(data => {
@@ -901,10 +965,42 @@
             document.getElementById('download-speed').textContent = data.network.downloadFormatted;
             document.getElementById('upload-speed-mobile').textContent = data.network.uploadFormatted;
             document.getElementById('download-speed-mobile').textContent = data.network.downloadFormatted;
+          }         
+          if (data.disk) {
+            const diskUsagePercent = data.disk.usagePercent;
+            
+            document.getElementById('disk-used').textContent = data.disk.used;
+            document.getElementById('disk-total').textContent = ' / ' + data.disk.total;
+            document.getElementById('disk-used-mobile').textContent = data.disk.used;
+            document.getElementById('disk-total-mobile').textContent = ' / ' + data.disk.total;
+            
+            const diskBar = document.getElementById('disk-bar');
+            const diskBarMobile = document.getElementById('disk-bar-mobile');
+              let barColor;
+            if (diskUsagePercent >= 80) {
+              barColor = 'bg-green-400'; 
+            } else {
+              barColor = 'bg-primary'; 
+            }
+            const colorClasses = ['bg-primary', 'bg-green-400'];
+            colorClasses.forEach(cls => {
+              diskBar.classList.remove(cls);
+              diskBarMobile.classList.remove(cls);
+            });
+            
+            diskBar.classList.add(barColor);
+            diskBarMobile.classList.add(barColor);
+            diskBar.style.width = diskUsagePercent + '%';
+            diskBarMobile.style.width = diskUsagePercent + '%';
           }
         })
         .catch(error => console.error('Error fetching system stats:', error));
     }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      updateToggleDisplay('both');
+    });
+    
     updateSystemStats();
     setInterval(updateSystemStats, 5000);
     document.getElementById('newStreamForm').addEventListener('submit', function (e) {

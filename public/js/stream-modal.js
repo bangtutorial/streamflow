@@ -4,11 +4,10 @@
  * Custom Features & UI Components
  * Created by: Bang Tutorial
  * GitHub: https://github.com/bangtutorial
-
  * © 2025 Bang Tutorial - All rights reserved
  */
 
-let selectedVideoData = null;
+let streamModalVideoData = null;
 let currentOrientation = 'horizontal';
 let isDropdownOpen = false;
 const videoSelectorDropdown = document.getElementById('videoSelectorDropdown');
@@ -18,15 +17,14 @@ let streamKeyTimeout = null;
 let isStreamKeyValid = true;
 let currentPlatform = 'Custom';
 function openNewStreamModal() {
-  const modal = document.getElementById('newStreamModal');
+  const modal = document.getElementById('newStreamModal');  
   document.body.style.overflow = 'hidden';
   modal.classList.remove('hidden');
   const advancedSettingsContent = document.getElementById('advancedSettingsContent');
   const advancedSettingsToggle = document.getElementById('advancedSettingsToggle');
   if (advancedSettingsContent && advancedSettingsToggle) {
     advancedSettingsContent.classList.add('hidden');
-    const icon = advancedSettingsToggle.querySelector('i');
-    if (icon) icon.style.transform = '';
+    advancedSettingsToggle.checked = false;
   }
   requestAnimationFrame(() => {
     modal.classList.add('active');
@@ -36,14 +34,12 @@ function openNewStreamModal() {
 function closeNewStreamModal() {
   const modal = document.getElementById('newStreamModal');
   document.body.style.overflow = 'auto';
-  modal.classList.remove('active');
-  resetModalForm();
+  modal.classList.remove('active');  resetModalForm();
   const advancedSettingsContent = document.getElementById('advancedSettingsContent');
   const advancedSettingsToggle = document.getElementById('advancedSettingsToggle');
   if (advancedSettingsContent && advancedSettingsToggle) {
     advancedSettingsContent.classList.add('hidden');
-    const icon = advancedSettingsToggle.querySelector('i');
-    if (icon) icon.style.transform = '';
+    advancedSettingsToggle.checked = false;
   }
   setTimeout(() => {
     modal.classList.add('hidden');
@@ -63,6 +59,7 @@ function toggleVideoSelector() {
   const dropdown = document.getElementById('videoSelectorDropdown');
   if (dropdown.classList.contains('hidden')) {
     dropdown.classList.remove('hidden');
+    isDropdownOpen = true;
     if (!dropdown.dataset.loaded) {
       loadGalleryVideos();
       dropdown.dataset.loaded = 'true';
@@ -73,6 +70,7 @@ function toggleVideoSelector() {
     }
   } else {
     dropdown.classList.add('hidden');
+    isDropdownOpen = false;
     const searchInput = document.getElementById('videoSearchInput');
     if (searchInput) {
       searchInput.value = '';
@@ -80,7 +78,7 @@ function toggleVideoSelector() {
   }
 }
 function selectVideo(video) {
-  selectedVideoData = video;
+  streamModalVideoData = video;
   document.getElementById('selectedVideo').textContent = video.name;
   const videoSelector = document.querySelector('[onclick="toggleVideoSelector()"]');
   videoSelector.classList.remove('border-red-500');
@@ -130,6 +128,7 @@ function selectVideo(video) {
     });
   }, 10);
   document.getElementById('videoSelectorDropdown').classList.add('hidden');
+  isDropdownOpen = false;
   const hiddenVideoInput = document.getElementById('selectedVideoId');
   if (hiddenVideoInput) {
     hiddenVideoInput.value = video.id;
@@ -200,10 +199,10 @@ function displayFilteredVideos(videos) {
           <img src="${video.thumbnail || '/images/default-thumbnail.jpg'}" alt="" 
             class="w-full h-full object-cover rounded" 
             onerror="this.src='/images/default-thumbnail.jpg'">
-        </div>
-        <div class="flex-1 min-w-0 ml-3">
-          <p class="text-sm font-medium text-white truncate">${video.name}</p>
-          <p class="text-xs text-gray-400">${video.resolution} • ${video.duration}</p>
+        </div>        
+        <div class="flex-1 min-w-0 ml-3 text-left">
+          <p class="text-sm font-medium text-white truncate text-left">${video.name}</p>
+          <p class="text-xs text-gray-400 text-left">${video.resolution} • ${video.duration}</p>
         </div>
       `;
       container.appendChild(button);
@@ -221,7 +220,7 @@ function displayFilteredVideos(videos) {
 function resetModalForm() {
   const form = document.getElementById('newStreamForm');
   form.reset();
-  selectedVideoData = null;
+  streamModalVideoData = null;
   document.getElementById('selectedVideo').textContent = 'Choose a video...';
   const desktopPreview = document.getElementById('videoPreview');
   const desktopEmptyPreview = document.getElementById('emptyPreview');
@@ -232,9 +231,9 @@ function resetModalForm() {
   desktopEmptyPreview.classList.remove('hidden');
   mobileEmptyPreview.classList.remove('hidden');
   desktopPreview.querySelector('video source').src = '';
-  mobilePreview.querySelector('video source').src = '';
-  if (isDropdownOpen) {
+  mobilePreview.querySelector('video source').src = '';  if (isDropdownOpen) {
     toggleVideoSelector();
+    isDropdownOpen = false;
   }
 }
 function initModal() {
@@ -247,16 +246,6 @@ function initModal() {
     }
   });
   
-  if (videoSelectorDropdown) {
-    document.addEventListener('click', (e) => {
-      const isClickInsideDropdown = videoSelectorDropdown.contains(e.target);
-      const isClickOnButton = e.target.closest('[onclick="toggleVideoSelector()"]');
-      if (!isClickInsideDropdown && !isClickOnButton && isDropdownOpen) {
-        toggleVideoSelector();
-      }
-    });
-  }
-  
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       if (isDropdownOpen) {
@@ -266,6 +255,7 @@ function initModal() {
       }
     }
   });
+  
   modal.addEventListener('touchmove', (e) => {
     if (e.target === modal) {
       e.preventDefault();
@@ -305,10 +295,10 @@ function toggleStreamKeyVisibility() {
   const streamKeyToggle = document.getElementById('streamKeyToggle');
   if (streamKeyInput.type === 'password') {
     streamKeyInput.type = 'text';
-    streamKeyToggle.className = 'ti ti-eye-off';
+    streamKeyToggle.className = 'ti ti-eye-off text-gray-400 hover:text-white';
   } else {
     streamKeyInput.type = 'password';
-    streamKeyToggle.className = 'ti ti-eye';
+    streamKeyToggle.className = 'ti ti-eye text-gray-400 hover:text-white';
   }
 }
 document.addEventListener('DOMContentLoaded', function () {

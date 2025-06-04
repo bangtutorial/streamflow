@@ -5,12 +5,10 @@
     options={ day: 'numeric' , month: 'short' , year: 'numeric' }; return date.toLocaleDateString('en-US', options); }
     function formatDuration(seconds) { if (!seconds) return '00:00' ; const minutes=Math.floor(seconds / 60); const
     remainingSeconds=Math.floor(seconds % 60); return `${minutes.toString().padStart(2, '0'
-    )}:${remainingSeconds.toString().padStart(2, '0' )}`; } %>
-
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+    )}:${remainingSeconds.toString().padStart(2, '0' )}`; } %>    
+  <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
       <div>
-        <h2 class="text-2xl font-bold">Video Gallery</h2>
-        <p class="text-gray-400 text-sm mt-1">Manage your videos for streaming</p>
+        <h2 class="text-2xl font-bold">Video Gallery<% if (videos && videos.length > 0) { %> (<%= videos.length %>)<% } %></h2>
       </div>
       <div class="flex flex-wrap gap-3">
         <button onclick="openUploadModal()"
@@ -24,92 +22,189 @@
           <span>Import from Drive</span>
         </button>
       </div>
-    </div>
-
+    </div>  
     <div class="bg-gray-800 rounded-lg p-4 mb-6">
-      <div class="flex flex-row items-center gap-3">
+    <div class="flex items-center gap-3">
+      <div class="relative flex-1 min-w-0 max-w-md">
+        <input type="text" placeholder="Search videos..."
+          class="w-full bg-dark-700 text-white pl-9 pr-4 py-2.5 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+        <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+      </div>
 
-        <div class="relative w-full sm:w-80 md:w-96">
-          <input type="text" placeholder="Search videos..."
-            class="w-full bg-dark-700 text-white pl-9 pr-4 py-2.5 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
-          <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-        </div>
+      <div class="hidden md:flex flex-1"></div>
 
-        <div class="w-32">
-          <select
-            class="w-full bg-dark-700 border border-gray-600 text-white px-3 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
-            <option selected>Newest</option>
-            <option>Oldest</option>
-          </select>
-        </div>
+      <div class="w-24 sm:w-32 flex-shrink-0">
+        <select id="sort-select"
+          class="w-full bg-dark-700 border border-gray-600 text-white px-2 sm:px-3 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary text-sm">
+          <option value="newest" selected>Newest</option>
+          <option value="oldest">Oldest</option>
+        </select>
+      </div>      
+      <div class="flex-shrink-0">
+        <button id="view-toggle-btn" 
+          class="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors border border-gray-600 hover:border-gray-500">
+          <i class="ti ti-list text-lg"></i>
+        </button>
       </div>
     </div>
+  </div>
+  <div id="tiles-view" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    <% if (videos && videos.length> 0) { %>
+      <% videos.forEach(function(video) { %>
+        <div class="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+          <div class="aspect-video relative group">
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-      <% if (videos && videos.length> 0) { %>
-        <% videos.forEach(function(video) { %>
-          <div class="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-            <div class="aspect-video relative group">
+            <img src="<%= video.thumbnail_path %>" alt="<%= video.title %>" class="w-full h-full object-cover">
 
-              <img src="<%= video.thumbnail_path %>" alt="<%= video.title %>" class="w-full h-full object-cover">
-
-              <div
-                class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  class="play-button bg-black/50 hover:bg-primary/80 w-12 h-12 rounded-full flex items-center justify-center transition-colors transform hover:scale-110"
-                  data-video-id="<%= video.id %>" data-video-title="<%= video.title %>"
-                  onclick="playVideo('<%= video.id %>', '<%= video.title %>')">
-                  <i class="ti ti-player-play-filled text-2xl text-white"></i>
-                </button>
-              </div>
-
-              <span class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                <%= typeof formatDuration==='function' ? formatDuration(video.duration) : (video.duration ?
-                  Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0' )
-                  : '0:00' ) %>
-              </span>
+            <div
+              class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                class="play-button bg-black/50 hover:bg-primary/80 w-12 h-12 rounded-full flex items-center justify-center transition-colors transform hover:scale-110"
+                data-video-id="<%= video.id %>" data-video-title="<%= video.title %>"
+                onclick="playVideo('<%= video.id %>', '<%= video.title %>')">
+                <i class="ti ti-player-play-filled text-2xl text-white"></i>
+              </button>
             </div>
 
-            <div class="p-3">
-              <h3 class="font-medium truncate mb-0.5">
-                <%= video.title %>
-              </h3>
-              <div class="flex items-center justify-between">
-                <div class="text-xs text-gray-400 flex items-center">
-                  <span>
-                    <%= new Date(video.upload_date).toLocaleDateString() %>
-                  </span>
-                  <span class="mx-1">•</span>
-                  <span>
-                    <%= typeof formatFileSize==='function' ? formatFileSize(video.file_size) : (video.file_size / (1024
-                      * 1024)).toFixed(1) + ' MB' %>
-                  </span>
-                </div>
+            <span class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+              <%= typeof formatDuration==='function' ? formatDuration(video.duration) : (video.duration ?
+                Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0' )
+                : '0:00' ) %>
+            </span>
+          </div>
 
-                <div class="flex">
-                  <button class="text-gray-400 hover:text-white p-1"
-                    onclick="showRenameDialog('<%= video.id %>', '<%= video.title %>')">
-                    <i class="ti ti-pencil text-sm"></i>
-                  </button>
-                  <button class="text-gray-400 hover:text-red-400 p-1 ml-1"
-                    onclick="showDeleteDialog('<%= video.id %>', '<%= video.title %>')">
-                    <i class="ti ti-trash text-sm"></i>
-                  </button>
-                </div>
+          <div class="p-3">
+            <h3 class="font-medium truncate mb-0.5">
+              <%= video.title %>
+            </h3>            <div class="flex items-center justify-between">
+              <div class="text-xs text-gray-400 flex items-center">
+                <span>
+                  <%= helpers.formatDateTime(video.upload_date) %>
+                </span>
+                <span class="mx-1">•</span>
+                <span>
+                  <%= typeof formatFileSize==='function' ? formatFileSize(video.file_size) : (video.file_size / (1024
+                    * 1024)).toFixed(1) + ' MB' %>
+                </span>
+              </div>
+
+              <div class="flex">
+                <button class="text-gray-400 hover:text-white p-1"
+                  onclick="showRenameDialog('<%= video.id %>', '<%= video.title %>')">
+                  <i class="ti ti-pencil text-sm"></i>
+                </button>
+                <button class="text-gray-400 hover:text-red-400 p-1 ml-1"
+                  onclick="showDeleteDialog('<%= video.id %>', '<%= video.title %>')">
+                  <i class="ti ti-trash text-sm"></i>
+                </button>
               </div>
             </div>
           </div>
-          <% }); %>
-            <% } else { %>
-              <div class="col-span-full text-center py-12">
-                <div class="text-gray-500 mb-3">
-                  <i class="ti ti-file-video text-6xl"></i>
-                </div>
-                <h3 class="text-xl font-medium text-gray-300 mb-1">No videos yet</h3>
-                <p class="text-gray-500 mb-4">Upload your first video to get started</p>
+        </div>
+        <% }); %>
+          <% } else { %>
+            <div class="col-span-full text-center py-12">
+              <div class="text-gray-500 mb-3">
+                <i class="ti ti-file-video text-6xl"></i>
               </div>
-              <% } %>
+              <h3 class="text-xl font-medium text-gray-300 mb-1">No videos yet</h3>
+              <p class="text-gray-500 mb-4">Upload your first video to get started</p>
+            </div>
+            <% } %>
+  </div>
+
+  <div id="details-view" class="bg-gray-800 rounded-lg shadow-md overflow-hidden hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-gray-700">
+        <thead>
+          <tr class="bg-dark-700">
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Video
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Title
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Upload Date
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Duration
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Size
+            </th>
+            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody id="details-table-body" class="bg-gray-800 divide-y divide-gray-700">
+          <% if (videos && videos.length> 0) { %>
+            <% videos.forEach(function(video) { %>
+              <tr class="hover:bg-dark-700/50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="w-16 h-9 bg-dark-700 rounded flex-shrink-0 overflow-hidden mr-3 relative group cursor-pointer"
+                      onclick="playVideo('<%= video.id %>', '<%= video.title %>')">
+                      <img src="<%= video.thumbnail_path %>" class="w-full h-full object-cover"
+                        onerror="this.src='/images/default-thumbnail.jpg'">
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
+                        <i class="ti ti-player-play-filled text-white text-lg"></i>
+                      </div>
+                      <span class="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-xs px-1 py-0.5 rounded text-[10px]">
+                        <%= typeof formatDuration==='function' ? formatDuration(video.duration) : (video.duration ?
+                          Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0' )
+                          : '0:00' ) %>
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm font-medium text-white max-w-xs">
+                    <%= video.title %>
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <%= new Date(video.upload_date).toLocaleDateString() %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <%= typeof formatDuration==='function' ? formatDuration(video.duration) : (video.duration ?
+                    Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0' )
+                    : '0:00' ) %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  <%= typeof formatFileSize==='function' ? formatFileSize(video.file_size) : (video.file_size / (1024
+                    * 1024)).toFixed(1) + ' MB' %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                  <div class="flex items-center justify-end space-x-2">
+                    <button onclick="showRenameDialog('<%= video.id %>', '<%= video.title %>')"
+                      class="p-1.5 text-gray-400 hover:text-white transition-colors">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                    <button onclick="showDeleteDialog('<%= video.id %>', '<%= video.title %>')"
+                      class="p-1.5 text-gray-400 hover:text-red-400 transition-colors">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <% }); %>
+                <% } else { %>
+                  <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                      <div class="text-gray-500 mb-3">
+                        <i class="ti ti-file-video text-6xl"></i>
+                      </div>
+                      <h3 class="text-xl font-medium text-gray-300 mb-1">No videos yet</h3>
+                      <p class="text-gray-500 mb-4">Upload your first video to get started</p>
+                    </td>
+                  </tr>
+                  <% } %>
+        </tbody>
+      </table>
     </div>
+  </div>
 
     <div class="mt-6 flex items-center justify-between">
       <p class="text-sm text-gray-400">Showing 1-4 of 12 videos</p>
@@ -296,16 +391,16 @@
         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
+      }      
       function showToast(type, message) {
+        if (type === 'success') {
+          return;
+        }
+        
         const toast = document.getElementById('toast');
         const toastIcon = document.getElementById('toast-icon');
         const toastMessage = document.getElementById('toast-message');
-        if (type === 'success') {
-          toastIcon.className = 'ti ti-check text-green-400 mr-2';
-          toast.classList.add('border-l-4', 'border-green-400');
-          toast.classList.remove('border-l-4', 'border-red-400', 'border-yellow-400');
-        } else if (type === 'error') {
+        if (type === 'error') {
           toastIcon.className = 'ti ti-x text-red-400 mr-2';
           toast.classList.add('border-l-4', 'border-red-400');
           toast.classList.remove('border-l-4', 'border-green-400', 'border-yellow-400');
@@ -636,9 +731,7 @@
             document.body.classList.remove('overflow-hidden');
           }
         });
-      }
-
-      function deleteVideo(videoId, videoTitle) {
+      }      function deleteVideo(videoId, videoTitle) {
         if (confirm(`Are you sure you want to delete "${videoTitle}"?`)) {
           fetch(`/api/videos/${videoId}`, {
             method: 'DELETE',
@@ -649,8 +742,7 @@
             .then(response => response.json())
             .then(data => {
               if (data.success) {
-                showToast('success', 'Video deleted successfully');
-                setTimeout(() => window.location.reload(), 1000);
+                setTimeout(() => window.location.reload(), 500);
               } else {
                 showToast('error', data.error || 'Failed to delete video');
               }
@@ -660,8 +752,7 @@
               showToast('error', 'An error occurred while deleting the video');
             });
         }
-      }
-      function renameVideo(videoId, currentTitle) {
+      }      function renameVideo(videoId, currentTitle) {
         const newTitle = prompt('Enter a new title for the video:', currentTitle);
         if (newTitle && newTitle !== currentTitle) {
           fetch(`/api/videos/${videoId}/rename`, {
@@ -674,8 +765,7 @@
             .then(response => response.json())
             .then(data => {
               if (data.success) {
-                showToast('success', 'Video renamed successfully');
-                setTimeout(() => window.location.reload(), 1000);
+                setTimeout(() => window.location.reload(), 500);
               } else {
                 showToast('error', data.error || 'Failed to rename video');
               }
@@ -736,14 +826,13 @@
             }
           });
           xhr.addEventListener('load', function () {
-            if (xhr.status === 200) {
+            if (xhr.status === 200) {              
               try {
                 const response = JSON.parse(xhr.responseText);
                 if (response.success) {
-                  showToast('success', 'Video uploaded successfully');
                   setTimeout(() => {
                     window.location.reload();
-                  }, 1000);
+                  }, 500);
                 } else {
                   showToast('error', response.error || 'Upload failed');
                   resetUploadForm();
@@ -933,21 +1022,10 @@
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({ title: result.value })
-            });
+            });            
             const data = await response.json();
             if (data.success) {
-              setModalButtonState('modal-confirm-btn', 'success', 'Saved!');
-              headerEl.innerHTML = `
-            <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mr-4 shrink-0 animate-pulse">
-              <i class="ti ti-check text-blue-400 text-2xl"></i>
-            </div>
-            <div class="flex-1">
-              <h3 class="text-lg font-medium text-white">Rename Successful</h3>
-              <p class="text-gray-400 text-sm mt-1">Your video has been renamed</p>
-            </div>`;
-              setTimeout(() => {
-                window.location.reload();
-              }, 1000);
+              window.location.reload();
             } else {
               setModalButtonState('modal-confirm-btn', 'normal', 'Try Again');
               showToast('error', data.error || 'Failed to rename video');
@@ -959,7 +1037,7 @@
           return false;
         }
         return true;
-      }
+      }      
       async function showDeleteDialog(videoId, videoTitle) {
         const result = await createModalDialog({
           type: 'danger',
@@ -971,18 +1049,29 @@
           confirmClass: 'bg-red-500 hover:bg-red-600'
         });
         if (result.confirmed) {
+          setModalButtonState('modal-confirm-btn', 'loading', 'Deleting...');
+          const headerEl = document.querySelector('#custom-modal .flex.items-center');
+          
           try {
             const response = await fetch(`/api/videos/${videoId}`, {
               method: 'DELETE'
-            });
-            const data = await response.json();
+            });            
+            const data = await response.json();            
             if (data.success) {
-              showToast('success', 'Video deleted successfully');
-              setTimeout(() => window.location.reload(), 1000);
+              const buttonContainer = document.querySelector('#custom-modal .flex.justify-end.space-x-3');
+              if (buttonContainer) {
+                buttonContainer.style.display = 'none';
+              }
+              
+              setModalButtonState('modal-confirm-btn', 'success', 'Deleted!');
+              
+              setTimeout(() => window.location.reload(), 500);
             } else {
+              setModalButtonState('modal-confirm-btn', 'normal', 'Try Again');
               showToast('error', data.error || 'Failed to delete video');
             }
           } catch (error) {
+            setModalButtonState('modal-confirm-btn', 'normal', 'Try Again');
             showToast('error', 'An error occurred while deleting the video');
           }
         }
@@ -1118,15 +1207,14 @@
               if (status.status === 'downloading') {
                 progressIcon.className = 'ti ti-download text-blue-400 text-2xl';
               } else if (status.status === 'processing') {
-                progressIcon.className = 'ti ti-settings text-blue-400 text-2xl animate-spin';
+                progressIcon.className = 'ti ti-settings text-blue-400 text-2xl animate-spin';              
               } else if (status.status === 'complete') {
                 progressIcon.className = 'ti ti-check text-green-400 text-2xl';
                 progressBar.classList.remove('bg-blue-500');
                 progressBar.classList.add('bg-green-500');
-                showToast('success', 'Video imported successfully');
                 setTimeout(() => {
                   window.location.reload();
-                }, 2000);
+                }, 1000);
                 clearInterval(progressInterval);
               } else if (status.status === 'failed') {
                 progressIcon.className = 'ti ti-alert-triangle text-red-400 text-2xl';
@@ -1140,10 +1228,10 @@
             console.error('Error monitoring import progress:', error);
           }
         }, 1000);
-      }
+      }      
       document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.querySelector('input[placeholder="Search videos..."]');
-        const sortSelect = document.querySelector('select');
+        const sortSelect = document.getElementById('sort-select');
         const videoGrid = document.querySelector('.grid');
         const allVideosElements = Array.from(document.querySelectorAll('.grid > div:not(.col-span-full)'));
         const paginationContainer = document.querySelector('.mt-6.flex.items-center.justify-between');
@@ -1153,28 +1241,31 @@
         let currentPage = 1;
         let totalPages = 1;
 
-        if (allVideosElements.length === 0) return;
-
+        if (allVideosElements.length === 0) return;        
         window.allVideosData = allVideosElements.map(videoEl => {
           const dateText = videoEl.querySelector('.text-xs.text-gray-400 span:first-child').textContent.trim();
           let dateObj;
           try {
-            const parts = dateText.split(/[\/,\s-]/);
-            if (parts.length === 3) {
-              const day = parseInt(parts[0], 10);
-              const month = parseInt(parts[1], 10);
-              const year = parseInt(parts[2], 10);
+            dateObj = new Date(dateText);
+            
+            if (isNaN(dateObj.getTime())) {
+              const parts = dateText.split(/[\/,\s-]/);
+              if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10);
+                const year = parseInt(parts[2], 10);
 
-              if (!isNaN(day) && !isNaN(month) && !isNaN(year) &&
-                year >= 1000 && year <= 9999 &&
-                month >= 1 && month <= 12 &&
-                day >= 1 && day <= 31) {
-                dateObj = new Date(year, month - 1, day);
+                if (!isNaN(day) && !isNaN(month) && !isNaN(year) &&
+                  year >= 1000 && year <= 9999 &&
+                  month >= 1 && month <= 12 &&
+                  day >= 1 && day <= 31) {
+                  dateObj = new Date(year, month - 1, day);
+                } else {
+                  dateObj = new Date(0);
+                }
               } else {
                 dateObj = new Date(0);
               }
-            } else {
-              dateObj = new Date(0);
             }
 
             if (!dateObj || isNaN(dateObj.getTime())) {
@@ -1259,25 +1350,30 @@
             }
           });
           paginationButtonsContainer.appendChild(nextButton);
-        }
-
+        }        
         function filterAndDisplayVideos(searchTerm, sortOrder, page) {
           let filteredVideos = window.allVideosData.filter(video =>
             video.title.includes(searchTerm)
-          );
-
-          filteredVideos.forEach(video => {
+          );          filteredVideos.forEach(video => {
             if (!(video.date instanceof Date) || isNaN(video.date.getTime())) {
               video.date = new Date(0);
             }
           });
 
-          if (sortOrder === 'Oldest') {
+          if (sortOrder === 'oldest') {
             filteredVideos.sort((a, b) => a.date.getTime() - b.date.getTime());
           } else {
             filteredVideos.sort((a, b) => b.date.getTime() - a.date.getTime());
           }
 
+          updateTilesView(filteredVideos, page);
+          updateDetailsView(filteredVideos, page);
+
+          setupPaginationControls(filteredVideos);
+          updatePaginationInfo(filteredVideos);
+        }
+
+        function updateTilesView(filteredVideos, page) {
           videoGrid.innerHTML = '';
 
           if (filteredVideos.length === 0) {
@@ -1330,9 +1426,117 @@
               };
             });
           }
+        }
 
-          setupPaginationControls(filteredVideos);
-          updatePaginationInfo(filteredVideos);
+        function updateDetailsView(filteredVideos, page) {
+          const detailsTableBody = document.getElementById('details-table-body');
+          if (!detailsTableBody) return;
+
+          detailsTableBody.innerHTML = '';
+
+          if (filteredVideos.length === 0) {
+            detailsTableBody.innerHTML = `
+              <tr>
+                <td colspan="6" class="px-6 py-12 text-center">
+                  <div class="text-gray-500 mb-3">
+                    <i class="ti ti-search text-6xl"></i>
+                  </div>
+                  <h3 class="text-xl font-medium text-gray-300 mb-1">No videos found</h3>
+                  <p class="text-gray-500 mb-4">Try adjusting your search criteria</p>
+                </td>
+              </tr>
+            `;
+          } else {
+            totalPages = Math.ceil(filteredVideos.length / itemsPerPage);
+            currentPage = Math.min(page, totalPages);
+
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = Math.min(startIndex + itemsPerPage, filteredVideos.length);
+            const currentPageVideos = filteredVideos.slice(startIndex, endIndex);            
+            currentPageVideos.forEach(video => {
+              const videoId = video.element.querySelector('.play-button').getAttribute('data-video-id');
+              const videoTitle = video.element.querySelector('h3').textContent.trim();
+              const thumbnailSrc = video.element.querySelector('img').src;
+              const duration = video.element.querySelector('.absolute.bottom-2.right-2').textContent;
+              const uploadDate = video.element.querySelector('.text-xs.text-gray-400 span:first-child').textContent;
+              const fileSize = video.element.querySelector('.text-xs.text-gray-400 span:last-child').textContent;
+
+              function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+              }
+
+              const row = document.createElement('tr');
+              row.className = 'hover:bg-dark-700/50 transition-colors';
+              row.innerHTML = `
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex items-center">
+                    <div class="w-16 h-9 bg-dark-700 rounded flex-shrink-0 overflow-hidden mr-3 relative group cursor-pointer"
+                      data-video-id="${escapeHtml(videoId)}" data-video-title="${escapeHtml(videoTitle)}" data-action="play">
+                      <img src="${thumbnailSrc}" class="w-full h-full object-cover"
+                        onerror="this.src='/images/default-thumbnail.jpg'">
+                      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/50">
+                        <i class="ti ti-player-play-filled text-white text-lg"></i>
+                      </div>
+                      <span class="absolute bottom-0.5 right-0.5 bg-black/70 text-white text-xs px-1 py-0.5 rounded text-[10px]">
+                        ${duration}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="text-sm font-medium text-white max-w-xs">
+                    ${escapeHtml(videoTitle)}
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  ${uploadDate}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  ${duration}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                  ${fileSize}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right">
+                  <div class="flex items-center justify-end space-x-2">
+                    <button data-video-id="${escapeHtml(videoId)}" data-video-title="${escapeHtml(videoTitle)}" data-action="rename"
+                      class="p-1.5 text-gray-400 hover:text-white transition-colors">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                    <button data-video-id="${escapeHtml(videoId)}" data-video-title="${escapeHtml(videoTitle)}" data-action="delete"
+                      class="p-1.5 text-gray-400 hover:text-red-400 transition-colors">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              `;
+              detailsTableBody.appendChild(row);
+
+              const renameBtn = row.querySelector('[data-action="rename"]');
+              const deleteBtn = row.querySelector('[data-action="delete"]');
+              const playBtn = row.querySelector('[data-action="play"]');
+
+              if (renameBtn) {
+                renameBtn.addEventListener('click', () => {
+                  showRenameDialog(videoId, videoTitle);
+                });
+              }
+
+              if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                  showDeleteDialog(videoId, videoTitle);
+                });
+              }
+
+              if (playBtn) {
+                playBtn.addEventListener('click', () => {
+                  playVideo(videoId, videoTitle);
+                });
+              }
+            });
+          }
         }
 
         function updatePaginationInfo(filteredVideos) {
@@ -1348,6 +1552,34 @@
               const endIndex = Math.min(currentPage * itemsPerPage, totalVideos);
               paginationInfo.textContent = `Showing ${startIndex}-${endIndex} of ${totalVideos} videos`;
             }
+          }
+        }
+        const viewToggleBtn = document.getElementById('view-toggle-btn');
+        const tilesView = document.getElementById('tiles-view');
+        const detailsView = document.getElementById('details-view');
+        
+        let currentView = localStorage.getItem('gallery-view') || 'tiles';
+        setActiveView(currentView);
+        
+        viewToggleBtn.addEventListener('click', function() {
+          currentView = currentView === 'tiles' ? 'details' : 'tiles';
+          setActiveView(currentView);
+          localStorage.setItem('gallery-view', currentView);
+        });
+        
+        function setActiveView(view) {
+          const icon = viewToggleBtn.querySelector('i');
+          
+          if (view === 'tiles') {
+            tilesView.classList.remove('hidden');
+            detailsView.classList.add('hidden');
+            
+            icon.className = 'ti ti-list text-lg';
+          } else {
+            tilesView.classList.add('hidden');
+            detailsView.classList.remove('hidden');
+            
+            icon.className = 'ti ti-grid-dots text-lg';
           }
         }
       });

@@ -100,7 +100,7 @@
     <div class="bg-gray-800 rounded-lg p-6 shadow-md">      
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold" id="network-disk-title">Internet Speed</h3>
-        <div class="w-10 h-10 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('desktop')" title="Click to switch between Internet Speed and Disk Usage">
+        <div class="w-10 h-10 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('desktop')">
           <i class="ti ti-wifi text-xl text-white" id="toggle-icon-desktop"></i>
         </div>
       </div>
@@ -177,9 +177,9 @@
   </div>
   <div id="newStreamModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
     <div class="flex min-h-screen items-center justify-center p-4">
-      <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
+      <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">        
         <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
-          <h3 class="text-lg font-semibold">Create New Stream</h3>
+          <h3 class="text-lg font-semibold">New Stream</h3>
           <button onclick="closeNewStreamModal()" class="text-gray-400 hover:text-white">
             <i class="ti ti-x text-xl"></i>
           </button>
@@ -206,11 +206,21 @@
                             placeholder="Search videos...">
                           <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         </div>
-                      </div>
+                      </div>                      
                       <div id="videoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto">
                       </div>
                     </div>
                   </div>
+                </div>
+                <div class="h-[42px] flex items-center justify-between">
+                  <label class="text-sm font-medium text-white">Loop Video Playback</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="loopVideo" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div
+                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
+                    </div>
+                  </label>
                 </div>
                 <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
                   <div class="aspect-video bg-dark-900">
@@ -241,11 +251,11 @@
                       <input type="text" id="rtmpUrl" name="rtmpUrl"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="RTMP URL" required>
-                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                        
                       <button type="button" id="platformSelector"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-dark-600 transition-colors"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                         aria-label="Select platform">
-                        <i class="ti ti-list-check text-gray-400 hover:text-primary"></i>
+                        <i class="ti ti-list-check text-gray-400 hover:text-white"></i>
                       </button>
                       <div id="platformDropdown"
                         class="hidden absolute z-10 right-0 mt-1 w-48 bg-dark-700 rounded-lg border border-gray-600 shadow-lg overflow-hidden">
@@ -265,7 +275,7 @@
                           <button type="button"
                             class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
                             data-url="rtmps://ingest.global.live.prod.tiktok.com/live">
-                            <i class="ti ti-brand-tiktok text-black text-base mr-2"></i>
+                            <i class="ti ti-brand-tiktok text-gray text-base mr-2"></i>
                             <span class="text-sm">TikTok</span>
                           </button>
                           <button type="button"
@@ -286,11 +296,11 @@
                     <div class="relative">
                       <input type="password" id="streamKey" name="streamKey"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
-                        placeholder="Stream Key" required>
-                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                      <button type="button" onclick="toggleStreamKeyVisibility()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
-                        <i class="ti ti-eye" id="streamKeyToggle"></i>
+                        placeholder="Stream Key" required>                      
+                        <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                          
+                        <button type="button" onclick="toggleStreamKeyVisibility()"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors">
+                        <i class="ti ti-eye text-gray-400 hover:text-white" id="streamKeyToggle"></i>
                       </button>
                     </div>
                   </div>
@@ -312,29 +322,19 @@
                       <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
                       <p class="text-sm text-gray-500">Select a video to preview</p>
                     </div>
-                  </div>
+                  </div>                
                 </div>
-              </div>
+              </div>            
             </div>
-            <div class="space-y-2">
-              <div class="flex flex-col sm:flex-row sm:items-center">
-                <label class="text-sm font-medium text-white">Schedule Settings</label>
+            <div class="space-y-2">              
+              <div class="flex flex-col">
+                <label class="text-sm font-medium text-white">Schedule Settings</label>                  
                 <span id="serverTimeDisplay"
-                  class="mt-1 sm:mt-0 sm:ml-2 block sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
-                  Server time: loading...
+                  class="mt-1 text-xs text-green-400">
+                  Server Time
                 </span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="h-[42px] flex items-center justify-between">
-                  <label class="text-sm text-gray-300">Loop Video</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="loopVideo" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
-                    <div
-                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
-                    </div>
-                  </label>
-                </div>
+              </div>              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">                
                 <div>
                   <input type="datetime-local"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
@@ -346,27 +346,18 @@
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
                 </div>
               </div>
-            </div>
-            <div class="space-y-4">
+            </div><div class="space-y-4">
               <div class="pt-2 border-t border-gray-700">
-                <button type="button" id="advancedSettingsToggle"
-                  class="flex items-center justify-between w-full text-left">
-                  <div class="flex items-center">
-                    <span class="text-sm font-medium text-white">Advanced Settings</span>
-                    <div class="relative ml-2 group">
-                      <i class="ti ti-info-circle text-gray-400 hover:text-primary"></i>
-                      <div
-                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
-                        <div class="text-center">Menggunakan advanced settings, proses streaming akan menjadi lebih
-                          berat karena ada proses re-encoding video</div>
-                        <div
-                          class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
-                        </div>
-                      </div>
-                    </div>
+                <div class="flex items-center justify-between w-full">                  
+                  <div class="flex items-center">                    
+                    <span class="text-sm font-medium text-white">Advanced Settings <span class="text-red-500 hidden md:inline">(High CPU Usage)</span></span>
                   </div>
-                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
-                </button>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="advancedSettingsToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
                 <div id="advancedSettingsContent" class="hidden space-y-6 pt-4">
                   <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -429,10 +420,11 @@
               </div>
             </div>
           </form>
-        </div>
+        </div>        
         <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
           <button onclick="closeNewStreamModal()"
-            class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+            <i class="ti ti-x mr-1.5"></i>
             Cancel
           </button>
           <button type="submit" form="newStreamForm"
@@ -475,11 +467,21 @@
                             placeholder="Search videos...">
                           <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                         </div>
-                      </div>
+                      </div>                      
                       <div id="editVideoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto">
                       </div>
                     </div>
                   </div>
+                </div>
+                <div class="h-[42px] flex items-center justify-between">
+                  <label class="text-sm font-medium text-white">Loop Video Playback</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="loopVideo" id="editLoopVideo" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div
+                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
+                    </div>
+                  </label>
                 </div>
                 <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
                   <div class="aspect-video bg-dark-900">
@@ -510,11 +512,11 @@
                       <input type="text" id="editRtmpUrl" name="rtmpUrl"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="RTMP URL" required>
-                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      
                       <button type="button" id="editPlatformSelector"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-dark-600 transition-colors"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                         aria-label="Select platform">
-                        <i class="ti ti-list-check text-gray-400 hover:text-primary"></i>
+                        <i class="ti ti-list-check text-gray-400 hover:text-black"></i>
                       </button>
                       <div id="editPlatformDropdown"
                         class="hidden absolute z-10 right-0 mt-1 w-48 bg-dark-700 rounded-lg border border-gray-600 shadow-lg overflow-hidden">
@@ -534,7 +536,7 @@
                           <button type="button"
                             class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
                             data-url="rtmps://ingest.global.live.prod.tiktok.com/live">
-                            <i class="ti ti-brand-tiktok text-black text-base mr-2"></i>
+                            <i class="ti ti-brand-tiktok text-gray text-base mr-2"></i>
                             <span class="text-sm">TikTok</span>
                           </button>
                           <button type="button"
@@ -558,7 +560,7 @@
                         placeholder="Stream Key" required>
                       <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                       <button type="button" onclick="toggleEditStreamKeyVisibility()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition-colors">
                         <i class="ti ti-eye" id="editStreamKeyToggle"></i>
                       </button>
                     </div>
@@ -583,27 +585,17 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div>            
             </div>
-            <div class="space-y-2">
-              <div class="flex flex-col sm:flex-row sm:items-center">
-                <label class="text-sm font-medium text-white">Schedule Settings</label>
+            <div class="space-y-2">              
+              <div class="flex flex-col">
+                <label class="text-sm font-medium text-white">Schedule Settings</label>                
                 <span id="editServerTimeDisplay"
-                  class="mt-1 sm:mt-0 sm:ml-2 block sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
-                  Server time: loading...
+                  class="mt-1 text-xs text-green-400">
+                  Server Time
                 </span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="h-[42px] flex items-center justify-between">
-                  <label class="text-sm text-gray-300">Loop Video</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="loopVideo" id="editLoopVideo" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
-                    <div
-                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
-                    </div>
-                  </label>
-                </div>
+              </div>              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">                
                 <div>
                   <input type="datetime-local" id="editScheduleTime"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
@@ -615,27 +607,18 @@
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
                 </div>
               </div>
-            </div>
-            <div class="space-y-4">
+            </div><div class="space-y-4">
               <div class="pt-2 border-t border-gray-700">
-                <button type="button" id="editAdvancedSettingsToggle"
-                  class="flex items-center justify-between w-full text-left">
-                  <div class="flex items-center">
-                    <span class="text-sm font-medium text-white">Advanced Settings</span>
-                    <div class="relative ml-2 group">
-                      <i class="ti ti-info-circle text-gray-400 hover:text-primary"></i>
-                      <div
-                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
-                        <div class="text-center">Menggunakan advanced settings, proses streaming akan menjadi lebih
-                          berat karena ada proses re-encoding video</div>
-                        <div
-                          class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
-                        </div>
-                      </div>
-                    </div>
+                <div class="flex items-center justify-between w-full">                  
+                  <div class="flex items-center">                    
+                    <span class="text-sm font-medium text-white">Advanced Settings <span class="text-red-500 hidden md:inline">(High CPU Usage)</span></span>
                   </div>
-                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
-                </button>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="editAdvancedSettingsToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
                 <div id="editAdvancedSettingsContent" class="hidden space-y-6 pt-4">
                   <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -698,10 +681,11 @@
               </div>
             </div>
           </form>
-        </div>
+        </div>        
         <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
           <button onclick="closeEditStreamModal()"
-            class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+            <i class="ti ti-x mr-1.5"></i>
             Cancel
           </button>
           <button type="submit" form="editStreamForm"
@@ -1003,11 +987,16 @@
     
     updateSystemStats();
     setInterval(updateSystemStats, 5000);
-    document.getElementById('newStreamForm').addEventListener('submit', function (e) {
+    document.getElementById('newStreamForm').addEventListener('submit', function (e) {      
       e.preventDefault();
       const videoId = document.getElementById('selectedVideoId').value;
       if (!videoId) {
-        alert('Please select a video before creating the stream');
+        createModalDialog({
+          type: 'warning',
+          title: 'Missing Video',
+          message: 'Please select a video before creating the stream',
+          showCancel: false
+        });
         const videoSelector = document.querySelector('[onclick="toggleVideoSelector()"]');
         videoSelector.classList.add('border-red-500');
         videoSelector.classList.remove('border-gray-600');
@@ -1024,7 +1013,12 @@
         return;
       }
       if (!isStreamKeyValid) {
-        alert('Please use a different stream key. This one is already in use.');
+        createModalDialog({
+          type: 'warning',
+          title: 'Invalid Stream Key',
+          message: 'Please use a different stream key. This one is already in use.',
+          showCancel: false
+        });
         return;
       }
       const formData = {
@@ -1032,12 +1026,12 @@
         videoId: document.getElementById('selectedVideoId').value,
         rtmpUrl: document.getElementById('rtmpUrl').value,
         streamKey: document.getElementById('streamKey').value,
-        bitrate: document.querySelector('select[name="bitrate"]').value,
+        bitrate: document.querySelector('select[name="bitrate"]').value,        
         fps: document.querySelector('select[name="fps"]').value,
         loopVideo: document.querySelector('input[name="loopVideo"]').checked,
         orientation: currentOrientation,
         resolution: document.getElementById('currentResolution').textContent.split(' ')[0],
-        useAdvancedSettings: !document.getElementById('advancedSettingsContent').classList.contains('hidden')
+        useAdvancedSettings: document.getElementById('advancedSettingsToggle').checked
       };
       const scheduleTime = document.querySelector('input[type="datetime-local"]').value;
       const duration = document.querySelector('input[type="number"]').value;
@@ -1054,23 +1048,32 @@
           'Content-Type': 'application/json',
           ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
         },
-        body: JSON.stringify(formData)
-      })
-        .then(response => response.json())
+        body: JSON.stringify(formData)      
+      })        
+      .then(response => response.json())
         .then(data => {
           if (data.success) {
-            alert('Stream created successfully!');
             closeNewStreamModal();
             setTimeout(() => {
               window.location.reload();
             }, 500);
           } else {
-            alert(`Error: ${data.error || 'Failed to create stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Error',
+              message: `${data.error || 'Failed to create stream'}`,
+              showCancel: false
+            });
           }
         })
         .catch(error => {
           console.error('Error:', error);
-          alert('An error occurred while creating the stream');
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: 'An error occurred while creating the stream',
+            showCancel: false
+          });
         });
     });
     document.addEventListener('DOMContentLoaded', function () {
@@ -1191,11 +1194,12 @@
           <div class="flex items-center text-sm text-gray-400 mb-2">
             <i class="ti ti-clock mr-1.5"></i>
             <span>Duration: ${formattedDuration}</span>
-          </div>
+          </div>          
           ${stream.status === 'scheduled' ? `
           <div class="flex items-center text-sm text-yellow-500 mb-3">
             <i class="ti ti-calendar-event mr-1.5"></i>
             <span>Starts ${scheduleDate} • ${scheduleTime}</span>
+            <span class="ml-2 text-orange-400 font-mono text-xs" data-schedule-time="${stream.schedule_time}"></span>
           </div>` : `
           <div class="flex items-center text-sm text-gray-400 mb-3">
             <i class="ti ti-calendar mr-1.5"></i>
@@ -1285,11 +1289,10 @@
         <td class="px-6 py-4 whitespace-nowrap">
           <div class="text-sm text-gray-400">${formatDate(startDate) || '--'}</div>
           ${startDate ? `<div class="text-xs text-gray-500">Started: ${formatTime(startDate)}</div>` : ''}
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
+        </td>        <td class="px-6 py-4 whitespace-nowrap w-44">
           ${scheduleDate
-            ? `<div class="text-sm text-yellow-500 font-medium">${formatDate(scheduleDate)}</div>
-               <div class="text-xs text-gray-400">${formatTime(scheduleDate)}</div>`
+            ? `<div class="text-sm text-yellow-500 font-medium">${formatDate(scheduleDate)} • ${formatTime(scheduleDate)}</div>
+               <div class="text-xs text-orange-400 font-mono h-4 leading-4" data-schedule-time="${stream.schedule_time}"></div>`
             : `<div class="text-sm">--</div>`}
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
@@ -1419,12 +1422,12 @@
               class="${btnClass} bg-red-500 hover:bg-red-600">
               Stop
             </button>
-          `;
+          `;          
           case 'scheduled':
             return `
             <button
               onclick="cancelSchedule('${streamId}')"
-              class="${btnClass} bg-yellow-500 hover:bg-yellow-600">
+              class="${btnClass} bg-red-500 hover:bg-red-600">
               Cancel
             </button>
           `;
@@ -1462,22 +1465,30 @@
       fetch(`/api/streams/${streamId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'live' })
-      })
-        .then(response => response.json())
+        body: JSON.stringify({ status: 'live' })      
+      })        
+      .then(response => response.json())
         .then(data => {
           if (data.success) {
-            const streamMode = data.isAdvancedMode ? "Advanced mode" : "Simple mode";
-            alert(`Stream started successfully! (${streamMode})`);
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to start stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Error',
+              message: `${data.error || 'Failed to start stream'}`,
+              showCancel: false
+            });
             restoreButtons();
           }
         })
         .catch(error => {
           console.error('Error starting stream:', error);
-          alert(`An error occurred while starting the stream: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while starting the stream: ${error.message}`,
+            showCancel: false
+          });
           restoreButtons();
         });
     }
@@ -1503,21 +1514,30 @@
       fetch(`/api/streams/${streamId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'offline' })
-      })
+        body: JSON.stringify({ status: 'offline' })      
+      })        
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            alert('Stream stopped successfully!');
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to stop stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Error',
+              message: `${data.error || 'Failed to stop stream'}`,
+              showCancel: false
+            });
             restoreButtons();
           }
         })
         .catch(error => {
           console.error('Error stopping stream:', error);
-          alert(`An error occurred while stopping the stream: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while stopping the stream: ${error.message}`,
+            showCancel: false
+          });
           restoreButtons();
         });
     }
@@ -1544,68 +1564,96 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'offline' })
-      })
-        .then(response => response.json())
+      })        
+      .then(response => response.json())        
         .then(data => {
           if (data.success) {
-            alert('Schedule cancelled successfully!');
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to cancel schedule'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Error',
+              message: `${data.error || 'Failed to cancel schedule'}`,
+              showCancel: false
+            });
             restoreButtons();
           }
         })
         .catch(error => {
           console.error('Error cancelling schedule:', error);
-          alert(`An error occurred while cancelling the schedule: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while cancelling the schedule: ${error.message}`,
+            showCancel: false
+          });
           restoreButtons();
         });
     }
     function editStream(streamId) {
       console.log('Edit stream:', streamId);
-    }
+    }    
     function deleteStream(streamId) {
       if (!streamId) return;
-      if (confirm('Are you sure you want to delete this stream?')) {
-        fetch(`/api/streams/${streamId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              window.location.reload();
-            } else {
-              alert('Error: ' + (data.error || 'Failed to delete stream'));
-            }
-          })
-          .catch(error => {
-            console.error('Error deleting stream:', error);
-            alert('An error occurred while deleting the stream');
-          });
-      }
-    }
-    function startCountdowns() {
+      createModalDialog({
+        type: 'danger',
+        title: 'Delete Stream',
+        message: 'Are you sure you want to delete this stream?',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      }).then(result => {
+        if (result.confirmed) {
+          fetch(`/api/streams/${streamId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
+            }        
+          })            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                window.location.reload();
+              } else {
+                createModalDialog({
+                  type: 'danger',
+                  title: 'Error',
+                  message: `${data.error || 'Failed to delete stream'}`,
+                  showCancel: false
+                });
+              }
+            })
+            .catch(error => {
+              console.error('Error deleting stream:', error);
+              createModalDialog({
+                type: 'danger',
+                title: 'Error',
+                message: 'An error occurred while deleting the stream',
+                showCancel: false
+              });
+            });
+        }
+      });
+    }    function startCountdowns() {
       const updateTimers = () => {
         document.querySelectorAll('[data-schedule-time]').forEach(el => {
           const scheduleTime = new Date(el.dataset.scheduleTime);
           const now = new Date();
           const diff = scheduleTime - now;
           if (diff <= 0) {
-            el.textContent = 'Starting soon...';
+            el.textContent = '';
             return;
           }
-          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-          let timeText = '';
-          if (days > 0) timeText = `${days}d ${hours}h ${minutes}m`;
-          else if (hours > 0) timeText = `${hours}h ${minutes}m ${seconds}s`;
-          else timeText = `${minutes}m ${seconds}s`;
-          el.textContent = `Starts in: ${timeText}`;
+          const totalSeconds = Math.floor(diff / 1000);
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;          let timeText = '';
+          if (hours > 0) {
+            timeText = `-${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+          } else if (minutes > 0) {
+            timeText = `-${minutes}:${seconds.toString().padStart(2, '0')}`;
+          } else {
+            timeText = `-${seconds}s`;
+          }
+          el.textContent = timeText;
         });
       };
       updateTimers();
@@ -1688,10 +1736,15 @@
           fpsSelect.selectedIndex = i;
           break;
         }
-      }
+      }      
       if (stream.schedule_time) {
         const scheduleDate = new Date(stream.schedule_time);
-        const formattedDate = scheduleDate.toISOString().slice(0, 16);
+        const year = scheduleDate.getFullYear();
+        const month = String(scheduleDate.getMonth() + 1).padStart(2, '0');
+        const day = String(scheduleDate.getDate()).padStart(2, '0');
+        const hours = String(scheduleDate.getHours()).padStart(2, '0');
+        const minutes = String(scheduleDate.getMinutes()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
         document.getElementById('editScheduleTime').value = formattedDate;
       } else {
         document.getElementById('editScheduleTime').value = '';
@@ -1700,16 +1753,15 @@
         document.getElementById('editDuration').value = stream.duration;
       } else {
         document.getElementById('editDuration').value = '';
-      }
+      }      
       const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
-      const icon = advancedSettingsToggle.querySelector('i');
       if (stream.use_advanced_settings) {
         advancedSettingsContent.classList.remove('hidden');
-        icon.style.transform = 'rotate(180deg)';
+        advancedSettingsToggle.checked = true;
       } else {
         advancedSettingsContent.classList.add('hidden');
-        icon.style.transform = '';
+        advancedSettingsToggle.checked = false;
       }
       const modal = document.getElementById('editStreamModal');
       document.body.style.overflow = 'hidden';
@@ -1749,13 +1801,12 @@
       desktopPreview.classList.add('hidden');
       mobilePreview.classList.add('hidden');
       desktopEmptyPreview.classList.remove('hidden');
-      mobileEmptyPreview.classList.remove('hidden');
+      mobileEmptyPreview.classList.remove('hidden');      
       const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
       if (advancedSettingsContent && advancedSettingsToggle) {
         advancedSettingsContent.classList.add('hidden');
-        const icon = advancedSettingsToggle.querySelector('i');
-        if (icon) icon.style.transform = '';
+        advancedSettingsToggle.checked = false;
       }
     }
     function toggleEditVideoSelector() {
@@ -1816,10 +1867,10 @@
         <img src="${video.thumbnail || '/images/default-thumbnail.jpg'}" alt="" 
           class="w-full h-full object-cover rounded" 
           onerror="this.src='/images/default-thumbnail.jpg'">
-      </div>
-      <div class="flex-1 min-w-0 ml-3">
-        <p class="text-sm font-medium text-white truncate">${video.name}</p>
-        <p class="text-xs text-gray-400">${video.resolution || 'Unknown'} • ${video.duration || '00:00'}</p>
+      </div>      
+      <div class="flex-1 min-w-0 ml-3 text-left">
+        <p class="text-sm font-medium text-white truncate text-left">${video.name}</p>
+        <p class="text-xs text-gray-400 text-left">${video.resolution || 'Unknown'} • ${video.duration || '00:00'}</p>
       </div>
     `;
         container.appendChild(button);
@@ -1906,18 +1957,16 @@
       if (resValue) {
         document.getElementById('editCurrentResolution').textContent = resValue;
       }
-    }
+    }    
     function toggleEditStreamKeyVisibility() {
       const keyInput = document.getElementById('editStreamKey');
       const eyeIcon = document.getElementById('editStreamKeyToggle');
       if (keyInput.type === 'password') {
         keyInput.type = 'text';
-        eyeIcon.classList.remove('ti-eye');
-        eyeIcon.classList.add('ti-eye-off');
+        eyeIcon.className = 'ti ti-eye-off text-gray-400 hover:text-white';
       } else {
         keyInput.type = 'password';
-        eyeIcon.classList.remove('ti-eye-off');
-        eyeIcon.classList.add('ti-eye');
+        eyeIcon.className = 'ti ti-eye text-gray-400 hover:text-white';
       }
     }
     document.addEventListener('DOMContentLoaded', function () {
@@ -1928,15 +1977,25 @@
       const editForm = document.getElementById('editStreamForm');
       if (editForm) {
         editForm.addEventListener('submit', function (e) {
-          e.preventDefault();
+          e.preventDefault();          
           const streamId = document.getElementById('editStreamId').value;
           if (!streamId) {
-            alert('Stream ID is missing.');
+            createModalDialog({
+              type: 'danger',
+              title: 'Error',
+              message: 'Stream ID is missing.',
+              showCancel: false
+            });
             return;
           }
           const videoId = document.getElementById('editSelectedVideoId').value;
           if (!videoId) {
-            alert('Please select a video before updating the stream.');
+            createModalDialog({
+              type: 'warning',
+              title: 'Missing Video',
+              message: 'Please select a video before updating the stream.',
+              showCancel: false
+            });
             return;
           }
           const formData = {
@@ -1946,10 +2005,10 @@
             streamKey: document.getElementById('editStreamKey').value,
             bitrate: document.getElementById('editBitrate').value,
             fps: document.getElementById('editFps').value,
-            loopVideo: document.getElementById('editLoopVideo').checked,
+            loopVideo: document.getElementById('editLoopVideo').checked,            
             orientation: currentEditOrientation,
             resolution: document.getElementById('editCurrentResolution').textContent,
-            useAdvancedSettings: !document.getElementById('editAdvancedSettingsContent').classList.contains('hidden')
+            useAdvancedSettings: document.getElementById('editAdvancedSettingsToggle').checked
           };
           const scheduleTime = document.getElementById('editScheduleTime').value;
           const duration = document.getElementById('editDuration').value;
@@ -1967,22 +2026,31 @@
               ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
             },
             body: JSON.stringify(formData)
-          })
-            .then(response => response.json())
+          })            
+          .then(response => response.json())
             .then(data => {
               if (data.success) {
-                alert('Stream updated successfully!');
                 closeEditStreamModal();
                 setTimeout(() => {
                   window.location.reload();
                 }, 500);
               } else {
-                alert(`Error: ${data.error || 'Failed to update stream'}`);
+                createModalDialog({
+                  type: 'danger',
+                  title: 'Error',
+                  message: `${data.error || 'Failed to update stream'}`,
+                  showCancel: false
+                });
               }
             })
             .catch(error => {
               console.error('Error:', error);
-              alert('An error occurred while updating the stream');
+              createModalDialog({
+                type: 'danger',
+                title: 'Error',
+                message: 'An error occurred while updating the stream',
+                showCancel: false
+              });
             });
         });
       }
@@ -2011,18 +2079,24 @@
     document.addEventListener('DOMContentLoaded', function () {
       setupAdvancedSettings('advancedSettingsToggle', 'advancedSettingsContent');
       setupAdvancedSettings('editAdvancedSettingsToggle', 'editAdvancedSettingsContent');
-    });
+    });      
     function setupAdvancedSettings(toggleId, contentId) {
       const toggle = document.getElementById(toggleId);
       const content = document.getElementById(contentId);
       if (toggle && content) {
-        toggle.addEventListener('click', function () {
-          content.classList.toggle('hidden');
-          const icon = this.querySelector('i');
-          if (content.classList.contains('hidden')) {
-            icon.style.transform = '';
+        toggle.addEventListener('change', function () {
+          if (this.checked) {
+            content.classList.remove('hidden');
+            
+            createModalDialog({
+              type: 'warning',
+              title: 'High CPU Usage Warning',
+              message: 'Menggunakan advanced settings, proses streaming akan menjadi lebih berat karena ada proses re-encoding video.',
+              confirmText: 'Mengerti',
+              showCancel: false
+            });
           } else {
-            icon.style.transform = 'rotate(180deg)';
+            content.classList.add('hidden');
           }
         });
       }
@@ -2039,20 +2113,19 @@
           el.textContent = `${hours}:${minutes}:${seconds}`;
         });
       }, 1000);
-    }
+    }    
     function updateServerTime() {
       fetch('/api/server-time')
         .then(response => response.json())
         .then(data => {
           if (data.formattedTime) {
-            const timeDisplay = `Server time: ${data.formattedTime}`;
             const createModalDisplay = document.getElementById('serverTimeDisplay');
             if (createModalDisplay) {
-              createModalDisplay.textContent = timeDisplay;
+              createModalDisplay.innerHTML = `<span class="font-bold">Server Time:</span> ${data.formattedTime}`;
             }
             const editModalDisplay = document.getElementById('editServerTimeDisplay');
             if (editModalDisplay) {
-              editModalDisplay.textContent = timeDisplay;
+              editModalDisplay.innerHTML = `<span class="font-bold">Server Time:</span> ${data.formattedTime}`;
             }
           }
         })
@@ -2112,4 +2185,189 @@
         });
       }
     });
+  </script>
+
+  <script>
+    document.addEventListener('click', (e) => {
+      const newStreamDropdown = document.getElementById('videoSelectorDropdown');
+      const newStreamButton = document.querySelector('[onclick="toggleVideoSelector()"]');
+      
+      if (newStreamDropdown && !newStreamDropdown.classList.contains('hidden')) {
+        const isClickInsideDropdown = newStreamDropdown.contains(e.target);
+        const isClickOnButton = newStreamButton && newStreamButton.contains(e.target);
+        
+        if (!isClickInsideDropdown && !isClickOnButton) {
+          newStreamDropdown.classList.add('hidden');
+          const searchInput = document.getElementById('videoSearchInput');
+          if (searchInput) {
+            searchInput.value = '';
+          }
+        }
+      }
+      
+      const editStreamDropdown = document.getElementById('editVideoSelectorDropdown');
+      const editStreamButton = document.querySelector('[onclick="toggleEditVideoSelector()"]');
+      
+      if (editStreamDropdown && !editStreamDropdown.classList.contains('hidden')) {
+        const isClickInsideDropdown = editStreamDropdown.contains(e.target);
+        const isClickOnButton = editStreamButton && editStreamButton.contains(e.target);
+        
+        if (!isClickInsideDropdown && !isClickOnButton) {
+          editStreamDropdown.classList.add('hidden');
+          const searchInput = document.getElementById('editVideoSearchInput');
+          if (searchInput) {
+            searchInput.value = '';
+          }
+        }
+      }
+    });
+
+    function createModalDialog(options) {
+      return new Promise((resolve) => {
+        const dialog = document.createElement('div');
+        dialog.id = 'custom-modal';
+        dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300';
+        const themes = {
+          'info': {
+            icon: options.icon || 'ti-info-circle',
+            color: 'text-blue-600',
+            bg: 'bg-blue-600/10',
+            border: 'border-gray-600/50',
+            button: 'bg-blue-600 hover:bg-blue-700',
+            buttonIcon: 'ti-check'
+          },
+          'danger': {
+            icon: options.icon || 'ti-alert-triangle',
+            color: 'text-red-400',
+            bg: 'bg-red-500/10',
+            border: 'border-gray-600/50',
+            button: 'bg-red-500 hover:bg-red-600',
+            buttonIcon: 'ti-trash'
+          },
+          'warning': {
+            icon: options.icon || 'ti-alert-triangle',
+            color: 'text-yellow-400',
+            bg: 'bg-yellow-500/10',
+            border: 'border-yellow-500/50',
+            button: 'bg-yellow-500 hover:bg-yellow-600',
+            buttonIcon: 'ti-alert-circle'
+          },
+          'success': {
+            icon: options.icon || 'ti-check-circle',
+            color: 'text-green-400',
+            bg: 'bg-green-500/10',
+            border: 'border-green-500/50',
+            button: 'bg-green-500 hover:bg-green-600',
+            buttonIcon: 'ti-check'
+          }
+        };
+        const theme = themes[options.type || 'info'];
+        dialog.innerHTML = `
+      <div class="transform transition-all duration-300 opacity-0 scale-95 modal-content max-w-md w-full mx-4">
+        <div class="bg-dark-800 rounded-lg shadow-xl border ${theme.border} overflow-hidden">
+          
+          <div class="px-6 py-5 flex items-center">
+            <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mr-4 shrink-0">
+              <i class="ti ${theme.icon} ${theme.color} text-2xl"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-medium text-white">${options.title}</h3>
+              <p class="text-gray-400 text-sm mt-1">${options.message}</p>
+            </div>
+          </div>
+          
+          ${options.hasInput ? `
+          <div class="px-6 pb-4">
+            <input 
+              type="text" 
+              id="modal-input" 
+              class="bg-dark-900 text-white px-4 py-3 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+              value="${options.inputValue || ''}"
+              placeholder="${options.placeholder || 'Enter value...'}"
+              autofocus
+            >
+          </div>
+          ` : ''}
+          
+          <div class="px-6 py-4 flex justify-end space-x-3 border-t border-gray-600/50">
+            ${options.showCancel !== false ? `
+            <button id="modal-cancel-btn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+              <i class="ti ti-x mr-1.5"></i>
+              ${options.cancelText || 'Cancel'}
+            </button>
+            ` : ''}
+            <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
+              <i class="ti ${theme.buttonIcon} mr-1.5"></i>
+              ${options.confirmText || 'OK'}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+        document.body.appendChild(dialog);
+        document.body.classList.add('overflow-hidden');
+        setTimeout(() => {
+          const modalContent = dialog.querySelector('.modal-content');
+          if (modalContent) {
+            modalContent.classList.replace('opacity-0', 'opacity-100');
+            modalContent.classList.replace('scale-95', 'scale-100');
+          }
+        }, 10);
+        
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        if (confirmBtn) {
+          confirmBtn.addEventListener('click', () => {
+            const inputValue = options.hasInput ? document.getElementById('modal-input').value : null;
+            closeModalWithAnimation(true, inputValue);
+          });
+        }
+        
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+        if (cancelBtn) {
+          cancelBtn.addEventListener('click', () => {
+            closeModalWithAnimation(false);
+          });
+        }
+        
+        document.addEventListener('keydown', function escapeHandler(e) {
+          if (e.key === 'Escape') {
+            closeModalWithAnimation(false);
+            document.removeEventListener('keydown', escapeHandler);
+          }
+        });
+        
+        dialog.addEventListener('click', function (e) {
+          if (e.target === dialog) {
+            closeModalWithAnimation(false);
+          }
+        });
+        
+        if (options.hasInput) {
+          const input = document.getElementById('modal-input');
+          if (input) {
+            input.focus();
+            input.select();
+            input.addEventListener('keydown', function (e) {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                closeModalWithAnimation(true, input.value);
+              }
+            });
+          }
+        }
+        
+        function closeModalWithAnimation(confirmed = false, value = null) {
+          const modalContent = dialog.querySelector('.modal-content');
+          if (modalContent) {
+            modalContent.classList.replace('opacity-100', 'opacity-0');
+            modalContent.classList.replace('scale-100', 'scale-95');
+          }
+          setTimeout(() => {
+            document.body.classList.remove('overflow-hidden');
+            dialog.remove();
+            resolve({ confirmed, value });
+          }, 200);
+        }
+      });
+    }
   </script>

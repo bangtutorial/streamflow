@@ -114,6 +114,30 @@ body {
   transform: scale(0.9);
 }
 
+#updates-menu-container a:active {
+  transform: scale(0.95);
+}
+
+#updates-menu-container a:active i {
+  color: #FBBF24 !important;
+}
+
+.lg\:hidden a[href="/updates"]:hover {
+  color: #FBBF24 !important;
+}
+
+.lg\:hidden a[href="/updates"]:active {
+  color: #FBBF24 !important;
+}
+
+.lg\:hidden a[href="/updates"].text-amber-400 {
+  color: #FBBF24 !important;
+}
+
+#platform-filter {
+  min-width: 144px;
+}
+
 @media (max-width: 768px) {
   .modal-container {
     margin: 1rem;

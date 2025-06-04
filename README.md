@@ -132,7 +132,7 @@ sudo npm install -g pm2
 
 ### 5. Cara Jalankan Aplikasi StreamFlow
 
-Pastikan kamu masih berada di folder **streamflow**, jalankan perintah ini:
+Pastikan kamu masih berada di folder streamflow, jalankan perintah ini:
 
 ```bash
 pm2 start app.js --name streamflow

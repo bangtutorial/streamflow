@@ -1,6 +1,5 @@
 const readline = require('readline');
 const bcrypt = require('bcrypt');
-const { db } = require('./db/database');
 const User = require('./models/User');
 require('dotenv').config();
 const rl = readline.createInterface({
@@ -8,20 +7,48 @@ const rl = readline.createInterface({
     output: process.stdout
 });
 function validatePassword(password) {
+    const isValid = password && password.length > 0;
+    
+    if (!isValid) {
+        console.log('\nPassword cannot be empty.\n');
+        return false;
+    }
+    
     const minLength = password.length >= 8;
     const hasLowercase = /[a-z]/.test(password);
     const hasUppercase = /[A-Z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
-    const isValid = minLength && hasLowercase && hasUppercase && hasNumber;
-    if (!isValid) {
-        console.log('\nPassword requirements:');
-        if (!minLength) console.log('- Must be at least 8 characters long');
-        if (!hasLowercase) console.log('- Must contain at least one lowercase letter');
-        if (!hasUppercase) console.log('- Must contain at least one uppercase letter');
-        if (!hasNumber) console.log('- Must contain at least one number');
-        console.log('');
+    const hasSymbol = /[^a-zA-Z0-9]/.test(password);
+    
+    let strengthScore = 0;
+    if (minLength) strengthScore++;
+    if (hasLowercase) strengthScore++;
+    if (hasUppercase) strengthScore++;
+    if (hasNumber) strengthScore++;
+    if (hasSymbol) strengthScore++;
+    
+    console.log('\nPassword Strength Analysis:');
+    if (strengthScore <= 1) {
+        console.log('🔴 Very Weak - Consider making it stronger');
+    } else if (strengthScore === 2) {
+        console.log('🟡 Weak - Could be improved');
+    } else if (strengthScore === 3) {
+        console.log('🟠 Moderate - Getting better');
+    } else if (strengthScore === 4) {
+        console.log('🟢 Good - Nice password');
+    } else {
+        console.log('💚 Excellent - Very strong password');
     }
-    return isValid;
+    
+    console.log('\nPassword suggestions (optional):');
+    if (!minLength) console.log('- Consider using at least 8 characters');
+    if (!hasLowercase) console.log('- Consider adding lowercase letters');
+    if (!hasUppercase) console.log('- Consider adding uppercase letters');
+    if (!hasNumber) console.log('- Consider adding numbers');
+    if (!hasSymbol) console.log('- Consider adding symbols (!@#$%^&*)');
+    console.log('');
+    
+    return true;
 }
 function askUsername() {
     console.log('\n===== StreamFlow Lite - Password Reset =====\n');

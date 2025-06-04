@@ -14,7 +14,7 @@ const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const User = require('./models/User');
-const { db, checkIfUsersExist } = require('./db/database');
+const { checkIfUsersExist } = require('./db/database');
 const systemMonitor = require('./services/systemMonitor');
 const { uploadVideo } = require('./middleware/uploadMiddleware');
 const { ensureDirectories } = require('./utils/storage');
@@ -39,7 +39,6 @@ process.on('uncaughtException', (error) => {
 const app = express();
 const port = process.env.PORT || 7575;
 const tokens = new csrf();
-ensureDirectories();
 ensureDirectories();
 app.locals.helpers = {
   getUsername: function (req) {
@@ -211,20 +210,6 @@ const videoUpload = multer({
     cb(null, true);
   }
 });
-const csrfProtection = function (req, res, next) {
-  if ((req.path === '/login' && req.method === 'POST') ||
-    (req.path === '/setup-account' && req.method === 'POST')) {
-    return next();
-  }
-  const token = req.body._csrf || req.query._csrf || req.headers['x-csrf-token'];
-  if (!token || !tokens.verify(req.session.csrfSecret, token)) {
-    return res.status(403).render('error', {
-      title: 'Error',
-      error: 'CSRF validation failed. Please try again.'
-    });
-  }
-  next();
-};
 const isAuthenticated = (req, res, next) => {
   if (req.session.userId) {
     return next();
@@ -354,11 +339,8 @@ app.post('/setup-account', upload.single('avatar'), [
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('Username can only contain letters, numbers, and underscores'),
   body('password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters long')
-    .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
-    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
-    .matches(/[0-9]/).withMessage('Password must contain at least one number'),
+    .notEmpty()
+    .withMessage('Password is required'),
   body('confirmPassword')
     .custom((value, { req }) => value === req.body.password)
     .withMessage('Passwords do not match')
@@ -506,6 +488,19 @@ app.get('/history', isAuthenticated, async (req, res) => {
     });
   }
 });
+app.get('/updates', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    res.render('updates', {
+      title: 'Updates',
+      active: 'updates',
+      user: user
+    });
+  } catch (error) {
+    console.error('Updates error:', error);
+    res.redirect('/dashboard');
+  }
+});
 app.delete('/api/history/:id', isAuthenticated, async (req, res) => {
   try {
     const db = require('./db/database').db;
@@ -629,11 +624,8 @@ app.post('/settings/profile', isAuthenticated, upload.single('avatar'), [
 app.post('/settings/password', isAuthenticated, [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
   body('newPassword')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters long')
-    .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter')
-    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
-    .matches(/[0-9]/).withMessage('Password must contain at least one number'),
+    .notEmpty()
+    .withMessage('New password is required'),
   body('confirmPassword')
     .custom((value, { req }) => value === req.body.newPassword)
     .withMessage('Passwords do not match'),
@@ -680,23 +672,6 @@ app.post('/settings/password', isAuthenticated, [
     });
   }
 });
-app.get('/settings', isAuthenticated, async (req, res) => {
-  try {
-    const user = await User.findById(req.session.userId);
-    if (!user) {
-      req.session.destroy();
-      return res.redirect('/login');
-    }
-    res.render('settings', {
-      title: 'Settings',
-      active: 'settings',
-      user: user
-    });
-  } catch (error) {
-    console.error('Settings error:', error);
-    res.redirect('/dashboard');
-  }
-});
 app.post('/settings/integrations/gdrive', isAuthenticated, [
   body('apiKey').notEmpty().withMessage('API Key is required'),
 ], async (req, res) => {
@@ -729,9 +704,33 @@ app.post('/settings/integrations/gdrive', isAuthenticated, [
       user: await User.findById(req.session.userId),
       error: 'An error occurred while saving your Google Drive API key',
       activeTab: 'integrations'
+    });  }
+});
+
+app.post('/settings/integrations/gdrive/clear', isAuthenticated, async (req, res) => {
+  try {
+    await User.update(req.session.userId, {
+      gdrive_api_key: null
+    });
+    return res.render('settings', {
+      title: 'Settings',
+      active: 'settings',
+      user: await User.findById(req.session.userId),
+      success: 'Google Drive disconnected successfully!',
+      activeTab: 'integrations'
+    });
+  } catch (error) {
+    console.error('Error clearing Google Drive API key:', error);
+    res.render('settings', {
+      title: 'Settings',
+      active: 'settings',
+      user: await User.findById(req.session.userId),
+      error: 'An error occurred while disconnecting Google Drive',
+      activeTab: 'integrations'
     });
   }
 });
+
 app.post('/upload/video', isAuthenticated, uploadVideo.single('video'), async (req, res) => {
   try {
     console.log('Upload request received:', req.file);
@@ -815,7 +814,6 @@ app.post('/api/videos/upload', isAuthenticated, videoUpload.single('video'), asy
         }
         const thumbnailFilename = `thumb-${path.parse(req.file.filename).name}.jpg`;
         const thumbnailPath = `/uploads/thumbnails/${thumbnailFilename}`;
-        const fullThumbnailPath = path.join(__dirname, 'public', thumbnailPath);
         ffmpeg(fullFilePath)
           .screenshots({
             timestamps: ['10%'],
@@ -1017,7 +1015,7 @@ app.post('/api/videos/import-drive', isAuthenticated, [
         error: 'Google Drive API key is not configured'
       });
     }
-    const { extractFileId, downloadFile } = require('./utils/googleDriveService');
+    const { extractFileId } = require('./utils/googleDriveService');
     try {
       const fileId = extractFileId(driveUrl);
       const jobId = uuidv4();
@@ -1165,7 +1163,6 @@ app.get('/api/stream/videos', isAuthenticated, async (req, res) => {
   }
 });
 const Stream = require('./models/Stream');
-const { title } = require('process');
 app.get('/api/streams', isAuthenticated, async (req, res) => {
   try {
     const filter = req.query.filter;
@@ -1506,5 +1503,76 @@ app.listen(port, '0.0.0.0', async () => {
     await streamingService.syncStreamStatuses();
   } catch (error) {
     console.error('Failed to sync stream statuses:', error);
+  }
+});
+
+app.get('/api/github/commits', isAuthenticated, async (req, res) => {
+  try {
+    const https = require('https');
+    
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/bangtutorial/streamflow/commits?per_page=3',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'StreamFlow-App'
+      }
+    };
+
+    const githubReq = https.request(options, (githubRes) => {
+      let data = '';
+      
+      githubRes.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      githubRes.on('end', () => {
+        try {
+          const commits = JSON.parse(data);
+          
+          if (githubRes.statusCode !== 200) {
+            return res.status(500).json({ 
+              success: false, 
+              error: 'Failed to fetch commits from GitHub' 
+            });
+          }
+          
+          const formattedCommits = commits.map(commit => ({
+            id: commit.sha.substring(0, 7),
+            message: commit.commit.message.split('\n')[0],
+            author: commit.commit.author.name,
+            date: commit.commit.author.date,
+            url: commit.html_url
+          }));
+          
+          res.json({
+            success: true,
+            commits: formattedCommits
+          });
+        } catch (parseError) {
+          console.error('Error parsing GitHub response:', parseError);
+          res.status(500).json({ 
+            success: false, 
+            error: 'Failed to parse GitHub response' 
+          });
+        }
+      });
+    });
+    
+    githubReq.on('error', (error) => {
+      console.error('GitHub API request error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to connect to GitHub API' 
+      });
+    });
+    
+    githubReq.end();
+  } catch (error) {
+    console.error('Error fetching GitHub commits:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
   }
 });

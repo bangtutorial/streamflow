@@ -746,7 +746,6 @@ app.post('/settings/integrations/gdrive', isAuthenticated, [
   }
 });
 
-// Clear Google Drive API Key route
 app.post('/settings/integrations/gdrive/clear', isAuthenticated, async (req, res) => {
   try {
     await User.update(req.session.userId, {

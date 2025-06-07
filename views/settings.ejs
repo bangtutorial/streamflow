@@ -312,26 +312,21 @@
           toggleApiKey.innerHTML = '<i class="ti ti-eye"></i>';
         }      });
       
-      // Clear API Key functionality
       const clearApiKeyBtn = document.getElementById('clear-api-key-btn');
       clearApiKeyBtn.addEventListener('click', () => {
         if (confirm('Are you sure you want to clear the Google Drive API key? This will disconnect your account.')) {
-          // Clear the API key field
           apiKeyField.value = '';
           
-          // Submit form to clear API key on server
           const form = document.createElement('form');
           form.method = 'POST';
           form.action = '/settings/integrations/gdrive/clear';
           
-          // Add CSRF token
           const csrfInput = document.createElement('input');
           csrfInput.type = 'hidden';
           csrfInput.name = '_csrf';
           csrfInput.value = '<%= csrfToken %>';
           form.appendChild(csrfInput);
           
-          // Add active tab
           const tabInput = document.createElement('input');
           tabInput.type = 'hidden';
           tabInput.name = 'activeTab';

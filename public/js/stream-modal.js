@@ -433,4 +433,28 @@ function validateStreamKeyForPlatform(streamKey, platform) {
       console.error('Error validating stream key:', error);
     });
 }
+
+document.addEventListener('click', function(event) {
+  const dropdown = document.getElementById('videoSelectorDropdown');
+  const button = document.querySelector('[onclick="toggleVideoSelector()"]');
+  const editDropdown = document.getElementById('editVideoSelectorDropdown');
+  const editButton = document.querySelector('[onclick="toggleEditVideoSelector()"]');
+  
+  if (dropdown && !dropdown.contains(event.target) && button && !button.contains(event.target)) {
+    dropdown.classList.add('hidden');
+    const searchInput = document.getElementById('videoSearchInput');
+    if (searchInput) {
+      searchInput.value = '';
+    }
+  }
+  
+  if (editDropdown && !editDropdown.contains(event.target) && editButton && !editButton.contains(event.target)) {
+    editDropdown.classList.add('hidden');
+    const editSearchInput = document.getElementById('editVideoSearchInput');
+    if (editSearchInput) {
+      editSearchInput.value = '';
+    }
+  }
+});
+
 document.addEventListener('DOMContentLoaded', initModal);

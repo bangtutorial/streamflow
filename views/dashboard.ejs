@@ -147,8 +147,7 @@
         <table class="min-w-full">
           <thead class="bg-gray-700 sticky top-0 z-10">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Stream Name
-              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Stream Name</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Platform</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Start Date</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Schedule</th>
@@ -179,7 +178,7 @@
     <div class="flex min-h-screen items-center justify-center p-4">
       <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
         <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
-          <h3 class="text-lg font-semibold">Create New Stream</h3>
+          <h3 class="text-lg font-semibold">New Stream</h3>
           <button onclick="closeNewStreamModal()" class="text-gray-400 hover:text-white">
             <i class="ti ti-x text-xl"></i>
           </button>
@@ -208,9 +207,19 @@
                         </div>
                       </div>
                       <div id="videoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto">
-                      </div>
+                      </div>                    
                     </div>
-                  </div>
+                  </div>                
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-gray-300">Loop Video</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="loopVideo" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div
+                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
+                    </div>
+                  </label>
                 </div>
                 <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
                   <div class="aspect-video bg-dark-900">
@@ -241,12 +250,12 @@
                       <input type="text" id="rtmpUrl" name="rtmpUrl"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="RTMP URL" required>
-                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      
                       <button type="button" id="platformSelector"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-dark-600 transition-colors"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                         aria-label="Select platform">
-                        <i class="ti ti-list-check text-gray-400 hover:text-primary"></i>
-                      </button>
+                        <i class="ti ti-list-check text-gray-400 hover:text-white transition-colors"></i>
+                      </button>                      
                       <div id="platformDropdown"
                         class="hidden absolute z-10 right-0 mt-1 w-48 bg-dark-700 rounded-lg border border-gray-600 shadow-lg overflow-hidden">
                         <div class="py-1">
@@ -265,7 +274,7 @@
                           <button type="button"
                             class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
                             data-url="rtmps://ingest.global.live.prod.tiktok.com/live">
-                            <i class="ti ti-brand-tiktok text-black text-base mr-2"></i>
+                            <i class="ti ti-brand-tiktok text-gray-200 text-base mr-2"></i>
                             <span class="text-sm">TikTok</span>
                           </button>
                           <button type="button"
@@ -287,9 +296,9 @@
                       <input type="password" id="streamKey" name="streamKey"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Stream Key" required>
-                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      
                       <button type="button" onclick="toggleStreamKeyVisibility()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                         <i class="ti ti-eye" id="streamKeyToggle"></i>
                       </button>
                     </div>
@@ -315,26 +324,15 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </div>              
             <div class="space-y-2">
               <div class="flex flex-col sm:flex-row sm:items-center">
                 <label class="text-sm font-medium text-white">Schedule Settings</label>
-                <span id="serverTimeDisplay"
-                  class="mt-1 sm:mt-0 sm:ml-2 block sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
-                  Server time: loading...
-                </span>
+              </div>              
+              <div class="text-xs text-gray-300">
+                <span class="font-bold">Server Time:</span> <span id="serverTimeDisplay" class="text-yellow-500">loading...</span>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="h-[42px] flex items-center justify-between">
-                  <label class="text-sm text-gray-300">Loop Video</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="loopVideo" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
-                    <div
-                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
-                    </div>
-                  </label>
-                </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <input type="datetime-local"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
@@ -346,27 +344,16 @@
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
                 </div>
               </div>
-            </div>
-            <div class="space-y-4">
+            </div>            <div class="space-y-4">
               <div class="pt-2 border-t border-gray-700">
-                <button type="button" id="advancedSettingsToggle"
-                  class="flex items-center justify-between w-full text-left">
-                  <div class="flex items-center">
+                <div class="flex items-center justify-between">                  <div class="flex items-center">
                     <span class="text-sm font-medium text-white">Advanced Settings</span>
-                    <div class="relative ml-2 group">
-                      <i class="ti ti-info-circle text-gray-400 hover:text-primary"></i>
-                      <div
-                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
-                        <div class="text-center">Menggunakan advanced settings, proses streaming akan menjadi lebih
-                          berat karena ada proses re-encoding video</div>
-                        <div
-                          class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
-                </button>
+                  </div><label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="advancedSettingsToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
                 <div id="advancedSettingsContent" class="hidden space-y-6 pt-4">
                   <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -477,9 +464,19 @@
                         </div>
                       </div>
                       <div id="editVideoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto">
-                      </div>
+                      </div>                    
                     </div>
                   </div>
+                </div>                
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-gray-300">Loop Video</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="loopVideo" id="editLoopVideo" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div
+                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
+                    </div>
+                  </label>
                 </div>
                 <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
                   <div class="aspect-video bg-dark-900">
@@ -510,13 +507,11 @@
                       <input type="text" id="editRtmpUrl" name="rtmpUrl"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="RTMP URL" required>
-                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                      <button type="button" id="editPlatformSelector"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-dark-600 transition-colors"
+                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      <button type="button" id="editPlatformSelector"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                         aria-label="Select platform">
-                        <i class="ti ti-list-check text-gray-400 hover:text-primary"></i>
-                      </button>
-                      <div id="editPlatformDropdown"
+                        <i class="ti ti-list-check text-gray-400 hover:text-white transition-colors"></i>
+                      </button>                      <div id="editPlatformDropdown"
                         class="hidden absolute z-10 right-0 mt-1 w-48 bg-dark-700 rounded-lg border border-gray-600 shadow-lg overflow-hidden">
                         <div class="py-1">
                           <button type="button"
@@ -534,7 +529,7 @@
                           <button type="button"
                             class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
                             data-url="rtmps://ingest.global.live.prod.tiktok.com/live">
-                            <i class="ti ti-brand-tiktok text-black text-base mr-2"></i>
+                            <i class="ti ti-brand-tiktok text-gray-400 text-base mr-2"></i>
                             <span class="text-sm">TikTok</span>
                           </button>
                           <button type="button"
@@ -556,9 +551,8 @@
                       <input type="password" id="editStreamKey" name="streamKey"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Stream Key" required>
-                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                      <button type="button" onclick="toggleEditStreamKeyVisibility()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      <button type="button" onclick="toggleEditStreamKeyVisibility()"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                         <i class="ti ti-eye" id="editStreamKeyToggle"></i>
                       </button>
                     </div>
@@ -584,26 +578,12 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </div>            
             <div class="space-y-2">
-              <div class="flex flex-col sm:flex-row sm:items-center">
+              <div>
                 <label class="text-sm font-medium text-white">Schedule Settings</label>
-                <span id="editServerTimeDisplay"
-                  class="mt-1 sm:mt-0 sm:ml-2 block sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
-                  Server time: loading...
-                </span>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="h-[42px] flex items-center justify-between">
-                  <label class="text-sm text-gray-300">Loop Video</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="loopVideo" id="editLoopVideo" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
-                    <div
-                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
-                    </div>
-                  </label>
-                </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <input type="datetime-local" id="editScheduleTime"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
@@ -614,28 +594,22 @@
                     placeholder="Duration">
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
                 </div>
+              </div>              
+              <div class="text-xs text-gray-300">
+                <span class="font-bold">Server Time:</span> <span id="editServerTimeDisplay" class="text-yellow-500">loading...</span>
               </div>
-            </div>
+            </div>            
             <div class="space-y-4">
               <div class="pt-2 border-t border-gray-700">
-                <button type="button" id="editAdvancedSettingsToggle"
-                  class="flex items-center justify-between w-full text-left">
+                <div class="flex items-center justify-between">                  
                   <div class="flex items-center">
                     <span class="text-sm font-medium text-white">Advanced Settings</span>
-                    <div class="relative ml-2 group">
-                      <i class="ti ti-info-circle text-gray-400 hover:text-primary"></i>
-                      <div
-                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
-                        <div class="text-center">Menggunakan advanced settings, proses streaming akan menjadi lebih
-                          berat karena ada proses re-encoding video</div>
-                        <div
-                          class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
-                </button>
+                  </div><label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="editAdvancedSettingsToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
                 <div id="editAdvancedSettingsContent" class="hidden space-y-6 pt-4">
                   <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -711,8 +685,7 @@
         </div>
       </div>
     </div>
-  </div>
-  <style>
+  </div>  <style>
     .video-js {
       background-color: #1f2937;
       width: 100%;
@@ -776,20 +749,43 @@
       top: 50% !important;
       left: 50% !important;
       transform: translate(-50%, -50%) !important;
-    }
-    #videoListContainer {
+    }    #videoListContainer {
       scrollbar-width: thin;
       scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+      text-align: left;
     }
     #videoListContainer::-webkit-scrollbar {
       width: 6px;
     }
     #videoListContainer::-webkit-scrollbar-track {
       background: transparent;
-    }
-    #videoListContainer::-webkit-scrollbar-thumb {
+    }    #videoListContainer::-webkit-scrollbar-thumb {
       background-color: rgba(156, 163, 175, 0.3);
       border-radius: 20px;
+    }
+    #editVideoListContainer {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+      text-align: left;
+    }
+    #editVideoListContainer::-webkit-scrollbar {
+      width: 6px;
+    }
+    #editVideoListContainer::-webkit-scrollbar-track {
+      background: transparent;
+    }    
+    #editVideoListContainer::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.3);
+      border-radius: 20px;
+    }
+    #videoListContainer button,
+    #editVideoListContainer button {
+      justify-content: flex-start !important;
+      text-align: left !important;
+    }
+    #videoListContainer .flex-1,
+    #editVideoListContainer .flex-1 {
+      text-align: left !important;
     }
     #videoSearchInput::placeholder {
       color: rgba(156, 163, 175, 0.7);
@@ -1037,7 +1033,7 @@
         loopVideo: document.querySelector('input[name="loopVideo"]').checked,
         orientation: currentOrientation,
         resolution: document.getElementById('currentResolution').textContent.split(' ')[0],
-        useAdvancedSettings: !document.getElementById('advancedSettingsContent').classList.contains('hidden')
+        useAdvancedSettings: document.getElementById('advancedSettingsToggle').checked
       };
       const scheduleTime = document.querySelector('input[type="datetime-local"]').value;
       const duration = document.querySelector('input[type="number"]').value;
@@ -1700,16 +1696,15 @@
         document.getElementById('editDuration').value = stream.duration;
       } else {
         document.getElementById('editDuration').value = '';
-      }
-      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
+      }      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
-      const icon = advancedSettingsToggle.querySelector('i');
+      
       if (stream.use_advanced_settings) {
+        advancedSettingsToggle.checked = true;
         advancedSettingsContent.classList.remove('hidden');
-        icon.style.transform = 'rotate(180deg)';
       } else {
+        advancedSettingsToggle.checked = false;
         advancedSettingsContent.classList.add('hidden');
-        icon.style.transform = '';
       }
       const modal = document.getElementById('editStreamModal');
       document.body.style.overflow = 'hidden';
@@ -1749,13 +1744,11 @@
       desktopPreview.classList.add('hidden');
       mobilePreview.classList.add('hidden');
       desktopEmptyPreview.classList.remove('hidden');
-      mobileEmptyPreview.classList.remove('hidden');
-      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
+      mobileEmptyPreview.classList.remove('hidden');      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
       if (advancedSettingsContent && advancedSettingsToggle) {
         advancedSettingsContent.classList.add('hidden');
-        const icon = advancedSettingsToggle.querySelector('i');
-        if (icon) icon.style.transform = '';
+        advancedSettingsToggle.checked = false;
       }
     }
     function toggleEditVideoSelector() {
@@ -1949,7 +1942,7 @@
             loopVideo: document.getElementById('editLoopVideo').checked,
             orientation: currentEditOrientation,
             resolution: document.getElementById('editCurrentResolution').textContent,
-            useAdvancedSettings: !document.getElementById('editAdvancedSettingsContent').classList.contains('hidden')
+            useAdvancedSettings: document.getElementById('editAdvancedSettingsToggle').checked
           };
           const scheduleTime = document.getElementById('editScheduleTime').value;
           const duration = document.getElementById('editDuration').value;
@@ -2007,22 +2000,27 @@
           editPlatformDropdown.classList.add('hidden');
         });
       });
-    }
-    document.addEventListener('DOMContentLoaded', function () {
+    }    document.addEventListener('DOMContentLoaded', function () {
       setupAdvancedSettings('advancedSettingsToggle', 'advancedSettingsContent');
       setupAdvancedSettings('editAdvancedSettingsToggle', 'editAdvancedSettingsContent');
-    });
-    function setupAdvancedSettings(toggleId, contentId) {
+    });    function setupAdvancedSettings(toggleId, contentId) {
       const toggle = document.getElementById(toggleId);
       const content = document.getElementById(contentId);
+      
       if (toggle && content) {
-        toggle.addEventListener('click', function () {
-          content.classList.toggle('hidden');
-          const icon = this.querySelector('i');
-          if (content.classList.contains('hidden')) {
-            icon.style.transform = '';
+        if (!toggle.hasAttribute('data-initialized')) {
+          content.classList.add('hidden');
+          toggle.checked = false;
+          toggle.setAttribute('data-initialized', 'true');
+        }
+        
+        toggle.addEventListener('change', function () {
+          if (this.checked) {
+            // Show alert warning when advanced settings is activated
+            alert('Menggunakan advanced settings, proses streaming akan menjadi lebih berat karena ada proses re-encoding video');
+            content.classList.remove('hidden');
           } else {
-            icon.style.transform = 'rotate(180deg)';
+            content.classList.add('hidden');
           }
         });
       }
@@ -2039,20 +2037,18 @@
           el.textContent = `${hours}:${minutes}:${seconds}`;
         });
       }, 1000);
-    }
-    function updateServerTime() {
+    }    function updateServerTime() {
       fetch('/api/server-time')
         .then(response => response.json())
         .then(data => {
           if (data.formattedTime) {
-            const timeDisplay = `Server time: ${data.formattedTime}`;
             const createModalDisplay = document.getElementById('serverTimeDisplay');
             if (createModalDisplay) {
-              createModalDisplay.textContent = timeDisplay;
+              createModalDisplay.textContent = data.formattedTime;
             }
             const editModalDisplay = document.getElementById('editServerTimeDisplay');
             if (editModalDisplay) {
-              editModalDisplay.textContent = timeDisplay;
+              editModalDisplay.textContent = data.formattedTime;
             }
           }
         })

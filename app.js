@@ -17,7 +17,7 @@ const User = require('./models/User');
 const { db, checkIfUsersExist } = require('./db/database');
 const systemMonitor = require('./services/systemMonitor');
 const { uploadVideo } = require('./middleware/uploadMiddleware');
-const { ensureDirectories } = require('./utils/storage');
+const { ensureDirectories, paths } = require('./utils/storage');
 const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
 const Video = require('./models/Video');
 const ffmpeg = require('fluent-ffmpeg');
@@ -745,6 +745,32 @@ app.post('/settings/integrations/gdrive', isAuthenticated, [
     });
   }
 });
+
+// Clear Google Drive API Key route
+app.post('/settings/integrations/gdrive/clear', isAuthenticated, async (req, res) => {
+  try {
+    await User.update(req.session.userId, {
+      gdrive_api_key: null
+    });
+    return res.render('settings', {
+      title: 'Settings',
+      active: 'settings',
+      user: await User.findById(req.session.userId),
+      success: 'Google Drive disconnected successfully!',
+      activeTab: 'integrations'
+    });
+  } catch (error) {
+    console.error('Error clearing Google Drive API key:', error);
+    res.render('settings', {
+      title: 'Settings',
+      active: 'settings',
+      user: await User.findById(req.session.userId),
+      error: 'An error occurred while disconnecting Google Drive',
+      activeTab: 'integrations'
+    });
+  }
+});
+
 app.post('/upload/video', isAuthenticated, uploadVideo.single('video'), async (req, res) => {
   try {
     console.log('Upload request received:', req.file);
@@ -1053,6 +1079,33 @@ app.post('/api/videos/import-drive', isAuthenticated, [
     res.status(500).json({ success: false, error: 'Failed to import video' });
   }
 });
+
+app.post('/api/videos/import-drive-direct', isAuthenticated, [
+  body('driveUrl').notEmpty().withMessage('Google Drive URL is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: errors.array()[0].msg });
+    }
+    
+    const { driveUrl } = req.body;
+    const jobId = uuidv4();
+    
+    processGoogleDriveDirectImport(jobId, driveUrl, req.session.userId)
+      .catch(err => console.error('Direct drive import failed:', err));
+    
+    return res.json({
+      success: true,
+      message: 'Video import started (Direct Download)',
+      jobId: jobId
+    });
+  } catch (error) {
+    console.error('Error importing from Google Drive (direct):', error);
+    res.status(500).json({ success: false, error: 'Failed to import video' });
+  }
+});
+
 app.get('/api/videos/import-status/:jobId', isAuthenticated, async (req, res) => {
   const jobId = req.params.jobId;
   if (!importJobs[jobId]) {
@@ -1154,6 +1207,124 @@ async function processGoogleDriveImport(jobId, apiKey, fileId, userId) {
     }, 5 * 60 * 1000);
   }
 }
+
+async function processGoogleDriveDirectImport(jobId, driveUrl, userId) {
+  const { GDriveDownloader } = require('./utils/googleDriveDownloader');
+  const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
+  const path = require('path');
+  const fs = require('fs');
+  
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+  
+  importJobs[jobId] = {
+    status: 'downloading',
+    progress: 0,
+    message: 'Starting direct download...'
+  };
+  
+  try {
+    const downloader = new GDriveDownloader();
+    
+    const fileId = downloader.extractFileId(driveUrl);
+    if (!fileId) {
+      throw new Error('Cannot extract File ID from Google Drive URL');
+    }
+    
+    const uploadsDir = paths.videos;
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    
+    const tempFileName = `gdrive_${fileId}_${Date.now()}.tmp`;
+    const outputPath = path.join(uploadsDir, tempFileName);
+    
+    const progressCallback = (progress) => {
+      const downloadProgress = Math.min(80, Math.round(progress.percentage * 0.8)); 
+      importJobs[jobId] = {
+        status: 'downloading',
+        progress: downloadProgress,
+        message: `Downloading: ${progress.percentage}% (${formatBytes(progress.downloaded)}/${formatBytes(progress.total)})`
+      };
+    };
+    
+    const localFilePath = await downloader.downloadFile(driveUrl, outputPath, progressCallback);
+    
+    const stats = fs.statSync(localFilePath);
+    const originalFilename = downloader.fileName || `gdrive_${fileId}.mp4`;
+    const finalFilename = `${fileId}_${Date.now()}_${originalFilename}`;
+    const finalPath = path.join(uploadsDir, finalFilename);
+    
+    fs.renameSync(localFilePath, finalPath);
+    
+    const result = {
+      localFilePath: finalPath,
+      filename: finalFilename,
+      originalFilename: originalFilename,
+      fileSize: stats.size
+    };
+    
+    importJobs[jobId] = {
+      status: 'processing',
+      progress: 90,
+      message: 'Processing video...'
+    };
+    
+    const videoInfo = await getVideoInfo(result.localFilePath);
+    const resolution = videoInfo.resolution || '1280x720';
+    const bitrate = videoInfo.bitrate || null;
+    
+    const thumbnailName = path.basename(result.filename, path.extname(result.filename)) + '.jpg';
+    const thumbnailRelativePath = await generateThumbnail(result.localFilePath, thumbnailName)
+      .then(() => `/uploads/thumbnails/${thumbnailName}`)
+      .catch(() => null);
+    
+    let format = path.extname(result.filename).toLowerCase().replace('.', '');
+    if (!format) format = 'mp4';
+    
+    const videoData = {
+      title: path.basename(result.originalFilename, path.extname(result.originalFilename)),
+      filepath: `/uploads/videos/${result.filename}`,
+      thumbnail_path: thumbnailRelativePath,
+      file_size: result.fileSize,
+      duration: videoInfo.duration,
+      format: format,
+      resolution: resolution,
+      bitrate: bitrate,
+      user_id: userId
+    };
+    
+    const video = await Video.create(videoData);
+    
+    importJobs[jobId] = {
+      status: 'complete',
+      progress: 100,
+      message: 'Video imported successfully (Direct Download)',
+      videoId: video.id
+    };
+    
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 5 * 60 * 1000);
+    
+  } catch (error) {
+    console.error('Error processing Google Drive direct import:', error);
+    importJobs[jobId] = {
+      status: 'failed',
+      progress: 0,
+      message: error.message || 'Failed to import video (Direct Download)'
+    };
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 5 * 60 * 1000);
+  }
+}
+
 app.get('/api/stream/videos', isAuthenticated, async (req, res) => {
   try {
     const videos = await Video.findAll(req.session.userId);

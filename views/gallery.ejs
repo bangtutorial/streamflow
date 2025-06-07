@@ -383,55 +383,195 @@
           modal.classList.add('hidden');
           document.body.classList.remove('overflow-hidden');
         }, 200);
+      }      async function checkGDriveAPIKey() {
+        try {
+          const modalContent = document.getElementById('gdriveModalBody');
+          
+          modalContent.innerHTML = `
+            <div class="p-6">
+              <div class="text-center mb-6">
+                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                  <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
+                </div>
+                <h4 class="text-lg font-medium mb-1">Import from Google Drive</h4>
+                <p class="text-gray-400 text-sm">Choose your preferred import method</p>
+              </div>
+              
+              <div class="space-y-3">
+                <!-- Direct Download Option (Primary) -->
+                <div class="border border-primary/50 bg-primary/5 rounded-lg p-4 cursor-pointer hover:bg-primary/10 transition-colors" onclick="showDirectDownloadInterface()">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                      <div class="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mr-3">
+                        <i class="ti ti-download text-xl text-primary"></i>
+                      </div>
+                      <div>
+                        <h5 class="font-medium text-white">Direct Download</h5>
+                        <p class="text-sm text-gray-400">No API key required</p>
+                      </div>
+                    </div>
+                    <div class="bg-primary text-white text-xs px-2 py-1 rounded-md font-medium">
+                      Recommended
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-2">Download videos directly from Google Drive without needing an API key. Works with publicly shared files.</p>
+                </div>
+                
+                <!-- API Key Option -->
+                <div class="border border-gray-600 bg-dark-700/50 rounded-lg p-4 cursor-pointer hover:bg-dark-700 transition-colors" onclick="showAPIKeyInterface()">
+                  <div class="flex items-center">
+                    <div class="w-12 h-12 bg-gray-600/20 rounded-lg flex items-center justify-center mr-3">
+                      <i class="ti ti-key text-xl text-gray-400"></i>
+                    </div>
+                    <div>
+                      <h5 class="font-medium text-white">API Key Method</h5>
+                      <p class="text-sm text-gray-400">Use Google Drive API</p>
+                    </div>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-2">Traditional method using Google Drive API. Requires setting up an API key but works with private files.</p>
+                </div>
+              </div>
+            </div>
+          `;
+        } catch (error) {
+          console.error('Error checking GDrive API key:', error);
+          showToast('error', 'Failed to load Google Drive import options');
+        }
       }
-      async function checkGDriveAPIKey() {
+
+      function showDirectDownloadInterface() {
+        const modalContent = document.getElementById('gdriveModalBody');
+        modalContent.innerHTML = `
+          <div class="p-6">
+            <div class="flex items-center mb-4">
+              <button onclick="checkGDriveAPIKey()" class="mr-3 p-1 hover:bg-gray-700 rounded-md transition-colors">
+                <i class="ti ti-arrow-left text-gray-400"></i>
+              </button>
+              <div class="text-center flex-1">
+                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                  <i class="ti ti-download text-xl text-primary"></i>
+                </div>
+                <h4 class="text-lg font-medium mb-1">Direct Download</h4>
+                <p class="text-gray-400 text-sm">Import video without API key</p>
+              </div>
+            </div>
+            
+            <div class="relative mb-2">
+              <input 
+                type="text" 
+                id="gdrive-link-direct" 
+                class="bg-dark-700 text-white pl-10 pr-4 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+                placeholder="https://drive.google.com/file/d/..."
+              >
+              <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            </div>
+            <p class="text-xs text-gray-500 mb-4">Make sure the file is shared with <strong>Anyone with the link</strong></p>
+            
+            <button id="import-drive-direct-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+              <i class="ti ti-download mr-2"></i>
+              <span>Import Video (Direct)</span>
+            </button>
+          </div>
+        `;
+        
+        document.getElementById('import-drive-direct-button').addEventListener('click', async function () {
+          const link = document.getElementById('gdrive-link-direct').value;
+          if (!link) {
+            showToast('error', 'Please enter a Google Drive link');
+            return;
+          }
+          
+          this.disabled = true;
+          this.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing...
+          `;
+          
+          try {
+            const response = await fetch('/api/videos/import-drive-direct', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+              },
+              body: JSON.stringify({ driveUrl: link })
+            });
+            const result = await response.json();
+            if (result.success) {
+              showImportProgressModal(result.jobId);
+              closeGDriveModal();
+            } else {
+              showToast('error', result.error || 'Failed to import video');
+              this.disabled = false;
+              this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video (Direct)</span>`;
+            }
+          } catch (error) {
+            showToast('error', 'An error occurred while importing the video');
+            this.disabled = false;
+            this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video (Direct)</span>`;
+          }
+        });
+      }
+
+      async function showAPIKeyInterface() {
         try {
           const response = await fetch('/api/settings/gdrive-status');
           const data = await response.json();
           const modalContent = document.getElementById('gdriveModalBody');
+          
           if (data.hasApiKey) {
             modalContent.innerHTML = `
-        <div class="p-6">
-          
-          <div class="text-center mb-5">
-            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-              <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
-            </div>
-            <h4 class="text-lg font-medium mb-1">Import from Google Drive</h4>
-            <p class="text-gray-400 text-sm">Enter a Google Drive link to your video</p>
-          </div>
-          
-          <div class="relative mb-2">
-            <input 
-              type="text" 
-              id="gdrive-link" 
-              class="bg-dark-700 text-white pl-10 pr-4 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
-              placeholder="https://drive.google.com/file/d/..."
-            >
-            <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          </div>
-          <p class="text-xs text-gray-500 mb-4">Make sure the file is shared with <strong>Anyone with the link</strong></p>
-          
-          <button id="import-drive-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
-            <i class="ti ti-download mr-2"></i>
-            <span>Import Video</span>
-          </button>
-        </div>
-      `;
-            document.getElementById('import-drive-button').addEventListener('click', async function () {
-              const link = document.getElementById('gdrive-link').value;
+              <div class="p-6">
+                <div class="flex items-center mb-4">
+                  <button onclick="checkGDriveAPIKey()" class="mr-3 p-1 hover:bg-gray-700 rounded-md transition-colors">
+                    <i class="ti ti-arrow-left text-gray-400"></i>
+                  </button>
+                  <div class="text-center flex-1">
+                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                      <i class="ti ti-key text-xl text-primary"></i>
+                    </div>
+                    <h4 class="text-lg font-medium mb-1">API Key Import</h4>
+                    <p class="text-gray-400 text-sm">Import using Google Drive API</p>
+                  </div>
+                </div>
+                
+                <div class="relative mb-2">
+                  <input 
+                    type="text" 
+                    id="gdrive-link-api" 
+                    class="bg-dark-700 text-white pl-10 pr-4 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+                    placeholder="https://drive.google.com/file/d/..."
+                  >
+                  <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+                <p class="text-xs text-gray-500 mb-4">Can access private files if you have permission</p>
+                
+                <button id="import-drive-api-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+                  <i class="ti ti-download mr-2"></i>
+                  <span>Import Video (API)</span>
+                </button>
+              </div>
+            `;
+            
+            document.getElementById('import-drive-api-button').addEventListener('click', async function () {
+              const link = document.getElementById('gdrive-link-api').value;
               if (!link) {
                 showToast('error', 'Please enter a Google Drive link');
                 return;
               }
+              
               this.disabled = true;
               this.innerHTML = `
-          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Processing...
-        `;
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              `;
+              
               try {
                 const response = await fetch('/api/videos/import-drive', {
                   method: 'POST',
@@ -448,52 +588,57 @@
                 } else {
                   showToast('error', result.error || 'Failed to import video');
                   this.disabled = false;
-                  this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
+                  this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video (API)</span>`;
                 }
               } catch (error) {
                 showToast('error', 'An error occurred while importing the video');
                 this.disabled = false;
-                this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
+                this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video (API)</span>`;
               }
             });
           } else {
             modalContent.innerHTML = `
-        <div class="p-6">
-          
-          <div class="text-center mb-5">
-            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-              <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
-            </div>
-            <h4 class="text-lg font-medium mb-1">Connect Google Drive</h4>
-            <p class="text-gray-400 text-sm">API key needed to access Drive videos</p>
-          </div>
-          
-          <div class="relative mb-2">
-            <input 
-              type="password" 
-              id="gdrive-api-key-setup" 
-              class="bg-dark-700 text-white pl-10 pr-10 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
-              placeholder="Enter your Google Drive API key"
-            >
-            <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <button type="button" id="toggle-api-key-visibility" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
-              <i class="ti ti-eye"></i>
-            </button>
-          </div>
-          <p class="text-xs text-gray-500 mb-4 flex items-center justify-between">
-            <span>Get your API key from the <a href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google Cloud Console</a>.</span> 
-            <a href="https://youtu.be/SS-uOm-ysFE" target="_blank" class="inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-1.5 py-0.5 rounded-md">
-              <i class="ti ti-brand-youtube"></i>
-              <span>Tutorial</span>
-            </a>
-          </p>
-          
-          <button id="save-api-key-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
-            <i class="ti ti-device-floppy mr-2"></i>
-            <span>Save API Key</span>
-          </button>
-        </div>
-      `;
+              <div class="p-6">
+                <div class="flex items-center mb-4">
+                  <button onclick="checkGDriveAPIKey()" class="mr-3 p-1 hover:bg-gray-700 rounded-md transition-colors">
+                    <i class="ti ti-arrow-left text-gray-400"></i>
+                  </button>
+                  <div class="text-center flex-1">
+                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                      <i class="ti ti-key text-xl text-primary"></i>
+                    </div>
+                    <h4 class="text-lg font-medium mb-1">Setup API Key</h4>
+                    <p class="text-gray-400 text-sm">Configure Google Drive API access</p>
+                  </div>
+                </div>
+                
+                <div class="relative mb-2">
+                  <input 
+                    type="password" 
+                    id="gdrive-api-key-setup" 
+                    class="bg-dark-700 text-white pl-10 pr-10 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+                    placeholder="Enter your Google Drive API key"
+                  >
+                  <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                  <button type="button" id="toggle-api-key-visibility" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
+                    <i class="ti ti-eye"></i>
+                  </button>
+                </div>
+                <p class="text-xs text-gray-500 mb-4 flex items-center justify-between">
+                  <span>Get your API key from the <a href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google Cloud Console</a>.</span> 
+                  <a href="https://youtu.be/SS-uOm-ysFE" target="_blank" class="inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-1.5 py-0.5 rounded-md">
+                    <i class="ti ti-brand-youtube"></i>
+                    <span>Tutorial</span>
+                  </a>
+                </p>
+                
+                <button id="save-api-key-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+                  <i class="ti ti-device-floppy mr-2"></i>
+                  <span>Save API Key</span>
+                </button>
+              </div>
+            `;
+            
             document.getElementById('toggle-api-key-visibility').addEventListener('click', function () {
               const apiKeyField = document.getElementById('gdrive-api-key-setup');
               const toggleBtn = this.querySelector('i');
@@ -507,20 +652,23 @@
                 toggleBtn.classList.add('ti-eye');
               }
             });
+            
             document.getElementById('save-api-key-button').addEventListener('click', async function () {
               const apiKey = document.getElementById('gdrive-api-key-setup').value;
               if (!apiKey) {
                 showToast('error', 'Please enter a Google Drive API key');
                 return;
               }
+              
               this.disabled = true;
               this.innerHTML = `
-    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-    Saving...
-  `;
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              `;
+              
               try {
                 const response = await fetch('/api/settings/gdrive-api-key', {
                   method: 'POST',
@@ -534,9 +682,9 @@
                 if (result.success) {
                   showToast('success', 'API key saved successfully');
                   this.innerHTML = `
-        <i class="ti ti-check mr-2"></i>
-        <span>API Key Saved!</span>
-      `;
+                    <i class="ti ti-check mr-2"></i>
+                    <span>API Key Saved!</span>
+                  `;
                   this.classList.remove('bg-primary', 'hover:bg-primary/90');
                   this.classList.add('bg-green-500', 'hover:bg-green-600');
                   
@@ -547,8 +695,7 @@
                   showToast('error', result.error || 'Failed to save API key');
                   this.disabled = false;
                   this.innerHTML = `<i class="ti ti-device-floppy mr-2"></i><span>Save API Key</span>`;
-                }
-              } catch (error) {
+                }              } catch (error) {
                 showToast('error', 'An error occurred while saving the API key');
                 this.disabled = false;
                 this.innerHTML = `<i class="ti ti-device-floppy mr-2"></i><span>Save API Key</span>`;
@@ -556,8 +703,8 @@
             });
           }
         } catch (error) {
-          console.error('Error checking Google Drive API key status:', error);
-          showToast('error', 'Failed to check API key status');
+          console.error('Error loading API key interface:', error);
+          showToast('error', 'Failed to load API key interface');
         }
       }
       function openVideoPreviewModal(title, videoSrc, details) {

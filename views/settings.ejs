@@ -75,7 +75,7 @@
           <div class="pt-4">
             <button type="submit"
               class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
-              Save Profile Changes
+              Save Changes
             </button>
           </div>
         </form>
@@ -160,8 +160,8 @@
           </div>
           <div class="flex-shrink-0 ml-3">
             <span id="gdrive-status"
-              class="<%= user.gdrive_api_key ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400' %> px-2 py-1 text-xs rounded whitespace-nowrap">
-              <%= user.gdrive_api_key ? 'Connected' : 'Not Connected' %>
+              class="<%= user.gdrive_api_key ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400' %> px-2 py-1 text-xs rounded whitespace-nowrap">
+              <%= user.gdrive_api_key ? 'Connected' : 'Disconnected' %>
             </span>
           </div>
         </div>
@@ -181,14 +181,16 @@
                 <i class="ti ti-eye"></i>
               </button>
             </div>
-            <p class="text-xs text-gray-400">You can get your API key from the <a
-                href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google
-                Cloud Console</a></p>
-          </div>
-          <div class="pt-2">
+            <p class="text-xs text-gray-400">You can get your API key from the <a href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google Cloud Console</a></p>
+          </div>            
+          <div class="pt-2 flex gap-3">
             <button type="submit"
               class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
-              Save & Connect
+              Connect
+            </button>
+            <button type="button" id="clear-api-key-btn"
+              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors <%= !user.gdrive_api_key ? 'hidden' : '' %>">
+              Disconnect
             </button>
           </div>
         </form>
@@ -308,8 +310,39 @@
         } else {
           apiKeyField.type = 'password';
           toggleApiKey.innerHTML = '<i class="ti ti-eye"></i>';
+        }      });
+      
+      // Clear API Key functionality
+      const clearApiKeyBtn = document.getElementById('clear-api-key-btn');
+      clearApiKeyBtn.addEventListener('click', () => {
+        if (confirm('Are you sure you want to clear the Google Drive API key? This will disconnect your account.')) {
+          // Clear the API key field
+          apiKeyField.value = '';
+          
+          // Submit form to clear API key on server
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '/settings/integrations/gdrive/clear';
+          
+          // Add CSRF token
+          const csrfInput = document.createElement('input');
+          csrfInput.type = 'hidden';
+          csrfInput.name = '_csrf';
+          csrfInput.value = '<%= csrfToken %>';
+          form.appendChild(csrfInput);
+          
+          // Add active tab
+          const tabInput = document.createElement('input');
+          tabInput.type = 'hidden';
+          tabInput.name = 'activeTab';
+          tabInput.value = 'integrations';
+          form.appendChild(tabInput);
+          
+          document.body.appendChild(form);
+          form.submit();
         }
       });
+      
       function showToast(type, message) {
         const toast = document.getElementById('toast');
         const toastIcon = document.getElementById('toast-icon');

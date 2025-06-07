@@ -94,9 +94,9 @@ Generate session secret:
 npm run generate-secret
 ```
 
-**Konfigurasi tambahan (opsional):**
+Jika perlu ubah port, edit file [.env](.env)
 
-Port default aplikasi adalah **7575**. Jika perlu ubah port, edit file [.env](.env) (contoh: 8080, 3300, dll):
+Contoh port: 8080, 3300, dll
 
 ```bash
 nano .env
@@ -132,7 +132,7 @@ sudo npm install -g pm2
 
 ### 5. Cara Jalankan Aplikasi StreamFlow
 
-Pastikan kamu masih berada di folder **streamflow**, jalankan perintah ini:
+Pastikan kamu masih berada di folder streamflow, jalankan perintah ini:
 
 ```bash
 pm2 start app.js --name streamflow

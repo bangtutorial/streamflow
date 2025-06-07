@@ -506,6 +506,19 @@ app.get('/history', isAuthenticated, async (req, res) => {
     });
   }
 });
+app.get('/updates', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    res.render('updates', {
+      title: 'Updates',
+      active: 'updates',
+      user: user
+    });
+  } catch (error) {
+    console.error('Updates error:', error);
+    res.redirect('/dashboard');
+  }
+});
 app.delete('/api/history/:id', isAuthenticated, async (req, res) => {
   try {
     const db = require('./db/database').db;
@@ -1506,5 +1519,76 @@ app.listen(port, '0.0.0.0', async () => {
     await streamingService.syncStreamStatuses();
   } catch (error) {
     console.error('Failed to sync stream statuses:', error);
+  }
+});
+
+app.get('/api/github/commits', isAuthenticated, async (req, res) => {
+  try {
+    const https = require('https');
+    
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/bangtutorial/streamflow/commits?per_page=3',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'StreamFlow-App'
+      }
+    };
+
+    const githubReq = https.request(options, (githubRes) => {
+      let data = '';
+      
+      githubRes.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      githubRes.on('end', () => {
+        try {
+          const commits = JSON.parse(data);
+          
+          if (githubRes.statusCode !== 200) {
+            return res.status(500).json({ 
+              success: false, 
+              error: 'Failed to fetch commits from GitHub' 
+            });
+          }
+          
+          const formattedCommits = commits.map(commit => ({
+            id: commit.sha.substring(0, 7),
+            message: commit.commit.message.split('\n')[0],
+            author: commit.commit.author.name,
+            date: commit.commit.author.date,
+            url: commit.html_url
+          }));
+          
+          res.json({
+            success: true,
+            commits: formattedCommits
+          });
+        } catch (parseError) {
+          console.error('Error parsing GitHub response:', parseError);
+          res.status(500).json({ 
+            success: false, 
+            error: 'Failed to parse GitHub response' 
+          });
+        }
+      });
+    });
+    
+    githubReq.on('error', (error) => {
+      console.error('GitHub API request error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to connect to GitHub API' 
+      });
+    });
+    
+    githubReq.end();
+  } catch (error) {
+    console.error('Error fetching GitHub commits:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
   }
 });

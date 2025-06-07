@@ -62,11 +62,14 @@
     class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-dark-800 shadow-lg flex items-center justify-between px-4 z-30">
     <div class="flex items-center">
       <img src="/images/logo_mobile.svg" alt="StreamFlow Logo" class="h-8">
-    </div>
+    </div>    
     <div class="flex items-center gap-1">
       <a href="https://donate.youtube101.id/" target="_blank" 
          class="p-2 text-gray-400 hover:text-white transition-colors">
         <i class="ti ti-gift text-lg"></i>
+      </a>
+      <a href="/updates" class="p-2 <%= active === 'updates' ? 'text-amber-400' : 'text-gray-400' %> hover:text-white transition-colors">
+        <i class="ti ti-sparkles text-lg"></i>
       </a>
       <div class="relative">
         <button id="mobile-notification-btn" class="p-2 text-gray-400 hover:text-white transition-colors relative">
@@ -91,14 +94,21 @@
           <i class="ti ti-video text-xl"></i>
           <span class="text-xs mt-1">Gallery</span>
           <span class="sidebar-tooltip group-hover:scale-100">Video Gallery</span>
-        </a>
+        </a>        
         <a href="/history" class="sidebar-icon group <%= active === 'history' ? 'bg-primary' : '' %>">
           <i class="ti ti-history text-xl"></i>
           <span class="text-xs mt-1">History</span>
           <span class="sidebar-tooltip group-hover:scale-100">Stream History</span>
-        </a>
+        </a>      
       </div>
-      <div class="mt-auto">
+      <div class="mt-auto">        
+        <div class="relative" id="updates-menu-container">
+          <div class="h-20 flex items-center justify-center px-3 py-4 hover:bg-dark-700/50 transition-colors">
+            <a href="/updates" class="w-12 h-12 rounded-full flex items-center justify-center overflow-hidden transition-all">
+              <i class="ti ti-sparkles text-xl <%= active === 'updates' ? 'text-amber-400' : 'text-gray-300' %> hover:text-white transition-colors"></i>
+            </a>
+          </div>
+        </div>
         <div class="h-px bg-gray-700 w-full"></div>
         <div class="relative" id="profile-menu-container">
           <div class="h-20 flex items-center justify-center px-3 py-4 hover:bg-dark-700/50 transition-colors">
@@ -132,9 +142,9 @@
         <span>Sign Out</span>
       </a>
     </div>
-    <div class="w-full lg:ml-20 flex flex-col min-h-screen">
+    <div class="w-full lg:ml-20 flex flex-col min-h-screen">      
       <div
-        class="hidden lg:fixed lg:flex top-0 right-0 left-20 items-center justify-end h-14 px-6 bg-dark-800 shadow-md z-10">
+        class="hidden lg:fixed lg:flex top-0 right-0 left-20 items-center justify-end h-14 px-6 bg-dark-800 shadow-md z-[10000]">
         <a href="https://github.com/bangtutorial/streamflow" target="_blank"
           class="p-2 text-gray-400 hover:text-white transition-colors mr-2">
           <i class="ti ti-brand-github text-lg"></i>
@@ -143,32 +153,15 @@
           <button id="notification-btn" class="p-2 text-gray-400 hover:text-white transition-colors relative">
             <i class="ti ti-bell text-lg"></i>
             <span class="hidden absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-          </button>
+          </button>          
           <div id="notification-dropdown"
-            class="hidden absolute right-0 mt-1 w-80 bg-dark-800 border border-gray-700 rounded-lg shadow-xl z-50">
-            <div class="p-3 border-b border-gray-700 flex items-center justify-between">
+            class="hidden absolute right-0 mt-1 w-80 bg-dark-800 border border-gray-700 rounded-lg shadow-xl z-[10001]">
+            <div class="p-3 border-b border-gray-700">
               <h3 class="font-medium">Notifications</h3>
-              <button class="text-xs text-primary hover:underline">Mark all as read</button>
-            </div>
+            </div>            
             <div class="max-h-80 overflow-y-auto" id="notification-list">
-              <div class="px-4 py-3 border-b border-gray-700 hover:bg-dark-700 transition-colors cursor-pointer" onclick="openStreamflowUpdateModal()">
-                <div class="flex items-start">
-                  <div class="shrink-0 mr-3">
-                    <div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                      <i class="ti ti-info-circle text-primary"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium">StreamFlow v2.0 Released!</p>
-                    <p class="text-sm text-gray-300 mt-1">Fitur dan imporvisasi yang ada di StreamFlow v2.</p>
-                    <p class="text-xs text-gray-400 mt-2">Just now</p>
-                  </div>
-                </div>
-              </div>
+              <!-- Notifications will be loaded dynamically -->
             </div>
-            <a href="#" class="block text-center p-2 text-sm text-primary hover:underline">
-              View all notifications
-            </a>
           </div>
         </div>
       </div>
@@ -207,7 +200,7 @@
       <a href="/gallery" class="bottom-nav-item <%= active === 'gallery' ? 'bottom-nav-active' : '' %>">
         <i class="ti ti-video"></i>
         <span>Gallery</span>
-      </a>
+      </a>      
       <a href="/history" class="bottom-nav-item <%= active === 'history' ? 'bottom-nav-active' : '' %>">
         <i class="ti ti-history"></i>
         <span>History</span>
@@ -241,93 +234,14 @@
         </a>
       </div>
     </div>
-  </div>
+  </div>  
   <div id="mobile-notification-popup"
-    class="fixed bottom-16 right-2 bg-dark-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden hidden transform transition-all duration-200 ease-out opacity-0 translate-y-4 w-72">
-    <div class="p-3 border-b border-gray-700 flex items-center justify-between">
+    class="fixed bottom-16 right-2 bg-dark-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden hidden transform transition-all duration-200 ease-out opacity-0 translate-y-1 w-72 z-[10001]">
+    <div class="p-3 border-b border-gray-700">
       <h3 class="font-medium">Notifications</h3>
-      <button class="text-xs text-primary hover:underline">Mark all as read</button>
-    </div>
+    </div>    
     <div class="max-h-80 overflow-y-auto" id="mobile-notification-list">
-      <div class="px-4 py-3 border-b border-gray-700 hover:bg-dark-700 transition-colors cursor-pointer" onclick="openStreamflowUpdateModal()">
-        <div class="flex items-start">
-          <div class="shrink-0 mr-3">
-            <div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-              <i class="ti ti-info-circle text-primary"></i>
-            </div>
-          </div>
-          <div>
-            <p class="text-sm font-medium">StreamFlow v2 Released!</p>
-            <p class="text-sm text-gray-300 mt-1">Fitur dan imporvisasi yang ada di StreamFlow v2.</p>
-            <p class="text-xs text-gray-400 mt-2">Baru saja</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div id="streamflowUpdateModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4 overflow-y-auto">
-    <div class="bg-dark-800 rounded-xl shadow-xl w-full max-w-2xl m-auto flex flex-col max-h-[90vh] border border-gray-700/50">
-      <div class="flex-shrink-0 flex items-center justify-between px-5 py-2 border-b border-gray-700/50">
-        <h3 class="text-lg font-medium text-white flex items-center gap-2">
-          <span class="text-base">🎉 Update StreamFlow v2</span>
-        </h3>
-        <button onclick="closeStreamflowUpdateModal()" class="text-gray-400 hover:text-white hover:bg-gray-700/50 px-2 py-1 rounded-lg transition-colors">
-          <i class="ti ti-x text-lg"></i>
-        </button>
-      </div>
-      <div class="p-5 overflow-y-auto text-gray-300 space-y-4">
-        <p class="text-sm">Terima kasih buat teman-teman yang sudah menunggu. Berikut adalah update terbaru yang ada di StreamFlow v2:</p>
-        
-        <div class="space-y-4">
-          <div class="flex items-start gap-3">
-            <div class="shrink-0">
-              <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                <i class="ti ti-layout-dashboard text-blue-400"></i>
-              </div>
-            </div>
-            <div>
-              <h4 class="font-medium text-white text-sm">UI Baru yang Lebih Fresh</h4>
-              <p class="text-gray-300 mt-1 text-sm">Tampilan baru yang lebih fresh dan user freindly. Sudah dibikin senyaman mungkin untuk kebutuhan live streaming.</p>
-            </div>
-          </div>
-          
-          <div class="flex items-start gap-3">
-            <div class="shrink-0">
-              <div class="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center">
-                <i class="ti ti-rocket text-green-400"></i>
-              </div>
-            </div>
-            <div>
-              <h4 class="font-medium text-white text-sm">Live Streaming Lebih Ringan</h4>
-              <p class="text-gray-300 mt-1 text-sm">Di StreamFlow v2, proses streaming sudah dioptimalkan, sehingga jauh lebih ringan dibandingkan StreamFlow v1 sebelumnya.</p>
-            </div>
-          </div>
-          
-          <div class="flex items-start gap-3">
-            <div class="shrink-0">
-              <div class="w-8 h-8 bg-purple-500/20 rounded-full flex items-center justify-center">
-                <i class="ti ti-calendar text-purple-400"></i>
-              </div>
-            </div>
-            <div>
-              <h4 class="font-medium text-white text-sm">Penjadwalan Live Streaming</h4>
-              <p class="text-gray-300 mt-1 text-sm">Di versi baru ini, fitur penjadwalan streaming ataupun auto stop sudah ditambahkan dan diperbaiki dibanding versi sebelumnya.</p>
-            </div>
-          </div>
-          
-          <div class="flex items-start gap-3">
-            <div class="shrink-0">
-              <div class="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center">
-                <i class="ti ti-bug text-amber-400"></i>
-              </div>
-            </div>
-            <div>
-              <h4 class="font-medium text-white text-sm">Fix Bug</h4>
-              <p class="text-gray-300 mt-1 text-sm">Beberapa bug yang sering ditemui di versi sebelumnya sudah di fix pada StreamFlow v2 ini, salah satunya bug streaming tiba-tiba terhenti.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Mobile notifications will be loaded dynamically -->
     </div>
   </div>
 </body>
@@ -460,15 +374,27 @@
     opacity: 1 !important;
     transform: translateY(0) !important;
     visibility: visible !important;
-  }
-  #mobile-notification-popup {
-    z-index: 100;
-    transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+  }  #mobile-notification-popup {
+    z-index: 10001;
+    transition: all 0.2s ease-out;
     display: block !important;
     visibility: hidden;
+    opacity: 0;
+    transform: translateY(4px);
   }
   #mobile-notification-popup.hidden {
     display: none !important;
+  }
+  #notification-dropdown {
+    transition: all 0.2s ease-out;
+    opacity: 0;
+    transform: translateY(4px);
+    visibility: hidden;
+  }
+  #notification-dropdown.show {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    visibility: visible !important;
   }
 </style>
 <script>
@@ -520,19 +446,33 @@
           }, 200);
         }
       });
-    }
+    }    
     const notificationBtn = document.getElementById('notification-btn');
     const notificationDropdown = document.getElementById('notification-dropdown');
     if (notificationBtn && notificationDropdown) {
       notificationBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        notificationDropdown.classList.toggle('hidden');
+        if (notificationDropdown.classList.contains('hidden')) {
+          notificationDropdown.classList.remove('hidden');
+          setTimeout(() => {
+            notificationDropdown.classList.add('show');
+          }, 10);
+          markNotificationsAsRead();
+        } else {
+          notificationDropdown.classList.remove('show');
+          setTimeout(() => {
+            notificationDropdown.classList.add('hidden');
+          }, 200);
+        }
       });
       document.addEventListener('click', (e) => {
         const isClickInsideDropdown = notificationDropdown.contains(e.target);
         const isClickOnButton = notificationBtn.contains(e.target);
         if (!isClickInsideDropdown && !isClickOnButton && !notificationDropdown.classList.contains('hidden')) {
-          notificationDropdown.classList.add('hidden');
+          notificationDropdown.classList.remove('show');
+          setTimeout(() => {
+            notificationDropdown.classList.add('hidden');
+          }, 200);
         }
       });
       notificationDropdown.addEventListener('click', (e) => {
@@ -540,7 +480,173 @@
       });
     }
     function loadNotifications() {
+      fetchGitHubCommits();
     }
+
+    let notificationCache = [];
+    let lastFetchTime = 0;
+    const CACHE_DURATION = 5 * 60 * 1000; 
+
+    function formatTimeAgo(dateString) {
+      const now = new Date();
+      const commitDate = new Date(dateString);
+      const diffInMs = now - commitDate;
+      const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      const diffInDays = Math.floor(diffInHours / 24);
+
+      if (diffInMinutes < 1) return 'Just now';
+      if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+      if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+      if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+      
+      return commitDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: commitDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
+    }    function createNotificationHTML(commit) {
+      const message = commit.commit.message.length > 60 
+        ? commit.commit.message.substring(0, 60) + '...' 
+        : commit.commit.message;
+      
+      return `
+        <a href="${commit.html_url}" target="_blank" class="block px-4 py-3 border-b border-gray-700 hover:bg-dark-700 transition-colors">
+          <div class="flex items-start gap-3">
+            <div class="shrink-0">
+              <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
+                <i class="ti ti-git-commit text-blue-400 text-sm"></i>
+              </div>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm text-white font-medium mb-1">${message}</div>
+              <div class="text-xs text-gray-400">
+                by ${commit.commit.author.name} • ${formatTimeAgo(commit.commit.author.date)}
+              </div>
+            </div>
+            <div class="shrink-0">
+              <i class="ti ti-external-link text-gray-400 text-xs"></i>
+            </div>
+          </div>
+        </a>
+      `;
+    }
+
+    function updateNotificationUI(commits) {
+      const desktopList = document.getElementById('notification-list');
+      const mobileList = document.getElementById('mobile-notification-list');
+      
+      if (!commits || commits.length === 0) {
+        const emptyHTML = `
+          <div class="px-4 py-8 text-center text-gray-400">
+            <i class="ti ti-inbox text-2xl mb-2"></i>
+            <p class="text-sm">No recent updates</p>
+          </div>
+        `;
+        if (desktopList) desktopList.innerHTML = emptyHTML;
+        if (mobileList) mobileList.innerHTML = emptyHTML;
+        return;
+      }
+
+      const notificationHTML = commits.slice(0, 3).map(createNotificationHTML).join('');
+      
+      if (desktopList) desktopList.innerHTML = notificationHTML;
+      if (mobileList) mobileList.innerHTML = notificationHTML;
+    }
+
+    async function fetchGitHubCommits() {
+      const now = Date.now();
+      
+      if (notificationCache.length > 0 && (now - lastFetchTime) < CACHE_DURATION) {
+        updateNotificationUI(notificationCache);
+        return;
+      }
+
+      try {
+        const response = await fetch('https://api.github.com/repos/bangtutorial/streamflow/commits');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const commits = await response.json();
+        
+        checkForNewCommits(commits);
+        
+        notificationCache = commits;
+        lastFetchTime = now;
+        
+        updateNotificationUI(commits);
+      } catch (error) {
+        console.error('Error fetching GitHub commits:', error);
+        
+        const errorHTML = `
+          <div class="px-4 py-6 text-center text-gray-400">
+            <i class="ti ti-alert-circle text-xl mb-2"></i>
+            <p class="text-sm">Unable to load updates</p>
+            <p class="text-xs text-gray-500 mt-1">Check your internet connection</p>
+          </div>
+        `;
+        
+        const desktopList = document.getElementById('notification-list');
+        const mobileList = document.getElementById('mobile-notification-list');
+        if (desktopList) desktopList.innerHTML = errorHTML;
+        if (mobileList) mobileList.innerHTML = errorHTML;
+      }
+    }
+
+    function checkForNewCommits(commits) {
+      if (!commits || commits.length === 0) return;
+      
+      const lastVisit = localStorage.getItem('lastNotificationCheck');
+      const latestCommitDate = new Date(commits[0].commit.author.date);
+      
+      if (!lastVisit || new Date(lastVisit) < latestCommitDate) {
+        showNotificationDot();
+      } else {
+        hideNotificationDot();
+      }
+    }
+
+    function showNotificationDot() {
+      const desktopDot = document.querySelector('#notification-btn .bg-red-500');
+      const mobileDot = document.querySelector('#mobile-notification-btn .bg-red-500');
+      
+      if (desktopDot) desktopDot.classList.remove('hidden');
+      if (mobileDot) mobileDot.classList.remove('hidden');
+    }
+
+    function hideNotificationDot() {
+      const desktopDot = document.querySelector('#notification-btn .bg-red-500');
+      const mobileDot = document.querySelector('#mobile-notification-btn .bg-red-500');
+      
+      if (desktopDot) desktopDot.classList.add('hidden');
+      if (mobileDot) mobileDot.classList.add('hidden');
+    }
+
+    function markNotificationsAsRead() {
+      localStorage.setItem('lastNotificationCheck', new Date().toISOString());
+      hideNotificationDot();
+    }
+
+    fetchGitHubCommits();
+    setInterval(fetchGitHubCommits, CACHE_DURATION);
+
+    window.addEventListener('resize', function() {
+      if (notificationDropdown && !notificationDropdown.classList.contains('hidden')) {
+        notificationDropdown.classList.remove('show');
+        setTimeout(() => {
+          notificationDropdown.classList.add('hidden');
+        }, 200);
+      }
+      
+      if (mobileNotificationPopup && !mobileNotificationPopup.classList.contains('hidden')) {
+        mobileNotificationPopup.classList.remove('show');
+        setTimeout(() => {
+          mobileNotificationPopup.classList.add('hidden');
+        }, 200);
+      }
+    });
     const mobileNotificationBtn = document.getElementById('mobile-notification-btn');
     const mobileNotificationPopup = document.getElementById('mobile-notification-popup');
     if (mobileNotificationBtn && mobileNotificationPopup) {
@@ -557,6 +663,7 @@
           setTimeout(() => {
             mobileNotificationPopup.classList.add('show');
           }, 10);
+          markNotificationsAsRead();
         } else {
           mobileNotificationPopup.classList.remove('show');
           setTimeout(() => {
@@ -572,40 +679,7 @@
           setTimeout(() => {
             mobileNotificationPopup.classList.add('hidden');
           }, 200);
-        }
-      });
-    }
-  });
-
-  function openStreamflowUpdateModal() {
-    const modal = document.getElementById('streamflowUpdateModal');
-    if (modal) {
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
-      document.body.style.overflow = 'hidden';
-    }
-  }
-
-  function closeStreamflowUpdateModal() {
-    const modal = document.getElementById('streamflowUpdateModal');
-    if (modal) {
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
-      document.body.style.overflow = 'auto';
-    }
-  }
-
-  document.addEventListener('keydown', (e) => {
-    const updateModal = document.getElementById('streamflowUpdateModal');
-    if (e.key === 'Escape' && updateModal && !updateModal.classList.contains('hidden')) {
-      closeStreamflowUpdateModal();
-    }
-  });
-
-  document.addEventListener('click', (e) => {
-    const updateModal = document.getElementById('streamflowUpdateModal');
-    if (updateModal && e.target === updateModal) { 
-      closeStreamflowUpdateModal();
+        }      });
     }
   });
 </script>

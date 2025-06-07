@@ -1,7 +1,6 @@
-<% layout('layout') -%>
-  <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+<% layout('layout') -%>  <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
     <div>
-      <h2 class="text-2xl font-bold">Stream History</h2>
+      <h2 class="text-2xl font-bold">Stream History<% if (history && history.length > 0) { %> <span class="text-gray-400 font-normal">(<%= history.length %>)</span><% } %></h2>
       <p class="text-gray-400 text-sm mt-1">View and manage your past streams</p>
     </div>
     <div class="flex items-center gap-3">
@@ -10,7 +9,7 @@
           class="bg-dark-700 border border-gray-600 text-white pl-9 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary w-full">
         <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
       </div>
-      <div class="w-32">
+      <div class="w-40">
         <select id="platform-filter"
           class="bg-dark-700 border border-gray-600 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary w-full">
           <option value="all">All Platforms</option>

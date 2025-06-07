@@ -5,11 +5,9 @@
     options={ day: 'numeric' , month: 'short' , year: 'numeric' }; return date.toLocaleDateString('en-US', options); }
     function formatDuration(seconds) { if (!seconds) return '00:00' ; const minutes=Math.floor(seconds / 60); const
     remainingSeconds=Math.floor(seconds % 60); return `${minutes.toString().padStart(2, '0'
-    )}:${remainingSeconds.toString().padStart(2, '0' )}`; } %>
-
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+    )}:${remainingSeconds.toString().padStart(2, '0' )}`; } %>    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
       <div>
-        <h2 class="text-2xl font-bold">Video Gallery</h2>
+        <h2 class="text-2xl font-bold">Video Gallery<% if (videos && videos.length > 0) { %> <span class="text-gray-400 font-normal">(<%= videos.length %>)</span><% } %></h2>
         <p class="text-gray-400 text-sm mt-1">Manage your videos for streaming</p>
       </div>
       <div class="flex flex-wrap gap-3">
@@ -33,9 +31,8 @@
           <input type="text" placeholder="Search videos..."
             class="w-full bg-dark-700 text-white pl-9 pr-4 py-2.5 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
           <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-        </div>
-
-        <div class="w-32">
+        </div>        
+        <div class="w-40 sm:w-32">
           <select
             class="w-full bg-dark-700 border border-gray-600 text-white px-3 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
             <option selected>Newest</option>

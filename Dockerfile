@@ -16,6 +16,13 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+# Define mount points for persistent data
+VOLUME /usr/src/app/db
+VOLUME /usr/src/app/public/uploads/videos
+VOLUME /usr/src/app/public/uploads/thumbnails
+VOLUME /usr/src/app/public/uploads/avatars
+VOLUME /usr/src/app/logs
+
 # Expose the application port
 EXPOSE 7575
 

@@ -162,6 +162,8 @@ A pre-built image is also available on Docker Hub, which can be pulled directly.
 docker pull anasrudin/streamflow:latest
 ```
 
+**Note:** Due to recent changes to handle session management more securely (as of November 21, 2023), the `anasrudin/streamflow:latest` image on Docker Hub needs to be rebuilt and pushed by the maintainer. If you have pulled the image before this update, please ensure you pull the newest version once it's updated, or consider building the image locally for the latest changes. You can check the "Last pushed" date on [Docker Hub](https://hub.docker.com/r/anasrudin/streamflow/tags).
+
 **Alternatively, Build the Docker Image Locally:**
 
 First, build the Docker image using the provided `Dockerfile`. Make sure you have Docker installed on your system.
@@ -170,19 +172,36 @@ First, build the Docker image using the provided `Dockerfile`. Make sure you hav
 docker build -t streamflow .
 ```
 
+**Note:** If you are rebuilding the image after recent changes (around November 21, 2023) related to session secret handling, ensure you have the latest code changes pulled from the repository.
+
 **Run the Docker Container:**
 
 Once the image is built or pulled, you can run it as a container.
 
 ```bash
-docker run -d -p 7575:7575 --name streamflow-app anasrudin/streamflow:latest
+docker run -d -p 7575:7575 \
+  -e SESSION_SECRET="your_very_strong_and_unique_secret_here" \
+  --name streamflow-app anasrudin/streamflow:latest
 ```
 
 Explanation of the command:
 - `-d`: Runs the container in detached mode (in the background).
 - `-p 7575:7575`: Maps port 7575 on your host to port 7575 in the container. If you changed the port in the `.env` file, adjust the host port accordingly (e.g., `-p YOUR_HOST_PORT:CONTAINER_PORT`).
+- `-e SESSION_SECRET="your_very_strong_and_unique_secret_here"`: Sets the session secret. **Important:** Replace `"your_very_strong_and_unique_secret_here"` with a long, random string. This is crucial for security. If not provided, the application will generate a temporary, less secure secret and issue a warning.
 - `--name streamflow-app`: Assigns a name to your container for easier management.
 - `anasrudin/streamflow:latest`: Specifies the image to use from Docker Hub. If you built it locally, you can use the local image name (e.g., `streamflow`).
+
+**Important: Setting the `SESSION_SECRET`**
+
+For security reasons, it is crucial to set a `SESSION_SECRET` environment variable when running the container in production, or even for persistent personal use. This secret is used to sign session cookies.
+
+You can generate a strong secret using a command like:
+```bash
+openssl rand -hex 32
+```
+Use the output of this command as your `SESSION_SECRET`.
+
+If you do not provide a `SESSION_SECRET` via the `-e` flag, the application will automatically generate a temporary secret for the current session. While this allows the application to run, it is **not secure for production** as the secret will change each time the container restarts, invalidating all previous sessions. A warning will be logged to the console in such cases.
 
 **Accessing the Application:**
 

@@ -8,6 +8,7 @@ const multer = require('multer');
 const fs = require('fs');
 const csrf = require('csrf');
 const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
 const bcrypt = require('bcrypt');
@@ -104,13 +105,25 @@ app.locals.helpers = {
     return `${hours}:${minutes}:${secs}`;
   }
 };
+
+let sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  sessionSecret = crypto.randomBytes(64).toString('hex');
+  console.warn(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+  console.warn(`!!! WARNING: SESSION_SECRET environment variable not set.                  !!!`);
+  console.warn(`!!! A temporary secret has been generated for this session.                !!!`);
+  console.warn(`!!! This is NOT secure for production environments.                        !!!`);
+  console.warn(`!!! Please set a strong, unique SESSION_SECRET environment variable.       !!!`);
+  console.warn(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+}
+
 app.use(session({
   store: new SQLiteStore({
     db: 'sessions.db',
     dir: './db/',
     table: 'sessions'
   }),
-  secret: process.env.SESSION_SECRET,
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {

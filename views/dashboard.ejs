@@ -2196,10 +2196,10 @@
         })
         .catch(error => {
           console.error('Error fetching server time:', error);
-        });    }
-
-    function updateLocationInfo() {
-      fetch('https://ipinfo.io/json')
+        });    
+      }    
+      function updateLocationInfo() {
+      fetch('/api/server-info')
         .then(response => response.json())
         .then(data => {
           const timezone = data.timezone || 'Unknown';
@@ -2212,15 +2212,7 @@
             editTimezoneDisplay.textContent = timezone;
           }
 
-          let location = 'Unknown';
-          if (data.city && data.region && data.country) {
-            location = `${data.city}, ${data.region}, ${data.country}`;
-          } else if (data.city && data.country) {
-            location = `${data.city}, ${data.country}`;
-          } else if (data.country) {
-            location = data.country;
-          }
-          
+          const location = data.location || 'Unknown';
           const createLocationDisplay = document.getElementById('locationDisplay');
           if (createLocationDisplay) {
             createLocationDisplay.textContent = location;

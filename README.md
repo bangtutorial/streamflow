@@ -241,7 +241,11 @@ rm db/*.db
 
 Restart aplikasi untuk create database baru.
 
-## Lisensi:
+## Contributors
+
+[![Contributors](https://contrib.rocks/image?repo=bangtutorial/streamflow)](https://github.com/bangtutorial/streamflow/graphs/contributors)
+
+## Lisensi
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/streamflow/blob/main/LICENSE)
 

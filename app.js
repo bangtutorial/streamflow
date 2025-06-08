@@ -1,6 +1,7 @@
 require('dotenv').config();
 require('./services/logger.js');
 const express = require('express');
+const axios = require('axios');
 const path = require('path');
 const engine = require('ejs-mate');
 const os = require('os');
@@ -1883,6 +1884,40 @@ app.get('/api/server-time', (req, res) => {
     formattedTime: formattedTime
   });
 });
+
+app.get('/api/server-info', async (req, res) => {
+  try {
+    const response = await axios.get('https://ipinfo.io/json');
+    const data = response.data;
+    
+    let location = 'Unknown';
+    if (data.city && data.region && data.country) {
+      location = `${data.city}, ${data.region}, ${data.country}`;
+    } else if (data.city && data.country) {
+      location = `${data.city}, ${data.country}`;
+    } else if (data.country) {
+      location = data.country;
+    }
+    
+    res.json({
+      ip: data.ip || 'Unknown',
+      location: location,
+      timezone: data.timezone || 'Unknown',
+      city: data.city || 'Unknown',
+      region: data.region || 'Unknown',
+      country: data.country || 'Unknown'
+    });
+  } catch (error) {
+    console.error('Error fetching server info from ipinfo.io:', error);
+    res.status(500).json({
+      error: 'Failed to fetch server information',
+      ip: 'Failed to load',
+      location: 'Failed to load',
+      timezone: 'Failed to load'
+    });
+  }
+});
+
 app.listen(port, '0.0.0.0', async () => {
   const ipAddresses = getLocalIpAddresses();
   console.log(`StreamFlow running at:`);

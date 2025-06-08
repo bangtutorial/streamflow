@@ -14,6 +14,7 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan
 - **Scheduled Streaming**: Jadwalkan streaming dengan waktu tertentu
 - **Advanced Settings**: Kontrol bitrate, resolution, FPS, dan orientasi
 - **Real-time Monitoring**: Monitor status streaming secara real-time
+- **Video Analytics**: Memantau statistik video langsung dari StreamFlow
 - **Responsive UI**: Tampilan modern yang responsive di semua device
 
 ## 📋 Requirements
@@ -96,11 +97,11 @@ npm run generate-secret
 
 Jika perlu ubah port, edit file [.env](.env)
 
-Contoh port: 8080, 3300, dll
-
 ```bash
 nano .env
 ```
+
+Contoh port: 8080, 3300, dll
 
 ### 3. Setup Firewall
 

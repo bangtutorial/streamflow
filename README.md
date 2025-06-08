@@ -151,6 +151,62 @@ Buat username dan password. Setelah masuk Dashboard, **Sign Out**. Lalu restart 
 pm2 restart streamflow
 ```
 
+## 🐳 Running with Docker
+
+You can also run StreamFlow using Docker. This is a convenient way to get the application running without manually installing dependencies.
+
+**1. Build the Docker Image:**
+
+First, build the Docker image using the provided `Dockerfile`. Make sure you have Docker installed on your system.
+
+```bash
+docker build -t streamflow .
+```
+
+**2. Run the Docker Container:**
+
+Once the image is built, you can run it as a container.
+
+```bash
+docker run -d -p 7575:7575 --name streamflow-app streamflow
+```
+
+Explanation of the command:
+- `-d`: Runs the container in detached mode (in the background).
+- `-p 7575:7575`: Maps port 7575 on your host to port 7575 in the container. If you changed the port in the `.env` file, adjust the host port accordingly (e.g., `-p YOUR_HOST_PORT:CONTAINER_PORT`).
+- `--name streamflow-app`: Assigns a name to your container for easier management.
+- `streamflow`: Specifies the image to use.
+
+**3. Accessing the Application:**
+
+After the container starts, you can access StreamFlow in your web browser at:
+
+```
+http://localhost:7575
+```
+
+Or, if you are running it on a VPS:
+
+```
+http://YOUR_VPS_IP:7575
+```
+
+**4. Managing the Container:**
+
+- To view logs: `docker logs streamflow-app`
+- To stop the container: `docker stop streamflow-app`
+- To start a stopped container: `docker start streamflow-app`
+- To remove the container (after stopping it): `docker rm streamflow-app`
+
+**5. Uploading to Docker Hub:**
+
+A script is provided to help you build and upload your image to Docker Hub.
+
+```bash
+./upload_to_dockerhub.sh
+```
+This script will prompt you for your Docker Hub username and the desired image name. It will then build the image, tag it with the version from `package.json` and as `latest`, and ask if you want to push it to Docker Hub.
+
 ## 📝 Informasi Tambahan
 
 ### Reset Password

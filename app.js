@@ -37,6 +37,7 @@ process.on('uncaughtException', (error) => {
   console.error('-----------------------------------');
 });
 const app = express();
+app.set("trust proxy", 1);
 const port = process.env.PORT || 7575;
 const tokens = new csrf();
 ensureDirectories();

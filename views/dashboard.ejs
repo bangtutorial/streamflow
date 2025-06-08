@@ -296,11 +296,32 @@
                       <input type="password" id="streamKey" name="streamKey"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Stream Key" required>
-                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      
+                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                        
                       <button type="button" onclick="toggleStreamKeyVisibility()"
                         class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                         <i class="ti ti-eye" id="streamKeyToggle"></i>
                       </button>
+                    </div>                  
+                  </div>                
+                </div>
+                <!-- Time Info Section -->
+                <div class="bg-dark-700 rounded-lg p-4 border border-gray-600">
+                  <div class="space-y-2">
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-clock text-yellow-500 mr-1"></i>
+                      <span class="font-bold">Server Time:</span> <span id="serverTimeDisplay" class="text-yellow-500">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-world text-blue-400 mr-1"></i>
+                      <span class="font-bold">Timezone:</span> <span id="timezoneDisplay" class="text-blue-400">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-map-pin text-green-400 mr-1"></i>
+                      <span class="font-bold">Location:</span> <span id="locationDisplay" class="text-green-400">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-network text-purple-400 mr-1"></i>
+                      <span class="font-bold">IP Address:</span> <span id="ipDisplay" class="text-purple-400">loading...</span>
                     </div>
                   </div>
                 </div>
@@ -321,17 +342,13 @@
                       <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
                       <p class="text-sm text-gray-500">Select a video to preview</p>
                     </div>
-                  </div>
-                </div>
+                  </div>                
+                </div>              
               </div>
-            </div>              
-            <div class="space-y-2">
+            </div><div class="space-y-2">
               <div class="flex flex-col sm:flex-row sm:items-center">
                 <label class="text-sm font-medium text-white">Schedule Settings</label>
               </div>              
-              <div class="text-xs text-gray-300">
-                <span class="font-bold">Server Time:</span> <span id="serverTimeDisplay" class="text-yellow-500">loading...</span>
-              </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <input type="datetime-local"
@@ -344,9 +361,11 @@
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
                 </div>
               </div>
-            </div>            <div class="space-y-4">
+            </div>            
+            <div class="space-y-4">
               <div class="pt-2 border-t border-gray-700">
-                <div class="flex items-center justify-between">                  <div class="flex items-center">
+                <div class="flex items-center justify-between">                  
+                  <div class="flex items-center">
                     <span class="text-sm font-medium text-white">Advanced Settings</span>
                   </div><label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" id="advancedSettingsToggle" class="sr-only peer">
@@ -416,10 +435,11 @@
               </div>
             </div>
           </form>
-        </div>
+        </div>        
         <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
           <button onclick="closeNewStreamModal()"
-            class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+            <i class="ti ti-x mr-1.5"></i>
             Cancel
           </button>
           <button type="submit" form="newStreamForm"
@@ -551,10 +571,32 @@
                       <input type="password" id="editStreamKey" name="streamKey"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Stream Key" required>
-                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      <button type="button" onclick="toggleEditStreamKeyVisibility()"
+                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      
+                      <button type="button" onclick="toggleEditStreamKeyVisibility()"
                         class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                         <i class="ti ti-eye" id="editStreamKeyToggle"></i>
                       </button>
+                    </div>                  
+                  </div>                
+                </div>
+                <!-- Time Info Section -->
+                <div class="bg-dark-700 rounded-lg p-4 border border-gray-600">
+                  <div class="space-y-2">
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-clock text-yellow-500 mr-1"></i>
+                      <span class="font-bold">Server Time:</span> <span id="editServerTimeDisplay" class="text-yellow-500">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-world text-blue-400 mr-1"></i>
+                      <span class="font-bold">Timezone:</span> <span id="editTimezoneDisplay" class="text-blue-400">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-map-pin text-green-400 mr-1"></i>
+                      <span class="font-bold">Location:</span> <span id="editLocationDisplay" class="text-green-400">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-network text-purple-400 mr-1"></i>
+                      <span class="font-bold">IP Address:</span> <span id="editIpDisplay" class="text-purple-400">loading...</span>
                     </div>
                   </div>
                 </div>
@@ -575,14 +617,13 @@
                       <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
                       <p class="text-sm text-gray-500">Select a video to preview</p>
                     </div>
-                  </div>
-                </div>
+                  </div>                
+                </div>              
               </div>
-            </div>            
-            <div class="space-y-2">
-              <div>
+            </div><div class="space-y-2">
+              <div class="flex flex-col sm:flex-row sm:items-center">
                 <label class="text-sm font-medium text-white">Schedule Settings</label>
-              </div>
+              </div>              
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <input type="datetime-local" id="editScheduleTime"
@@ -594,11 +635,8 @@
                     placeholder="Duration">
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
                 </div>
-              </div>              
-              <div class="text-xs text-gray-300">
-                <span class="font-bold">Server Time:</span> <span id="editServerTimeDisplay" class="text-yellow-500">loading...</span>
               </div>
-            </div>            
+            </div>
             <div class="space-y-4">
               <div class="pt-2 border-t border-gray-700">
                 <div class="flex items-center justify-between">                  
@@ -672,10 +710,11 @@
               </div>
             </div>
           </form>
-        </div>
+        </div>        
         <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
           <button onclick="closeEditStreamModal()"
-            class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+            <i class="ti ti-x mr-1.5"></i>
             Cancel
           </button>
           <button type="submit" form="editStreamForm"
@@ -1000,10 +1039,15 @@
     updateSystemStats();
     setInterval(updateSystemStats, 5000);
     document.getElementById('newStreamForm').addEventListener('submit', function (e) {
-      e.preventDefault();
+      e.preventDefault();      
       const videoId = document.getElementById('selectedVideoId').value;
       if (!videoId) {
-        alert('Please select a video before creating the stream');
+        createModalDialog({
+          type: 'warning',
+          title: 'Video Required',
+          message: 'Please select a video before creating the stream',
+          confirmText: 'OK'
+        });
         const videoSelector = document.querySelector('[onclick="toggleVideoSelector()"]');
         videoSelector.classList.add('border-red-500');
         videoSelector.classList.remove('border-gray-600');
@@ -1017,10 +1061,14 @@
           duration: 300,
           iterations: 1
         });
-        return;
-      }
+        return;      }
       if (!isStreamKeyValid) {
-        alert('Please use a different stream key. This one is already in use.');
+        createModalDialog({
+          type: 'warning',
+          title: 'Invalid Stream Key',
+          message: 'Please use a different stream key. This one is already in use.',
+          confirmText: 'OK'
+        });
         return;
       }
       const formData = {
@@ -1051,22 +1099,31 @@
           ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
         },
         body: JSON.stringify(formData)
-      })
-        .then(response => response.json())
-        .then(data => {
+      })        
+      .then(response => response.json())        
+      .then(data => {
           if (data.success) {
-            alert('Stream created successfully!');
             closeNewStreamModal();
             setTimeout(() => {
               window.location.reload();
             }, 500);
           } else {
-            alert(`Error: ${data.error || 'Failed to create stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Creation Failed',
+              message: `Error: ${data.error || 'Failed to create stream'}`,
+              confirmText: 'OK'
+            });
           }
-        })
+        })        
         .catch(error => {
           console.error('Error:', error);
-          alert('An error occurred while creating the stream');
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: 'An error occurred while creating the stream',
+            confirmText: 'OK'
+          });
         });
     });
     document.addEventListener('DOMContentLoaded', function () {
@@ -1459,21 +1516,29 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'live' })
-      })
-        .then(response => response.json())
-        .then(data => {
+      })        
+      .then(response => response.json())        
+      .then(data => {
           if (data.success) {
-            const streamMode = data.isAdvancedMode ? "Advanced mode" : "Simple mode";
-            alert(`Stream started successfully! (${streamMode})`);
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to start stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Start Failed',
+              message: `Error: ${data.error || 'Failed to start stream'}`,
+              confirmText: 'OK'
+            });
             restoreButtons();
           }
-        })
+        })        
         .catch(error => {
           console.error('Error starting stream:', error);
-          alert(`An error occurred while starting the stream: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while starting the stream: ${error.message}`,
+            confirmText: 'OK'
+          });
           restoreButtons();
         });
     }
@@ -1500,20 +1565,29 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'offline' })
-      })
-        .then(response => response.json())
-        .then(data => {
+      })        
+      .then(response => response.json())        
+      .then(data => {
           if (data.success) {
-            alert('Stream stopped successfully!');
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to stop stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Stop Failed',
+              message: `Error: ${data.error || 'Failed to stop stream'}`,
+              confirmText: 'OK'
+            });
             restoreButtons();
           }
-        })
+        })        
         .catch(error => {
           console.error('Error stopping stream:', error);
-          alert(`An error occurred while stopping the stream: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while stopping the stream: ${error.message}`,
+            confirmText: 'OK'
+          });
           restoreButtons();
         });
     }
@@ -1540,48 +1614,75 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'offline' })
-      })
-        .then(response => response.json())
-        .then(data => {
+      })        .then(response => response.json())        
+      .then(data => {
           if (data.success) {
-            alert('Schedule cancelled successfully!');
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to cancel schedule'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Cancel Failed',
+              message: `Error: ${data.error || 'Failed to cancel schedule'}`,
+              confirmText: 'OK'
+            });
             restoreButtons();
           }
-        })
+        })        
         .catch(error => {
           console.error('Error cancelling schedule:', error);
-          alert(`An error occurred while cancelling the schedule: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while cancelling the schedule: ${error.message}`,
+            confirmText: 'OK'
+          });
           restoreButtons();
         });
     }
     function editStream(streamId) {
       console.log('Edit stream:', streamId);
-    }
+    }    
     function deleteStream(streamId) {
       if (!streamId) return;
-      if (confirm('Are you sure you want to delete this stream?')) {
-        fetch(`/api/streams/${streamId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              window.location.reload();
-            } else {
-              alert('Error: ' + (data.error || 'Failed to delete stream'));
+      
+      createModalDialog({
+        type: 'danger',
+        title: 'Delete Stream',
+        message: 'Are you sure you want to delete this stream? This action cannot be undone.',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      }).then(result => {
+        if (result.confirmed) {
+          fetch(`/api/streams/${streamId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
             }
           })
-          .catch(error => {
-            console.error('Error deleting stream:', error);
-            alert('An error occurred while deleting the stream');
-          });
-      }
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                window.location.reload();
+              } else {
+                createModalDialog({
+                  type: 'danger',
+                  title: 'Delete Failed',
+                  message: 'Error: ' + (data.error || 'Failed to delete stream'),
+                  confirmText: 'OK'
+                });
+              }
+            })
+            .catch(error => {
+              console.error('Error deleting stream:', error);
+              createModalDialog({
+                type: 'danger',
+                title: 'Error',
+                message: 'An error occurred while deleting the stream',
+                confirmText: 'OK'
+              });
+            });
+        }
+      });
     }
     function startCountdowns() {
       const updateTimers = () => {
@@ -1619,17 +1720,27 @@
     function editStream(streamId) {
       if (!streamId) return;
       fetch(`/api/streams/${streamId}`)
-        .then(response => response.json())
+        .then(response => response.json())        
         .then(data => {
           if (data.success) {
             openEditStreamModal(data.stream);
           } else {
-            alert('Error: ' + (data.error || 'Failed to fetch stream data'));
+            createModalDialog({
+              type: 'danger',
+              title: 'Fetch Failed',
+              message: 'Error: ' + (data.error || 'Failed to fetch stream data'),
+              confirmText: 'OK'
+            });
           }
         })
         .catch(error => {
           console.error('Error fetching stream data:', error);
-          alert('An error occurred while fetching stream data');
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: 'An error occurred while fetching stream data',
+            confirmText: 'OK'
+          });
         });
     }
     function openEditStreamModal(stream) {
@@ -1744,7 +1855,8 @@
       desktopPreview.classList.add('hidden');
       mobilePreview.classList.add('hidden');
       desktopEmptyPreview.classList.remove('hidden');
-      mobileEmptyPreview.classList.remove('hidden');      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
+      mobileEmptyPreview.classList.remove('hidden');      
+      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
       if (advancedSettingsContent && advancedSettingsToggle) {
         advancedSettingsContent.classList.add('hidden');
@@ -1921,15 +2033,25 @@
       const editForm = document.getElementById('editStreamForm');
       if (editForm) {
         editForm.addEventListener('submit', function (e) {
-          e.preventDefault();
+          e.preventDefault();          
           const streamId = document.getElementById('editStreamId').value;
           if (!streamId) {
-            alert('Stream ID is missing.');
+            createModalDialog({
+              type: 'warning',
+              title: 'Missing Stream ID',
+              message: 'Stream ID is missing.',
+              confirmText: 'OK'
+            });
             return;
           }
           const videoId = document.getElementById('editSelectedVideoId').value;
           if (!videoId) {
-            alert('Please select a video before updating the stream.');
+            createModalDialog({
+              type: 'warning',
+              title: 'Video Required',
+              message: 'Please select a video before updating the stream.',
+              confirmText: 'OK'
+            });
             return;
           }
           const formData = {
@@ -1960,22 +2082,31 @@
               ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
             },
             body: JSON.stringify(formData)
-          })
-            .then(response => response.json())
-            .then(data => {
+          })            
+          .then(response => response.json())            
+          .then(data => {
               if (data.success) {
-                alert('Stream updated successfully!');
                 closeEditStreamModal();
                 setTimeout(() => {
                   window.location.reload();
                 }, 500);
               } else {
-                alert(`Error: ${data.error || 'Failed to update stream'}`);
+                createModalDialog({
+                  type: 'danger',
+                  title: 'Update Failed',
+                  message: `Error: ${data.error || 'Failed to update stream'}`,
+                  confirmText: 'OK'
+                });
               }
             })
             .catch(error => {
               console.error('Error:', error);
-              alert('An error occurred while updating the stream');
+              createModalDialog({
+                type: 'danger',
+                title: 'Error',
+                message: 'An error occurred while updating the stream',
+                confirmText: 'OK'
+              });
             });
         });
       }
@@ -2016,9 +2147,20 @@
         
         toggle.addEventListener('change', function () {
           if (this.checked) {
-            // Show alert warning when advanced settings is activated
-            alert('Menggunakan advanced settings, proses streaming akan menjadi lebih berat karena ada proses re-encoding video');
-            content.classList.remove('hidden');
+            createModalDialog({
+              type: 'warning',
+              title: 'Advanced Settings Warning',
+              message: 'Menggunakan advanced settings, proses streaming akan menjadi lebih berat karena ada proses re-encoding video',
+              confirmText: 'OK',
+              cancelText: 'Cancel'
+            }).then(result => {
+              if (result.confirmed) {
+                content.classList.remove('hidden');
+              } else {
+                this.checked = false;
+                content.classList.add('hidden');
+              }
+            });
           } else {
             content.classList.add('hidden');
           }
@@ -2054,10 +2196,74 @@
         })
         .catch(error => {
           console.error('Error fetching server time:', error);
+        });    }
+
+    function updateLocationInfo() {
+      fetch('https://ipinfo.io/json')
+        .then(response => response.json())
+        .then(data => {
+          const timezone = data.timezone || 'Unknown';
+          const createTimezoneDisplay = document.getElementById('timezoneDisplay');
+          if (createTimezoneDisplay) {
+            createTimezoneDisplay.textContent = timezone;
+          }
+          const editTimezoneDisplay = document.getElementById('editTimezoneDisplay');
+          if (editTimezoneDisplay) {
+            editTimezoneDisplay.textContent = timezone;
+          }
+
+          let location = 'Unknown';
+          if (data.city && data.region && data.country) {
+            location = `${data.city}, ${data.region}, ${data.country}`;
+          } else if (data.city && data.country) {
+            location = `${data.city}, ${data.country}`;
+          } else if (data.country) {
+            location = data.country;
+          }
+          
+          const createLocationDisplay = document.getElementById('locationDisplay');
+          if (createLocationDisplay) {
+            createLocationDisplay.textContent = location;
+          }
+          const editLocationDisplay = document.getElementById('editLocationDisplay');
+          if (editLocationDisplay) {
+            editLocationDisplay.textContent = location;
+          }
+
+          const ip = data.ip || 'Unknown';
+          const createIpDisplay = document.getElementById('ipDisplay');
+          if (createIpDisplay) {
+            createIpDisplay.textContent = ip;
+          }
+          const editIpDisplay = document.getElementById('editIpDisplay');
+          if (editIpDisplay) {
+            editIpDisplay.textContent = ip;
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching location info:', error);
+          const fallbackMessage = 'Failed to load';
+          
+          ['timezoneDisplay', 'editTimezoneDisplay'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = fallbackMessage;
+          });
+          
+          ['locationDisplay', 'editLocationDisplay'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = fallbackMessage;
+          });
+          
+          ['ipDisplay', 'editIpDisplay'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = fallbackMessage;
+          });
         });
     }
+
     document.addEventListener('DOMContentLoaded', function () {
       updateServerTime();
+      updateLocationInfo();
       setInterval(updateServerTime, 1000);
     });
     document.addEventListener('DOMContentLoaded', function () {
@@ -2104,8 +2310,142 @@
             </div>
           `;
             }
-          }
+          }        
         });
       }
     });
+
+    function createModalDialog(options) {
+      const dialog = document.createElement('div');
+      dialog.id = 'custom-modal';
+      dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300';      
+      const themes = {
+        'info': {
+          icon: options.icon || 'ti-info-circle',
+          color: 'text-blue-600',
+          bg: 'bg-blue-600/10',
+          border: 'border-gray-600/50',
+          button: 'bg-blue-600 hover:bg-blue-700',
+          buttonIcon: 'ti-check'
+        },
+        'danger': {
+          icon: options.icon || 'ti-alert-triangle',
+          color: 'text-red-400',
+          bg: 'bg-red-500/10',
+          border: 'border-gray-600/50',
+          button: 'bg-red-500 hover:bg-red-600',
+          buttonIcon: 'ti-trash'
+        },
+        'warning': {
+          icon: options.icon || 'ti-alert-triangle',
+          color: 'text-yellow-400',
+          bg: 'bg-yellow-500/10',
+          border: 'border-yellow-500/50',
+          button: 'bg-yellow-500 hover:bg-yellow-600',
+          buttonIcon: 'ti-alert-circle'        }
+      };
+      
+      const theme = themes[options.type || 'info'];
+      
+      dialog.innerHTML = `
+        <div class="transform transition-all duration-300 opacity-0 scale-95 modal-content max-w-md w-full mx-4">
+          <div class="bg-dark-800 rounded-lg shadow-xl border ${theme.border} overflow-hidden">
+              <div class="px-6 py-5 flex items-center">
+              <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mr-4 shrink-0">
+                <i class="ti ${theme.icon} ${theme.color} text-2xl"></i>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-medium text-white">${options.title}</h3>
+                <p class="text-gray-400 text-sm mt-1">${options.message}</p>
+              </div>
+            </div>
+            
+            ${options.hasInput ? `
+            <div class="px-6 pb-4">
+              <input 
+                type="text" 
+                id="modal-input" 
+                class="bg-dark-900 text-white px-4 py-3 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+                value="${options.inputValue || ''}"
+                placeholder="Enter new title..."
+                autofocus
+              >
+            </div>
+            ` : ''}
+            
+            <div class="px-6 py-4 flex justify-end space-x-3 border-t border-gray-600/50">
+              <button id="modal-cancel-btn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+                <i class="ti ti-x mr-1.5"></i>
+                ${options.cancelText || 'Cancel'}
+              </button>              
+              <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
+                <i class="ti ${theme.buttonIcon} mr-1.5"></i>
+                ${options.confirmText || 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(dialog);
+      document.body.classList.add('overflow-hidden');
+      
+      setTimeout(() => {
+        const modalContent = dialog.querySelector('.modal-content');
+        if (modalContent) {
+          modalContent.classList.replace('opacity-0', 'opacity-100');
+          modalContent.classList.replace('scale-95', 'scale-100');
+        }
+      }, 10);
+      
+      return new Promise((resolve) => {        
+        document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+          const inputValue = options.hasInput ? document.getElementById('modal-input').value : null;
+          closeModalWithAnimation(true, inputValue);
+        });
+        
+        document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+          closeModalWithAnimation();
+        });
+        
+        document.addEventListener('keydown', function escapeHandler(e) {
+          if (e.key === 'Escape') {
+            closeModalWithAnimation();
+            document.removeEventListener('keydown', escapeHandler);
+          }
+        });
+        
+        dialog.addEventListener('click', function (e) {
+          if (e.target === dialog) {
+            closeModalWithAnimation();
+          }
+        });
+        
+        if (options.hasInput) {
+          const input = document.getElementById('modal-input');
+          input.focus();
+          input.select();
+          input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              closeModalWithAnimation(true, input.value);
+            }
+          });
+        }
+        
+        function closeModalWithAnimation(confirmed = false, value = null) {
+          const modalContent = dialog.querySelector('.modal-content');
+          if (modalContent) {
+            modalContent.classList.replace('opacity-100', 'opacity-0');
+            modalContent.classList.replace('scale-100', 'scale-95');
+          }
+          setTimeout(() => {
+            document.body.classList.remove('overflow-hidden');
+            dialog.remove();
+            resolve({ confirmed, value, closeNow: true });
+          }, 200);
+        }
+      });
+    }
+
   </script>

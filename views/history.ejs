@@ -156,49 +156,69 @@
       const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
       const secs = Math.floor(seconds % 60).toString().padStart(2, '0');
       return `${hours}:${minutes}:${secs}`;
-    }
-    function deleteHistoryEntry(id, title) {
-      if (confirm(`Are you sure you want to delete the history entry for "${title}"?`)) {
-        fetch(`/api/history/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
+    }    function deleteHistoryEntry(id, title) {
+      createModalDialog({
+        type: 'danger',
+        icon: 'ti-trash',
+        title: 'Delete History Entry',
+        message: `Are you sure you want to delete the history entry for "${title}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel'      }).then(result => {
+        if (result.confirmed) {
+          const modal = document.getElementById('custom-modal');
+          if (modal) {
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+              modalContent.classList.replace('opacity-100', 'opacity-0');
+              modalContent.classList.replace('scale-100', 'scale-95');
+            }
+            setTimeout(() => {
+              document.body.classList.remove('overflow-hidden');
+              modal.remove();
+            }, 200);
           }
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              showToast('History entry deleted successfully');
-              const row = document.querySelector(`tr[data-id="${id}"]`);
-              if (row) {
-                row.classList.add('animate-fade-out');
-                setTimeout(() => {
-                  row.remove();
-                  const tableBody = document.getElementById('history-table-body');
-                  if (tableBody.children.length === 0) {
-                    tableBody.innerHTML = `
-                  <tr>
-                    <td colspan="6" class="px-6 py-10 text-center text-gray-400">
-                      <div class="flex flex-col items-center">
-                        <i class="ti ti-history text-3xl mb-2"></i>
-                        <p>No stream history found</p>
-                        <p class="text-xs mt-1">Your completed streams will appear here</p>
-                      </div>
-                    </td>
-                  </tr>
-                `;
-                  }
-                }, 300);
-              }
-            } else {
-              showToast('Error: ' + (data.error || 'Failed to delete history entry'));
+          
+          fetch(`/api/history/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
             }
           })
-          .catch(error => {
-            console.error('Error:', error);
-            showToast('An error occurred while deleting history entry');
-          });
-      }
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                showToast('success', 'History entry deleted successfully');
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                  row.classList.add('animate-fade-out');
+                  setTimeout(() => {
+                    row.remove();
+                    const tableBody = document.getElementById('history-table-body');
+                    if (tableBody.children.length === 0) {
+                      tableBody.innerHTML = `
+                      <tr>
+                        <td colspan="6" class="px-6 py-10 text-center text-gray-400">
+                          <div class="flex flex-col items-center">
+                            <i class="ti ti-history text-3xl mb-2"></i>
+                            <p>No stream history found</p>
+                            <p class="text-xs mt-1">Your completed streams will appear here</p>
+                          </div>
+                        </td>
+                      </tr>
+                    `;
+                    }
+                  }, 300);
+                }
+              } else {
+                showToast('error', 'Error: ' + (data.error || 'Failed to delete history entry'));
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              showToast('error', 'An error occurred while deleting history entry');
+            });
+        }
+      });
     }
     document.addEventListener('DOMContentLoaded', function () {
       const searchInput = document.getElementById('history-search');
@@ -237,13 +257,21 @@
       }
       searchInput.addEventListener('input', filterTable);
       platformFilter.addEventListener('change', filterTable);
-    });
-    function showToast(message) {
+    });    
+    function showToast(type, message) {
       const toast = document.createElement('div');
       toast.className = 'fixed bottom-4 right-4 bg-dark-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+      
+      let iconClass = '';
+      if (type === 'error') {
+        iconClass = 'ti ti-x text-red-400';
+      } else {
+        iconClass = 'ti ti-info-circle text-blue-400';
+      }
+      
       toast.innerHTML = `
       <div class="flex items-center">
-        <i class="ti ti-check text-green-400 mr-2"></i>
+        <i class="${iconClass} mr-2"></i>
         <span>${message}</span>
       </div>
     `;
@@ -271,7 +299,118 @@
         toast.classList.add('animate-fade-out');
         setTimeout(() => {
           document.body.removeChild(toast);
-        }, 300);
+        }, 300);      
       }, 3000);
     }
+
+    function createModalDialog(options) {
+      const dialog = document.createElement('div');
+      dialog.id = 'custom-modal';
+      dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300';
+      
+      const themes = {
+        'info': {
+          icon: options.icon || 'ti-info-circle',
+          color: 'text-blue-600',
+          bg: 'bg-blue-600/10',
+          border: 'border-gray-600/50',
+          button: 'bg-blue-600 hover:bg-blue-700',
+          buttonIcon: 'ti-check'
+        },
+        'danger': {
+          icon: options.icon || 'ti-alert-triangle',
+          color: 'text-red-400',
+          bg: 'bg-red-500/10',
+          border: 'border-gray-600/50',
+          button: 'bg-red-500 hover:bg-red-600',
+          buttonIcon: 'ti-trash'
+        },
+        'warning': {
+          icon: options.icon || 'ti-alert-triangle',
+          color: 'text-yellow-400',
+          bg: 'bg-yellow-500/10',
+          border: 'border-yellow-500/50',
+          button: 'bg-yellow-500 hover:bg-yellow-600',
+          buttonIcon: 'ti-alert-circle'
+        },
+      };
+      
+      const theme = themes[options.type || 'info'];
+      
+      dialog.innerHTML = `
+        <div class="transform transition-all duration-300 opacity-0 scale-95 modal-content max-w-md w-full mx-4">
+          <div class="bg-dark-800 rounded-lg shadow-xl border ${theme.border} overflow-hidden">
+            
+            <div class="px-6 py-5 flex items-center">
+              <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mr-4 shrink-0">
+                <i class="ti ${theme.icon} ${theme.color} text-2xl"></i>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-medium text-white">${options.title}</h3>
+                <p class="text-gray-400 text-sm mt-1">${options.message}</p>
+              </div>
+            </div>
+            
+            <div class="px-6 py-4 flex justify-end space-x-3 border-t border-gray-600/50">
+              <button id="modal-cancel-btn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+                <i class="ti ti-x mr-1.5"></i>
+                ${options.cancelText || 'Cancel'}
+              </button>
+              <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
+                <i class="ti ${theme.buttonIcon} mr-1.5"></i>
+                ${options.confirmText || 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(dialog);
+      document.body.classList.add('overflow-hidden');
+      
+      setTimeout(() => {
+        const modalContent = dialog.querySelector('.modal-content');
+        if (modalContent) {
+          modalContent.classList.replace('opacity-0', 'opacity-100');
+          modalContent.classList.replace('scale-95', 'scale-100');
+        }
+      }, 10);
+      
+      return new Promise((resolve) => {
+        document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+          resolve({ confirmed: true, closeNow: false });
+        });
+        
+        document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+          closeModalWithAnimation();
+        });
+        
+        document.addEventListener('keydown', function escapeHandler(e) {
+          if (e.key === 'Escape') {
+            closeModalWithAnimation();
+            document.removeEventListener('keydown', escapeHandler);
+          }
+        });
+        
+        dialog.addEventListener('click', function (e) {
+          if (e.target === dialog) {
+            closeModalWithAnimation();
+          }
+        });
+        
+        function closeModalWithAnimation(confirmed = false) {
+          const modalContent = dialog.querySelector('.modal-content');
+          if (modalContent) {
+            modalContent.classList.replace('opacity-100', 'opacity-0');
+            modalContent.classList.replace('scale-100', 'scale-95');
+          }
+          setTimeout(() => {
+            document.body.classList.remove('overflow-hidden');
+            dialog.remove();
+            resolve({ confirmed, closeNow: true });
+          }, 200);
+        }
+      });
+    }
+
   </script>

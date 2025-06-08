@@ -105,7 +105,7 @@
                 <h3 class="text-xl font-medium text-gray-300 mb-1">No videos yet</h3>
                 <p class="text-gray-500 mb-4">Upload your first video to get started</p>
               </div>
-              <% } %>
+            <% } %>
     </div>
 
     <div class="mt-6 flex items-center justify-between">
@@ -159,44 +159,57 @@
 
                   <div class="mb-3 transition-all" id="dropzoneIconContainer">
                     <i class="ti ti-upload text-4xl text-gray-500"></i>
-                  </div>
+                  </div>                  
                   <p class="text-gray-300 mb-2">Drag and drop video files here</p>
-                  <p class="text-gray-500 text-sm mb-4">Or click to browse</p>
+                  <p class="text-gray-500 text-sm mb-4">Select multiple files to upload at once</p>
                   <label
                     class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors inline-block cursor-pointer">
-                    <span>Select files</span>
+                    <span>Select files</span>                    
                     <input type="file" name="video" accept="video/mp4,video/avi,video/quicktime" class="hidden"
-                      id="videoFileInput">
+                      id="videoFileInput" multiple>
                   </label>
                   <p class="text-gray-500 text-xs mt-4">Supported formats: MP4, AVI, MOV</p>
                 </div>
-              </div>
-
+              </div>              
               <div id="selectedFileInfo" class="mt-4 hidden">
                 <div class="bg-dark-700/50 p-4 rounded-lg border border-gray-600/50">
-                  <div class="flex items-start">
-                    <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
-                      <i class="ti ti-file-video text-blue-400"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p id="selectedFileName" class="font-medium break-words"></p>
-                      <p id="selectedFileSize" class="text-xs text-gray-400 mt-1"></p>
-                    </div>
-                    <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white ml-2 shrink-0">
+                  <div class="flex items-start justify-between mb-2">
+                    <h4 class="font-medium text-white">Selected Files</h4>
+                    <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white">
                       <i class="ti ti-x"></i>
                     </button>
                   </div>
+                  <div id="selectedFilesList" class="space-y-2 max-h-32 overflow-y-auto">
+                    <!-- Files will be listed here -->
+                  </div>
+                  <div class="mt-3 pt-3 border-t border-gray-600">
+                    <p class="text-sm text-gray-400">
+                      <span id="totalFilesCount">0</span> file(s) selected • 
+                      <span id="totalFilesSize">0 MB</span> total
+                    </p>
+                  </div>
                 </div>
-              </div>
-
+              </div>              
               <div class="mt-6 hidden" id="uploadProgress">
-                <div class="flex justify-between items-start text-sm mb-1.5">
-                  <span id="uploadProgressFilename" class="break-words mr-2 flex-1 min-w-0">Uploading...</span>
-                  <span id="uploadProgressPercent" class="text-blue-400 ml-2 shrink-0">0%</span>
-                </div>
-                <div class="w-full bg-dark-700 rounded-full h-2.5 overflow-hidden">
-                  <div id="uploadProgressBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
-                    style="width: 0%"></div>
+                <div class="bg-dark-700/50 p-4 rounded-lg border border-gray-600/50">
+                  <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-medium text-white">Upload Progress</h4>
+                    <span id="overallProgress" class="text-sm text-gray-400">0 / 0</span>
+                  </div>
+                  
+                  <div class="mb-3">
+                    <div class="flex justify-between text-sm mb-1">
+                      <span class="text-gray-300">Overall Progress</span>
+                      <span id="overallPercentage" class="text-blue-400">0%</span>
+                    </div>
+                    <div class="w-full bg-dark-700 rounded-full h-2">
+                      <div id="overallProgressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-2 max-h-48 overflow-y-auto" id="uploadFilesList">
+                    <!-- Individual file progress will be shown here -->
+                  </div>
                 </div>
               </div>
             </form>
@@ -837,81 +850,208 @@
           const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
           const i = Math.floor(Math.log(bytes) / Math.log(k));
           return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+        }        
         const videoFileInput = document.getElementById('videoFileInput');
         const selectedFileInfo = document.getElementById('selectedFileInfo');
-        const selectedFileName = document.getElementById('selectedFileName');
-        const selectedFileSize = document.getElementById('selectedFileSize');
+        const selectedFilesList = document.getElementById('selectedFilesList');
+        const totalFilesCount = document.getElementById('totalFilesCount');
+        const totalFilesSize = document.getElementById('totalFilesSize');
         const clearFileButton = document.getElementById('clearFileButton');
         const uploadDropzone = document.getElementById('uploadDropzone');
         const uploadButton = document.getElementById('uploadButton');
         const uploadProgress = document.getElementById('uploadProgress');
-        const uploadProgressBar = document.getElementById('uploadProgressBar');
-        const uploadProgressPercent = document.getElementById('uploadProgressPercent');
-        const uploadProgressFilename = document.getElementById('uploadProgressFilename');
+        const overallProgressBar = document.getElementById('overallProgressBar');
+        const overallPercentage = document.getElementById('overallPercentage');
+        const overallProgress = document.getElementById('overallProgress');
+        const uploadFilesList = document.getElementById('uploadFilesList');
+        
+        let selectedFiles = [];
+        
         videoFileInput.addEventListener('change', function () {
-          if (this.files.length > 0) {
-            const file = this.files[0];
-            selectedFileName.textContent = file.name;
-            selectedFileSize.textContent = formatFileSize(file.size);
+          selectedFiles = Array.from(this.files);
+          updateSelectedFilesDisplay();
+        });
+        
+        function updateSelectedFilesDisplay() {
+          if (selectedFiles.length > 0) {
             uploadDropzone.classList.add('hidden');
             selectedFileInfo.classList.remove('hidden');
             uploadButton.disabled = false;
+            
+            selectedFilesList.innerHTML = '';
+            let totalSize = 0;
+            
+            selectedFiles.forEach((file, index) => {
+              totalSize += file.size;
+              const fileItem = document.createElement('div');
+              fileItem.className = 'flex items-center p-2 bg-dark-800 rounded border border-gray-600';
+              fileItem.innerHTML = `
+                <div class="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
+                  <i class="ti ti-file-video text-blue-400 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium break-words">${file.name}</p>
+                  <p class="text-xs text-gray-400">${formatFileSize(file.size)}</p>
+                </div>
+                <button type="button" onclick="removeFile(${index})" class="text-gray-400 hover:text-red-400 ml-2 shrink-0">
+                  <i class="ti ti-x text-sm"></i>
+                </button>
+              `;
+              selectedFilesList.appendChild(fileItem);
+            });
+            
+            totalFilesCount.textContent = selectedFiles.length;
+            totalFilesSize.textContent = formatFileSize(totalSize);
+          } else {
+            uploadDropzone.classList.remove('hidden');
+            selectedFileInfo.classList.add('hidden');
+            uploadButton.disabled = true;
           }
-        });
+        }
+        
+        function removeFile(index) {
+          selectedFiles.splice(index, 1);
+          updateSelectedFilesDisplay();
+        }
+        
+        window.removeFile = removeFile;        
         uploadButton.addEventListener('click', function () {
-          if (videoFileInput.files.length === 0) {
+          if (selectedFiles.length === 0) {
             return;
           }
-          const file = videoFileInput.files[0];
-          const formData = new FormData();
-          formData.append('video', file);
+          
           uploadDropzone.classList.add('hidden');
           selectedFileInfo.classList.add('hidden');
           uploadProgress.classList.remove('hidden');
-          uploadProgressFilename.textContent = file.name;
           uploadButton.disabled = true;
-          const xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener('progress', (event) => {
-            if (event.lengthComputable) {
-              const percentComplete = Math.round((event.loaded / event.total) * 100);
-              uploadProgressBar.style.width = percentComplete + '%';
-              uploadProgressPercent.textContent = percentComplete + '%';
-            }
-          });
-          xhr.addEventListener('load', function () {
-            if (xhr.status === 200) {
-              try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                  showToast('success', 'Video uploaded successfully');
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 1000);
-                } else {
-                  showToast('error', response.error || 'Upload failed');
-                  resetUploadForm();
-                }
-              } catch (error) {
-                showToast('error', 'Failed to parse server response');
-                resetUploadForm();
-              }
-            } else {
-              showToast('error', 'Upload failed with status: ' + xhr.status);
-              resetUploadForm();
-            }
-          });
-          xhr.addEventListener('error', function () {
-            showToast('error', 'An error occurred during upload');
-            resetUploadForm();
-          });
-          xhr.addEventListener('abort', function () {
-            showToast('warning', 'Upload aborted');
-            resetUploadForm();
-          });
-          xhr.open('POST', '/api/videos/upload', true);
-          xhr.send(formData);
+          
+          uploadMultipleFiles(selectedFiles);
         });
+        
+        async function uploadMultipleFiles(files) {
+          let completedFiles = 0;
+          let failedFiles = 0;
+          const totalFiles = files.length;
+          
+          uploadFilesList.innerHTML = '';
+          overallProgress.textContent = `0 / ${totalFiles}`;
+          overallPercentage.textContent = '0%';
+          overallProgressBar.style.width = '0%';
+          
+          const progressItems = files.map((file, index) => {
+            const progressItem = document.createElement('div');
+            progressItem.className = 'bg-dark-800 p-3 rounded border border-gray-600';
+            progressItem.innerHTML = `
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium truncate mr-2">${file.name}</span>
+                <span class="text-xs text-gray-400 shrink-0" id="progress-${index}">0%</span>
+              </div>
+              <div class="w-full bg-dark-700 rounded-full h-1.5">
+                <div id="progressbar-${index}" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <div class="mt-1">
+                <span id="status-${index}" class="text-xs text-gray-500">Waiting...</span>
+              </div>
+            `;
+            uploadFilesList.appendChild(progressItem);
+            return progressItem;
+          });
+          
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const statusElement = document.getElementById(`status-${i}`);
+            const progressElement = document.getElementById(`progress-${i}`);
+            const progressBarElement = document.getElementById(`progressbar-${i}`);
+            
+            try {
+              statusElement.textContent = 'Uploading...';
+              statusElement.className = 'text-xs text-blue-400';
+              
+              const result = await uploadSingleFile(file, (progress) => {
+                progressElement.textContent = `${progress}%`;
+                progressBarElement.style.width = `${progress}%`;
+              });
+              
+              if (result.success) {
+                completedFiles++;
+                statusElement.textContent = 'Completed';
+                statusElement.className = 'text-xs text-green-400';
+                progressBarElement.className = 'bg-green-500 h-1.5 rounded-full transition-all duration-300';
+              } else {
+                failedFiles++;
+                statusElement.textContent = `Failed: ${result.error}`;
+                statusElement.className = 'text-xs text-red-400';
+                progressBarElement.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
+              }
+            } catch (error) {
+              failedFiles++;
+              statusElement.textContent = `Error: ${error.message}`;
+              statusElement.className = 'text-xs text-red-400';
+              progressBarElement.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
+            }
+            
+            const processedFiles = completedFiles + failedFiles;
+            const overallPercent = Math.round((processedFiles / totalFiles) * 100);
+            overallProgress.textContent = `${processedFiles} / ${totalFiles}`;
+            overallPercentage.textContent = `${overallPercent}%`;
+            overallProgressBar.style.width = `${overallPercent}%`;
+          }
+          
+          if (completedFiles > 0) {
+            if (failedFiles > 0) {
+              showToast('warning', `${completedFiles} videos uploaded successfully, ${failedFiles} failed`);
+            } else {
+              showToast('success', `All ${completedFiles} videos uploaded successfully`);
+            }
+            
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          } else {
+            showToast('error', 'All uploads failed');
+            resetUploadForm();
+          }
+        }
+        
+        function uploadSingleFile(file, progressCallback) {
+          return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('video', file);
+            
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (event) => {
+              if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                progressCallback(percentComplete);
+              }
+            });
+            
+            xhr.addEventListener('load', function () {
+              if (xhr.status === 200) {
+                try {
+                  const response = JSON.parse(xhr.responseText);
+                  resolve(response);
+                } catch (error) {
+                  resolve({ success: false, error: 'Failed to parse server response' });
+                }
+              } else {
+                resolve({ success: false, error: `Upload failed with status: ${xhr.status}` });
+              }
+            });
+            
+            xhr.addEventListener('error', function () {
+              resolve({ success: false, error: 'Network error occurred' });
+            });
+            
+            xhr.addEventListener('abort', function () {
+              resolve({ success: false, error: 'Upload aborted' });
+            });
+            
+            xhr.open('POST', '/api/videos/upload', true);
+            xhr.send(formData);
+          });
+        }
         clearFileButton.addEventListener('click', function () {
           resetUploadForm();
         });
@@ -943,22 +1083,13 @@
             border: 'border-gray-600/50',
             button: 'bg-red-500 hover:bg-red-600',
             buttonIcon: 'ti-trash'
-          },
-          'warning': {
+          },          'warning': {
             icon: options.icon || 'ti-alert-triangle',
             color: 'text-yellow-400',
             bg: 'bg-yellow-500/10',
             border: 'border-yellow-500/50',
             button: 'bg-yellow-500 hover:bg-yellow-600',
             buttonIcon: 'ti-alert-circle'
-          },
-          'success': {
-            icon: options.icon || 'ti-check-circle',
-            color: 'text-green-400',
-            bg: 'bg-green-500/10',
-            border: 'border-green-500/50',
-            button: 'bg-green-500 hover:bg-green-600',
-            buttonIcon: 'ti-check'
           }
         };
         const theme = themes[options.type || 'info'];

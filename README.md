@@ -155,7 +155,14 @@ pm2 restart streamflow
 
 You can also run StreamFlow using Docker. This is a convenient way to get the application running without manually installing dependencies.
 
-**1. Build the Docker Image:**
+A pre-built image is also available on Docker Hub, which can be pulled directly.
+
+**Pull from Docker Hub (Recommended):**
+```bash
+docker pull anasrudin/streamflow:latest
+```
+
+**Alternatively, Build the Docker Image Locally:**
 
 First, build the Docker image using the provided `Dockerfile`. Make sure you have Docker installed on your system.
 
@@ -163,21 +170,21 @@ First, build the Docker image using the provided `Dockerfile`. Make sure you hav
 docker build -t streamflow .
 ```
 
-**2. Run the Docker Container:**
+**Run the Docker Container:**
 
-Once the image is built, you can run it as a container.
+Once the image is built or pulled, you can run it as a container.
 
 ```bash
-docker run -d -p 7575:7575 --name streamflow-app streamflow
+docker run -d -p 7575:7575 --name streamflow-app anasrudin/streamflow:latest
 ```
 
 Explanation of the command:
 - `-d`: Runs the container in detached mode (in the background).
 - `-p 7575:7575`: Maps port 7575 on your host to port 7575 in the container. If you changed the port in the `.env` file, adjust the host port accordingly (e.g., `-p YOUR_HOST_PORT:CONTAINER_PORT`).
 - `--name streamflow-app`: Assigns a name to your container for easier management.
-- `streamflow`: Specifies the image to use.
+- `anasrudin/streamflow:latest`: Specifies the image to use from Docker Hub. If you built it locally, you can use the local image name (e.g., `streamflow`).
 
-**3. Accessing the Application:**
+**Accessing the Application:**
 
 After the container starts, you can access StreamFlow in your web browser at:
 

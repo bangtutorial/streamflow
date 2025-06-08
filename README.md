@@ -241,6 +241,49 @@ rm db/*.db
 
 Restart aplikasi untuk create database baru.
 
+## 🚢 Deploy & Run with Docker
+
+### 1. Persiapan .env
+Buat file `.env` di root project (jika belum ada), minimal berisi:
+
+```
+PORT=7575
+SESSION_SECRET=isi_random_yang_tetap
+NODE_ENV=development
+```
+
+- **SESSION_SECRET**: Gunakan string acak, dan JANGAN diubah-ubah setiap restart.
+- **NODE_ENV=development**: Untuk development/testing (agar cookie session tidak butuh https).
+
+### 2. Build & Jalankan dengan Docker Compose
+
+```bash
+docker-compose up --build
+```
+
+Akses aplikasi di: [http://localhost:7575](http://localhost:7575)
+
+### 3. Volume Persistence
+- Data database, logs, dan file upload akan otomatis tersimpan di folder `db/`, `logs/`, dan `public/uploads/` di host.
+
+### 4. Reset Password (dalam container)
+Jika lupa password admin:
+```bash
+docker-compose exec app node reset-password.js
+```
+
+### 5. Troubleshooting
+- **Tidak bisa login?**
+  - Pastikan cookie session muncul di browser setelah login.
+  - Pastikan `.env` berisi `NODE_ENV=development` jika akses via http.
+  - Pastikan permission folder `db/`, `logs/`, dan `public/uploads/` sudah benar:
+    ```bash
+    sudo chmod -R 777 db/ logs/ public/uploads/
+    ```
+  - Pastikan file `.env` dan SESSION_SECRET tidak berubah-ubah.
+- **Production (https):**
+  - Ubah `NODE_ENV=production` dan akses via https agar cookie session tetap dikirim.
+
 ## Lisensi:
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/streamflow/blob/main/LICENSE)

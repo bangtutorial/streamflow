@@ -884,10 +884,10 @@
             selectedFiles.forEach((file, index) => {
               totalSize += file.size;
               const fileItem = document.createElement('div');
-              fileItem.className = 'flex items-center p-2 bg-dark-800 rounded border border-gray-600';
+              fileItem.className = 'flex items-center p-2 bg-dark-800 rounded border border-gray-600';              
               fileItem.innerHTML = `
                 <div class="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
-                  <i class="ti ti-file-video text-blue-400 text-sm"></i>
+                  <i class="ti ti-video text-blue-400 text-sm"></i>
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium break-words">${file.name}</p>

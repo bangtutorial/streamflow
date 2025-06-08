@@ -115,9 +115,12 @@
                 id="toggle-password">
                 <i class="ti ti-eye"></i>
               </button>
-            </div>
-            <div class="text-xs text-gray-400 mt-1">
-              Password must be at least 8 characters and include uppercase, lowercase and a number
+            </div>              
+            <div class="mt-2 sm:max-w-md">
+              <div class="w-full bg-gray-700 rounded-full h-1.5">
+                <div id="password-strength" class="bg-gray-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <div id="password-feedback" class="text-xs text-gray-400 mt-1">Use 8+ characters with letters, numbers & symbols</div>
             </div>
           </div>
           
@@ -290,7 +293,7 @@
           showToast('error', 'Please enter your Google Drive API key.');
           return false;
         }
-      });
+      });      
       const togglePassword = document.getElementById('toggle-password');
       const newPasswordField = document.getElementById('new-password');
       togglePassword.addEventListener('click', () => {
@@ -300,6 +303,49 @@
         } else {
           newPasswordField.type = 'password';
           togglePassword.innerHTML = '<i class="ti ti-eye"></i>';
+        }
+      });
+
+      function calculatePasswordStrength(password) {
+        let score = 0;
+        if (password.length >= 8) score += 1;
+        if (password.length >= 12) score += 1;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+        if (/[0-9]/.test(password)) score += 0.5;
+        if (/[^a-zA-Z0-9]/.test(password)) score += 0.5;
+        return {
+          score: Math.min(4, Math.floor(score))
+        };
+      }
+
+      newPasswordField.addEventListener('input', function (e) {
+        const password = e.target.value;
+        const strength = calculatePasswordStrength(password);
+        const strengthBar = document.getElementById('password-strength');
+        const feedback = document.getElementById('password-feedback');
+        
+        strengthBar.style.width = strength.score * 25 + '%';
+        
+        if (strength.score === 0) {
+          strengthBar.className = 'bg-gray-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Use 8+ characters with letters, numbers & symbols';
+          feedback.className = 'text-xs text-gray-400 mt-1';
+        } else if (strength.score === 1) {
+          strengthBar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Too weak - password needs improvement';
+          feedback.className = 'text-xs text-red-400 mt-1';
+        } else if (strength.score === 2) {
+          strengthBar.className = 'bg-yellow-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Could be stronger - add more variety';
+          feedback.className = 'text-xs text-yellow-500 mt-1';
+        } else if (strength.score === 3) {
+          strengthBar.className = 'bg-green-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Good password';
+          feedback.className = 'text-xs text-green-500 mt-1';
+        } else {
+          strengthBar.className = 'bg-green-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Strong password - excellent!';
+          feedback.className = 'text-xs text-green-500 mt-1';
         }
       });
       const toggleApiKey = document.getElementById('toggle-api-key');

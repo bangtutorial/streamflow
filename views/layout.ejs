@@ -99,6 +99,11 @@
           <i class="ti ti-history text-xl"></i>
           <span class="text-xs mt-1">History</span>
           <span class="sidebar-tooltip group-hover:scale-100">Stream History</span>
+        </a>
+        <a href="/analytics" class="sidebar-icon group <%= active === 'analytics' ? 'bg-primary' : '' %>">
+          <i class="ti ti-chart-line text-xl"></i>
+          <span class="text-xs mt-1">Analytics</span>
+          <span class="sidebar-tooltip group-hover:scale-100">Video Analytics</span>
         </a>      
       </div>
       <div class="mt-auto">        
@@ -205,9 +210,9 @@
         <i class="ti ti-history"></i>
         <span>History</span>
       </a>
-      <a href="/settings" class="bottom-nav-item <%= active === 'settings' ? 'bottom-nav-active' : '' %>">
-        <i class="ti ti-settings"></i>
-        <span>Settings</span>
+      <a href="/analytics" class="bottom-nav-item <%= active === 'analytics' ? 'bottom-nav-active' : '' %>">
+        <i class="ti ti-chart-line"></i>
+        <span>Analytics</span>
       </a>
       <button id="mobile-profile-btn" class="bottom-nav-item">
         <div class="relative">
@@ -228,6 +233,10 @@
           <%= req.session.email || '' %>
         </div>
         <div class="h-px bg-gray-700 my-2"></div>
+        <a href="/settings" class="flex items-center py-2 text-gray-300 hover:text-white text-sm">
+          <i class="ti ti-settings mr-2"></i>
+          <span>Settings</span>
+        </a>
         <a href="/logout" class="flex items-center py-2 text-red-400 hover:text-red-300 text-sm">
           <i class="ti ti-logout mr-2"></i>
           <span>Sign Out</span>

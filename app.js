@@ -20,6 +20,7 @@ const { uploadVideo } = require('./middleware/uploadMiddleware');
 const { ensureDirectories, paths } = require('./utils/storage');
 const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
 const Video = require('./models/Video');
+const VideoAnalytics = require('./utils/videoAnalytics');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const streamingService = require('./services/streamingService');
@@ -506,6 +507,20 @@ app.get('/history', isAuthenticated, async (req, res) => {
     });
   }
 });
+app.get('/analytics', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    res.render('analytics', {
+      title: 'Video Analytics',
+      active: 'analytics',
+      user: user
+    });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.redirect('/dashboard');
+  }
+});
+
 app.get('/updates', isAuthenticated, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
@@ -558,6 +573,75 @@ app.delete('/api/history/:id', isAuthenticated, async (req, res) => {
     });
   }
 });
+
+const videoAnalytics = new VideoAnalytics();
+
+app.post('/api/analytics/add-video', isAuthenticated, [
+  body('url').notEmpty().withMessage('URL is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: errors.array()[0].msg
+      });
+    }
+
+    const videoId = videoAnalytics.extractVideoId(req.body.url);
+    if (!videoId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid YouTube URL format'
+      });
+    }
+
+    const analytics = await videoAnalytics.getVideoAnalytics(videoId);
+    if (!analytics.status) {
+      return res.status(400).json({
+        success: false,
+        error: analytics.error
+      });
+    }
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    console.error('Error adding video to analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to add video to analytics'
+    });
+  }
+});
+
+app.get('/api/analytics/video/:videoId', isAuthenticated, async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    const analytics = await videoAnalytics.getVideoAnalytics(videoId);
+    
+    if (!analytics.status) {
+      return res.status(400).json({
+        success: false,
+        error: analytics.error
+      });
+    }
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    console.error('Error fetching video analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch video analytics'
+    });
+  }
+});
+
 app.get('/api/system-stats', isAuthenticated, async (req, res) => {
   try {
     const stats = await systemMonitor.getSystemStats();

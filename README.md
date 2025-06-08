@@ -2,33 +2,33 @@
 
 # StreamFlow v2.0: Fresh From The Oven🔥
 
-StreamFlow adalah aplikasi live streaming yang memungkinkan kamu untuk melakukan live streaming ke berbagai platform seperti YouTube, Facebook, dan platform lainnya menggunakan protokol RTMP. Aplikasi ini bisa berjalan di VPS (Virtual Private Server) dan mendukung streaming ke banyak platform sekaligus.
+StreamFlow is a live streaming application that allows you to stream to various platforms like YouTube, Facebook, and others using the RTMP protocol. This application can run on a VPS (Virtual Private Server) and supports streaming to multiple platforms simultaneously.
 
 ![Untitled-2](https://github.com/user-attachments/assets/3d7bb367-a1b2-43a5-839b-b6aa8dd5de90)
 
-## 🚀 Fitur Utama
+## 🚀 Key Features
 
-- **Multi-Platform Streaming**: Mendukung streaming ke berbagai platform populer
-- **Video Gallery**: Kelola koleksi video dengan mudah
-- **Upload Video**: Upload video dari local atau import dari Google Drive
-- **Scheduled Streaming**: Jadwalkan streaming dengan waktu tertentu
-- **Advanced Settings**: Kontrol bitrate, resolution, FPS, dan orientasi
-- **Real-time Monitoring**: Monitor status streaming secara real-time
-- **Responsive UI**: Tampilan modern yang responsive di semua device
+- **Multi-Platform Streaming**: Supports streaming to various popular platforms
+- **Video Gallery**: Manage video collections easily
+- **Upload Video**: Upload videos from local storage or import from Google Drive
+- **Scheduled Streaming**: Schedule streams for specific times
+- **Advanced Settings**: Control bitrate, resolution, FPS, and orientation
+- **Real-time Monitoring**: Monitor streaming status in real-time
+- **Responsive UI**: Modern and responsive interface for all devices
 
 ## 📋 Requirements
 
-- **Node.js** v16 atau lebih baru
+- **Node.js** v16 or newer
 - **FFmpeg**
-- **SQLite3** (sudah termasuk)
-- **VPS/Server** dengan minimal 1Core & 1GB RAM
-- **Port** 7575 (dapat diubah di [.env](.env))
+- **SQLite3** (included)
+- **VPS/Server** with a minimum of 1 Core & 1GB RAM
+- **Port** 7575 (changeable in .env)
 
-## 🛠️ Instalasi di VPS
+## 🛠️ Installation on VPS
 
-### 1. Persiapan VPS
+### 1. VPS Preparation
 
-Update sistem:
+Update system:
 
 ```bash
 sudo apt update && sudo apt upgrade -y
@@ -44,7 +44,7 @@ curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
-Verifikasi instalasi Node.js:
+Verify Node.js installation:
 
 ```bash
 node --version
@@ -57,7 +57,7 @@ Install FFmpeg:
 sudo apt install ffmpeg -y
 ```
 
-Verifikasi FFmpeg:
+Verify FFmpeg:
 ```bash
 ffmpeg -version
 ```
@@ -68,15 +68,15 @@ Install Git:
 sudo apt install git -y
 ```
 
-### 2. Setup Projek StreamFlow
+### 2. StreamFlow Project Setup
 
-Clone repository ke VPS:
+Clone the repository to your VPS:
 
 ```bash
 git clone https://github.com/bangtutorial/streamflow
 ```
 
-Masuk ke folder project:
+Navigate to the project folder:
 
 ```bash
 cd streamflow
@@ -94,29 +94,29 @@ Generate session secret:
 npm run generate-secret
 ```
 
-**Konfigurasi tambahan (opsional):**
+**Additional configuration (optional):**
 
-Port default aplikasi adalah **7575**. Jika perlu ubah port, edit file [.env](.env) (contoh: 8080, 3300, dll):
+The default application port is **7575**. If you need to change the port, edit the .env file (e.g., 8080, 3300, etc.):
 
 ```bash
 nano .env
 ```
 
-### 3. Setup Firewall
+### 3. Firewall Setup
 
-Buka port sesuai dengan yang ada di .env (default: 7575):
+Open the port according to your .env file (default: 7575):
 
 ```bash
 sudo ufw allow 7575
 ```
 
-Aktifkan firewall:
+Enable firewall:
 
 ```bash
 sudo ufw enable
 ```
 
-Cek status firewall:
+Check firewall status:
 
 ```bash
 sudo ufw status
@@ -130,22 +130,22 @@ Install PM2:
 sudo npm install -g pm2
 ```
 
-### 5. Cara Jalankan Aplikasi StreamFlow
+### 5. How to Run StreamFlow Application
 
-Pastikan kamu masih berada di folder **streamflow**, jalankan perintah ini:
+Ensure you are still in the streamflow folder, then run this command:
 
 ```bash
 pm2 start app.js --name streamflow
 ```
 
-Akses aplikasi di <b>IP_SERVER:PORT</b><br>
-Contoh:
+Access the application at <b>SERVER_IP:PORT</b><br>
+Example:
 
 ```bash
 88.12.34.56:7575
 ```
 
-Buat username dan password. Setelah masuk Dashboard, **Sign Out**. Lalu restart aplikasi dengan:
+Create a username and password. After logging into the Dashboard, Sign Out. Then restart the application with:
 
 ```bash
 pm2 restart streamflow
@@ -207,57 +207,57 @@ A script is provided to help you build and upload your image to Docker Hub.
 ```
 This script will prompt you for your Docker Hub username and the desired image name. It will then build the image, tag it with the version from `package.json` and as `latest`, and ask if you want to push it to Docker Hub.
 
-## 📝 Informasi Tambahan
+## 📝 Additional Information
 
 ### Reset Password
 
-Jika kamu lupa password atau ingin reset password, bisa ikutin cara berikut:
+If you forget your password or want to reset it, follow these steps:
 
-Masuk ke folder aplikasi:
+Navigate to the application folder:
 
 ```bash
 cd streamflow
 ```
 
-Jalankan perintah reset password:
+Run the password reset command:
 
 ```bash
 node reset-password.js
 ```
 
-### Setup Waktu Server (Timezone)
+### Server Time Setup (Timezone)
 
-Untuk memastikan scheduled streaming berjalan dengan waktu yang tepat, atur timezone server sesuai zona waktu kamu:
+To ensure scheduled streaming runs at the correct time, set the server timezone to your local timezone:
 
-#### 1. Cek Timezone Saat Ini
+#### 1. Check Current Timezone
 
-Lihat timezone aktif:
+View active timezone:
 
 ```bash
 timedatectl status
 ```
 
-#### 2. Lihat Daftar Timezone Yang Tersedia
+#### 2. View Available Timezones
 
-Cari timezone Indonesia:
+Search for your timezone (example for Indonesia):
 
 ```bash
 timedatectl list-timezones | grep Asia
 ```
 
-Contoh set Timezone ke WIB (Jakarta):
+Example: Set Timezone to WIB (Jakarta):
 
 ```bash
 sudo timedatectl set-timezone Asia/Jakarta
 ```
 
-Verifikasi perubahan:
+Verify changes:
 
 ```bash
 timedatectl status
 ```
 
-Setelah mengubah timezone, restart aplikasi agar perubahan timezone berlaku:
+After changing the timezone, restart the application for the changes to take effect:
 
 ```bash
 pm2 restart streamflow
@@ -267,7 +267,7 @@ pm2 restart streamflow
 
 ### Permission Error
 
-Fix permission untuk folder uploads:
+Fix permissions for the uploads folder:
 
 ```bash
 chmod -R 755 public/uploads/
@@ -275,13 +275,13 @@ chmod -R 755 public/uploads/
 
 ### Port Already in Use
 
-Cek process yang menggunakan port:
+Check processes using the port:
 
 ```bash
 sudo lsof -i :7575
 ```
 
-Kill process jika perlu:
+Kill the process if necessary:
 
 ```bash
 sudo kill -9 <PID>
@@ -289,15 +289,15 @@ sudo kill -9 <PID>
 
 ### Database Error
 
-Reset database (HATI-HATI: akan menghapus semua data):
+Reset database (CAUTION: this will delete all data):
 
 ```bash
 rm db/*.db
 ```
 
-Restart aplikasi untuk create database baru.
+Restart the application to create a new database.
 
-## Lisensi:
+## License:
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/streamflow/blob/main/LICENSE)
 

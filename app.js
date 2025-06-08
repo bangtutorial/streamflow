@@ -642,6 +642,142 @@ app.get('/api/analytics/video/:videoId', isAuthenticated, async (req, res) => {
   }
 });
 
+const { addVideoToAnalytics, getUserAnalyticsVideos, removeVideoFromAnalytics, updateVideoAnalyticsData, getVideoAnalytics } = require('./db/database');
+
+app.post('/api/analytics/add-video-db', isAuthenticated, [
+  body('url').notEmpty().withMessage('URL is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: errors.array()[0].msg
+      });
+    }
+
+    const videoId = videoAnalytics.extractVideoId(req.body.url);
+    if (!videoId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid YouTube URL format'
+      });
+    }
+
+    const analytics = await videoAnalytics.getVideoAnalytics(videoId);
+    if (!analytics.status) {
+      return res.status(400).json({
+        success: false,
+        error: analytics.error
+      });
+    }
+
+    const savedVideo = await addVideoToAnalytics(req.session.userId, {
+      videoId: analytics.videoId,
+      title: analytics.title,
+      thumbnail: analytics.thumbnail,
+      channelName: analytics.channelName,
+      uploadDate: analytics.uploadDate,
+      analytics: analytics.analytics,
+      isLive: analytics.isLive
+    });
+
+    res.json({
+      success: true,
+      data: analytics,
+      saved: savedVideo
+    });
+  } catch (error) {
+    console.error('Error adding video to analytics database:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to add video to analytics database'
+    });
+  }
+});
+
+app.get('/api/analytics/videos', isAuthenticated, async (req, res) => {
+  try {
+    const videos = await getUserAnalyticsVideos(req.session.userId);
+    res.json({
+      success: true,
+      data: videos
+    });
+  } catch (error) {
+    console.error('Error fetching analytics videos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch analytics videos'
+    });
+  }
+});
+
+app.delete('/api/analytics/video/:videoId', isAuthenticated, async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    const removed = await removeVideoFromAnalytics(req.session.userId, videoId);
+    
+    if (removed) {
+      res.json({
+        success: true,
+        message: 'Video removed from analytics'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Video not found in analytics'
+      });
+    }
+  } catch (error) {
+    console.error('Error removing video from analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove video from analytics'
+    });
+  }
+});
+
+app.get('/api/analytics/video-db/:videoId', isAuthenticated, async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    
+    const analytics = await videoAnalytics.getVideoAnalytics(videoId);
+    if (!analytics.status) {
+      return res.status(400).json({
+        success: false,
+        error: analytics.error
+      });
+    }
+
+    const updated = await updateVideoAnalyticsData(req.session.userId, videoId, {
+      title: analytics.title,
+      thumbnail: analytics.thumbnail,
+      channelName: analytics.channelName,
+      uploadDate: analytics.uploadDate,
+      analytics: analytics.analytics,
+      isLive: analytics.isLive
+    });
+
+    if (updated) {
+      res.json({
+        success: true,
+        data: analytics
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Video not found in database'
+      });
+    }
+  } catch (error) {
+    console.error('Error refreshing video analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to refresh video analytics'
+    });
+  }
+});
+
 app.get('/api/system-stats', isAuthenticated, async (req, res) => {
   try {
     const stats = await systemMonitor.getSystemStats();

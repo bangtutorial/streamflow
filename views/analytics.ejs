@@ -197,18 +197,15 @@
 </template>
 
 <script>
-class VideoAnalyticsManager {
-  constructor() {
+class VideoAnalyticsManager {  constructor() {
     this.videos = new Map();
     this.refreshInterval = null;
     this.currentPage = 0; 
     this.init();
   }
-
-  init() {
+  async init() {
     this.bindEvents();
-    this.startAutoRefresh();
-    this.updateDisplay();
+    await this.startAutoRefresh();
   }
   bindEvents() {
     const addVideoBtn = document.getElementById('addVideoBtn');
@@ -286,7 +283,6 @@ class VideoAnalyticsManager {
   resetSubmitButton() {
     this.setSubmitLoading(false);
   }
-
   async handleAddVideo(e) {
     e.preventDefault();
     
@@ -297,7 +293,7 @@ class VideoAnalyticsManager {
     this.setSubmitLoading(true);
 
     try {
-      const response = await fetch('/api/analytics/add-video', {
+      const response = await fetch('/api/analytics/add-video-db', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -322,56 +318,112 @@ class VideoAnalyticsManager {
     } finally {
       this.setSubmitLoading(false);
     }
-  }
-  addVideo(videoData) {
+  }  addVideo(videoData) {
     this.videos.set(videoData.videoId, videoData);
     this.currentPage = this.videos.size - 1;
-    this.saveToLocalStorage();
-  }
-  removeVideo(videoId) {
+  }  async removeVideo(videoId) {
     const video = this.videos.get(videoId);
     const videoTitle = video ? video.title : 'this video';
     
-    createModalDialog({
+    const result = await createModalDialog({
       type: 'danger',
       title: 'Remove Video',
       message: `Are you sure you want to remove "${videoTitle}" from analytics tracking? This action cannot be undone.`,
       confirmText: 'Remove',
       cancelText: 'Cancel'
-    }).then(result => {
-      if (result.confirmed) {
-        this.videos.delete(videoId);
-        const totalVideos = this.videos.size;
-        if (this.currentPage >= totalVideos && totalVideos > 0) {
-          this.currentPage = totalVideos - 1;
-        } else if (totalVideos === 0) {
-          this.currentPage = 0;
-        }
-        this.saveToLocalStorage();
-        this.updateDisplay();
-      }
     });
-  }
 
+    if (result.confirmed) {
+      try {
+        const response = await fetch(`/api/analytics/video/${videoId}`, {
+          method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          this.videos.delete(videoId);
+          const totalVideos = this.videos.size;
+          if (this.currentPage >= totalVideos && totalVideos > 0) {
+            this.currentPage = totalVideos - 1;
+          } else if (totalVideos === 0) {
+            this.currentPage = 0;
+          }
+          this.updateDisplay();
+        } else {
+          console.error('Failed to remove video:', result.error);
+        }
+      } catch (error) {
+        console.error('Error removing video:', error);
+      }
+    }
+  }
   saveToLocalStorage() {
-    const videosArray = Array.from(this.videos.values());
-    localStorage.setItem('analyticsVideos', JSON.stringify(videosArray));
+  }
+  async loadFromDatabase() {
+    try {
+      const response = await fetch('/api/analytics/videos');
+      const result = await response.json();
+      
+      if (result.success) {
+        this.videos.clear();
+        result.data.forEach(video => {
+          this.videos.set(video.videoId, video);
+        });
+        
+        if (result.data.length === 0) {
+          await this.migrateFromLocalStorage();
+        }
+      } else {
+        console.error('Failed to load videos from database:', result.error);
+      }
+    } catch (error) {
+      console.error('Error loading videos from database:', error);
+    }
   }
 
-  loadFromLocalStorage() {
+  async migrateFromLocalStorage() {
     try {
       const saved = localStorage.getItem('analyticsVideos');
       if (saved) {
         const videosArray = JSON.parse(saved);
-        this.videos.clear();
-        videosArray.forEach(video => {
-          this.videos.set(video.videoId, video);
-        });
+        console.log(`Found ${videosArray.length} videos in localStorage, migrating to database...`);
+        
+        for (const video of videosArray) {
+          try {
+            const videoId = video.videoId;
+            if (videoId) {
+              const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+              
+              const response = await fetch('/api/analytics/add-video-db', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: videoUrl })
+              });
+
+              const result = await response.json();
+              if (result.success) {
+                this.videos.set(videoId, result.data);
+              } else {
+                console.error(`Failed to migrate video ${videoId}:`, result.error);
+              }
+            }
+          } catch (error) {
+            console.error('Error migrating individual video:', error);
+          }
+        }
+        
+        if (this.videos.size > 0) {
+          localStorage.removeItem('analyticsVideos');
+          console.log('Migration completed, localStorage cleared');
+        }
       }
     } catch (error) {
-      console.error('Error loading videos from localStorage:', error);
+      console.error('Error during migration from localStorage:', error);
     }
-  }  updateDisplay() {
+  }updateDisplay() {
     const container = document.getElementById('analyticsContainer');
     const emptyState = document.getElementById('emptyState');
     const paginationControls = document.getElementById('paginationControls');
@@ -494,12 +546,10 @@ class VideoAnalyticsManager {
     card.querySelector('.remove-video-btn').addEventListener('click', () => {
       this.removeVideo(video.videoId);
     });
-  }
-
-  async refreshVideoData() {
+  }  async refreshVideoData() {
     const promises = Array.from(this.videos.keys()).map(async (videoId) => {
       try {
-        const response = await fetch(`/api/analytics/video/${videoId}`);
+        const response = await fetch(`/api/analytics/video-db/${videoId}`);
         const result = await response.json();
         
         if (result.success) {
@@ -511,12 +561,10 @@ class VideoAnalyticsManager {
     });
 
     await Promise.all(promises);
-    this.saveToLocalStorage();
     this.updateDisplay();
   }
-
-  startAutoRefresh() {
-    this.loadFromLocalStorage();
+  async startAutoRefresh() {
+    await this.loadFromDatabase();
     this.updateDisplay();
     
     this.refreshInterval = setInterval(() => {

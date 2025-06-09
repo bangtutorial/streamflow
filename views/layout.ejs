@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>
-    <%= title %> - StreamFlow
+    <%= title %> - StreamFlow v2
   </title>
   <link rel="icon" href="/images/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,13 +55,14 @@
       }
     }
   </script>
-  <script src="/js/stream-modal.js" defer></script>
 </head>
 <body class="bg-dark-900 text-white font-inter">
   <div
     class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-dark-800 shadow-lg flex items-center justify-between px-4 z-30">
     <div class="flex items-center">
-      <img src="/images/logo_mobile.svg" alt="StreamFlow Logo" class="h-8">
+      <a href="https://github.com/bangtutorial/streamflow" target="_blank" class="hover:opacity-80 transition-opacity">
+        <img src="/images/logo_mobile.svg" alt="StreamFlow Logo" class="h-8">
+      </a>
     </div>    
     <div class="flex items-center gap-1">
       <a href="https://donate.youtube101.id/" target="_blank" 
@@ -82,7 +83,9 @@
   <div class="flex">
     <div class="hidden lg:flex lg:fixed lg:flex-col w-20 h-screen pt-2 bg-dark-800 shadow-lg overflow-hidden">
       <div class="flex items-center justify-center h-14 w-14 mx-auto mb-4">
-        <img src="/images/logo.svg" alt="StreamFlow Logo" class="w-9 h-9">
+        <a href="https://github.com/bangtutorial/streamflow" target="_blank" class="hover:opacity-80 transition-opacity">
+          <img src="/images/logo.svg" alt="StreamFlow Logo" class="w-9 h-9">
+        </a>
       </div>
       <div class="flex-1">
         <a href="/dashboard" class="sidebar-icon group <%= active === 'dashboard' ? 'bg-primary' : '' %>">

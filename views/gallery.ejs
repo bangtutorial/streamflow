@@ -97,19 +97,20 @@
             </div>
           </div>
           <% }); %>
-            <% } else { %>
+            <% } else { %>              
               <div class="col-span-full text-center py-12">
                 <div class="text-gray-500 mb-3">
-                  <i class="ti ti-file-video text-6xl"></i>
+                  <i class="ti ti-video-off text-4xl"></i>
                 </div>
-                <h3 class="text-xl font-medium text-gray-300 mb-1">No videos yet</h3>
+                <h3 class="text-xl font-medium text-gray-500 mb-1">No videos yet</h3>
                 <p class="text-gray-500 mb-4">Upload your first video to get started</p>
               </div>
-            <% } %>
+              <% } %>
     </div>
 
+    <% if (videos && videos.length > 0) { %>
     <div class="mt-6 flex items-center justify-between">
-      <p class="text-sm text-gray-400">Showing 1-4 of 12 videos</p>
+      <p class="text-sm text-gray-400">Showing 1-<%= Math.min(videos.length, 4) %> of <%= videos.length %> videos</p>
       <div class="flex items-center gap-2">
         <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 text-gray-400">
           <i class="ti ti-chevron-left"></i>
@@ -131,6 +132,7 @@
         </button>
       </div>
     </div>
+    <% } %>
 
 
     <div id="uploadModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity">
@@ -155,35 +157,34 @@
               <div id="uploadDropzone"
                 class="border-2 border-dashed border-gray-600 hover:border-primary/70 rounded-lg p-8 text-center transition-all cursor-pointer"
                 data-state="idle">
-                <div class="flex flex-col items-center justify-center">
-
+                <div class="flex flex-col items-center justify-center">                  
                   <div class="mb-3 transition-all" id="dropzoneIconContainer">
                     <i class="ti ti-upload text-4xl text-gray-500"></i>
                   </div>                  
-                  <p class="text-gray-300 mb-2">Drag and drop video files here</p>
-                  <p class="text-gray-500 text-sm mb-4">Select multiple files to upload at once</p>
+                  <p class="text-gray-300 mb-2">Drag and drop video file(s) here</p>
+                  <p class="text-gray-500 text-sm mb-4">You can select single or multiple files</p>
                   <label
                     class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors inline-block cursor-pointer">
-                    <span>Select files</span>                    
+                    <span>Choose file(s)</span>
                     <input type="file" name="video" accept="video/mp4,video/avi,video/quicktime" class="hidden"
                       id="videoFileInput" multiple>
                   </label>
                   <p class="text-gray-500 text-xs mt-4">Supported formats: MP4, AVI, MOV</p>
                 </div>
               </div>              
-              <div id="selectedFileInfo" class="mt-4 hidden">
+              <div id="selectedFileInfo" class="mt-4 hidden">                
                 <div class="bg-dark-700/50 p-4 rounded-lg border border-gray-600/50">
                   <div class="flex items-start justify-between mb-2">
-                    <h4 class="font-medium text-white">Selected Files</h4>
+                    <h4 class="font-medium text-white" id="selectedFilesTitle">Selected File(s)</h4>
                     <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white">
                       <i class="ti ti-x"></i>
                     </button>
                   </div>
                   <div id="selectedFilesList" class="space-y-2 max-h-32 overflow-y-auto">
                     <!-- Files will be listed here -->
-                  </div>
+                  </div>                  
                   <div class="mt-3 pt-3 border-t border-gray-600">
-                    <p class="text-sm text-gray-400">
+                    <p class="text-sm text-gray-400" id="fileCountSummary">
                       <span id="totalFilesCount">0</span> file(s) selected • 
                       <span id="totalFilesSize">0 MB</span> total
                     </p>
@@ -871,12 +872,18 @@
           selectedFiles = Array.from(this.files);
           updateSelectedFilesDisplay();
         });
-        
-        function updateSelectedFilesDisplay() {
+          function updateSelectedFilesDisplay() {
           if (selectedFiles.length > 0) {
             uploadDropzone.classList.add('hidden');
             selectedFileInfo.classList.remove('hidden');
             uploadButton.disabled = false;
+            
+            const selectedFilesTitle = document.getElementById('selectedFilesTitle');
+            if (selectedFiles.length === 1) {
+              selectedFilesTitle.textContent = 'Selected File';
+            } else {
+              selectedFilesTitle.textContent = 'Selected Files';
+            }
             
             selectedFilesList.innerHTML = '';
             let totalSize = 0;
@@ -899,9 +906,15 @@
               `;
               selectedFilesList.appendChild(fileItem);
             });
-            
-            totalFilesCount.textContent = selectedFiles.length;
+              totalFilesCount.textContent = selectedFiles.length;
             totalFilesSize.textContent = formatFileSize(totalSize);
+            
+            const fileCountText = selectedFiles.length === 1 ? 'file selected' : 'files selected';
+            const fileCountSummary = document.getElementById('fileCountSummary');
+            fileCountSummary.innerHTML = `
+              <span id="totalFilesCount">${selectedFiles.length}</span> ${fileCountText} • 
+              <span id="totalFilesSize">${formatFileSize(totalSize)}</span> total
+            `;
           } else {
             uploadDropzone.classList.remove('hidden');
             selectedFileInfo.classList.add('hidden');
@@ -1424,7 +1437,7 @@
         const paginationContainer = document.querySelector('.mt-6.flex.items-center.justify-between');
         const paginationButtons = document.querySelectorAll('.mt-6.flex.items-center.justify-between button');
 
-        const itemsPerPage = 12;
+        const itemsPerPage = 8;
         let currentPage = 1;
         let totalPages = 1;
 

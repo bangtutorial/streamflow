@@ -511,10 +511,12 @@ app.get('/history', isAuthenticated, async (req, res) => {
 app.get('/analytics', isAuthenticated, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
+    const videos = await getUserAnalyticsVideos(req.session.userId);
     res.render('analytics', {
       title: 'Video Analytics',
       active: 'analytics',
-      user: user
+      user: user,
+      videos: videos
     });
   } catch (error) {
     console.error('Analytics error:', error);

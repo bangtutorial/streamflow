@@ -2,11 +2,10 @@
 <div class="flex-1 p-3 pt-6 sm:p-4 sm:pt-8 md:p-6 md:pt-12 lg:pt-6">
   <div class="max-w-7xl mx-auto">    
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-white">Video Analytics <span id="videoCount" class="text-gray-400 text-lg font-normal">(0)</span></h1>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">      <div>
+        <h1 class="text-2xl font-bold text-white">Video Analytics<% if (videos && videos.length > 0) { %> <span class="text-gray-400 text-2xl font-normal">(<%= videos.length %>)</span><% } %></h1>
         <p class="text-gray-400 mt-1">Monitor your YouTube videos with real-time analytics</p>
-      </div>      
+      </div>
       <button id="addVideoBtn" class="mt-4 sm:mt-0 bg-primary hover:bg-secondary px-4 py-2 rounded-lg font-medium transition-colors" style="display: none;">
         <i class="ti ti-plus mr-2"></i>
         Add Video
@@ -22,7 +21,7 @@
         <i class="ti ti-chevron-left"></i>
       </button>
       
-      <button id="pageNumber" class="w-9 h-9 flex items-center justify-center bg-primary text-white rounded-lg font-medium">1</button>
+      <button id="pageNumber" class="px-3 h-9 flex items-center justify-center bg-primary text-white rounded-lg font-medium text-sm min-w-[60px]">1/1</button>
 
       <button id="nextBtn" class="w-9 h-9 flex items-center justify-center bg-dark-700 hover:bg-dark-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
         <i class="ti ti-chevron-right"></i>
@@ -35,7 +34,7 @@
         <div class="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
           <i class="ti ti-chart-line text-2xl text-gray-400"></i>
         </div>
-        <h3 class="text-lg font-medium text-white mb-2">No videos added yet</h3>
+        <h3 class="text-lg font-medium text-gray-400 mb-2">No videos added yet</h3>
         <p class="text-gray-400 mb-6">Add YouTube videos to start monitoring their analytics and performance metrics.</p>
         <button id="addFirstVideoBtn" class="bg-primary hover:bg-secondary px-6 py-2 rounded-lg font-medium transition-colors">
           <i class="ti ti-plus mr-2"></i>
@@ -66,14 +65,14 @@
           placeholder="https://www.youtube.com/watch?v=..." 
           class="w-full px-3 py-2 bg-dark-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-primary"
           required
-        >
+        >        
         <p class="text-xs text-gray-400 mt-1">Supported formats:</p>
-        <ul class="text-xs text-gray-500 mt-1 space-y-1">
-            <li>• https://studio.youtube.com/video/tNkZsRW7h2c/livestreaming</li>
-            <li>• https://www.youtube.com/live/tNkZsRW7h2c?feature=share</li>
-            <li>• https://www.youtube.com/watch?v=tNkZsRW7h2c</li>
-            <li>• https://youtube.com/watch?v=tNkZsRW7h2c</li>
-            <li>• https://youtu.be/tNkZsRW7h2c</li>
+        <ul class="text-xs sm:text-xs text-gray-500 mt-1 space-y-1">
+            <li class="break-all text-[10px] sm:text-xs">• https://studio.youtube.com/video/tNkZsRW7h2c/livestreaming</li>
+            <li class="break-all text-[10px] sm:text-xs">• https://www.youtube.com/live/tNkZsRW7h2c?feature=share</li>
+            <li class="break-all text-[10px] sm:text-xs">• https://www.youtube.com/watch?v=tNkZsRW7h2c</li>
+            <li class="break-all text-[10px] sm:text-xs">• https://youtube.com/watch?v=tNkZsRW7h2c</li>
+            <li class="break-all text-[10px] sm:text-xs">• https://youtu.be/tNkZsRW7h2c</li>
         </ul>
       </div>
       
@@ -89,89 +88,80 @@
         <button type="button" id="cancelBtn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
           <i class="ti ti-x mr-1.5"></i>
           Cancel
-        </button>
+        </button>        
         <button type="submit" id="submitBtn" class="px-4 py-2 bg-primary hover:bg-secondary rounded-lg font-medium transition-colors">
           <span id="submitText">Add Video</span>
-          <i id="submitLoader" class="ti ti-loader animate-spin hidden ml-2"></i>
         </button>
       </div>
-    </form>
-  </div>
+    </form>  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden flex items-center">
+  <i id="toast-icon" class="mr-2"></i>
+  <span id="toast-message"></span>
 </div>
 
 <!-- Analytics Card Template -->
 <template id="analyticsCardTemplate">
   <div class="bg-dark-800 rounded-lg p-6 border border-gray-700" data-video-id="">
-    <div class="flex flex-col lg:flex-row gap-6">
+    <div class="flex flex-col lg:flex-row gap-6">      
       <!-- Video Info -->
-      <div class="flex-shrink-0 lg:w-80">
-        <div class="relative">
-          <img class="video-thumbnail w-full h-44 object-cover rounded-lg" src="" alt="Video thumbnail">          
-          <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-lg">
-            <button class="remove-video-btn px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
-              <i class="ti ti-trash mr-1.5"></i>
-              Remove
-            </button>
-          </div>
-        </div>
-        <div class="mt-3">
+      <div class="flex-shrink-0 lg:w-80">        
+        <div class="relative aspect-video">
+          <img class="video-thumbnail w-full h-full object-cover rounded-lg" src="" alt="Video thumbnail">
+          <!-- Remove Button -->
+          <button class="remove-video-btn absolute top-2 left-2 w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center">
+            <i class="ti ti-trash text-sm"></i>
+          </button>
+        </div><div class="mt-3">
           <h3 class="video-title font-semibold text-white text-sm line-clamp-2"></h3>
           <p class="video-channel text-xs text-gray-400 mt-1"></p>
-          <p class="video-upload-date text-xs text-gray-500 mt-1"></p>
         </div>
       </div>
 
       <!-- Analytics Data -->
       <div class="flex-1">        
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">          
-        <!-- Views -->
-          <div class="bg-dark-700 rounded-lg p-3 sm:p-4 text-center">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4">            
+          <!-- Views -->
+          <div class="bg-dark-700 rounded-lg p-3 sm:p-4 text-center relative">
             <div class="text-blue-400 text-xl sm:text-2xl mb-1">
               <i class="ti ti-eye"></i>
             </div>
-            <div class="flex items-center justify-center gap-1 sm:gap-2 min-h-[2rem]">
-              <div class="video-views text-base sm:text-lg font-semibold text-white">0</div>
-              <div class="video-views-diff text-xs font-medium shrink-0"></div>
-            </div>
+            <div class="video-views-diff text-xs font-medium absolute top-2 right-2"></div>
+            <div class="video-views text-base sm:text-lg font-semibold text-white min-h-[2rem] flex items-center justify-center">0</div>
             <div class="text-xs text-gray-400 mt-1">Total Views</div>
           </div>          
           <!-- Likes -->
-          <div class="bg-dark-700 rounded-lg p-3 sm:p-4 text-center">
+          <div class="bg-dark-700 rounded-lg p-3 sm:p-4 text-center relative">
             <div class="text-green-400 text-xl sm:text-2xl mb-1">
               <i class="ti ti-thumb-up"></i>
             </div>
-            <div class="flex items-center justify-center gap-1 sm:gap-2 min-h-[2rem]">
-              <div class="video-likes text-base sm:text-lg font-semibold text-white">0</div>
-              <div class="video-likes-diff text-xs font-medium shrink-0"></div>
-            </div>
+            <div class="video-likes-diff text-xs font-medium absolute top-2 right-2"></div>
+            <div class="video-likes text-base sm:text-lg font-semibold text-white min-h-[2rem] flex items-center justify-center">0</div>
             <div class="text-xs text-gray-400 mt-1">Likes</div>
           </div>          
           <!-- Dislikes -->
-          <div class="bg-dark-700 rounded-lg p-3 sm:p-4 text-center">
+          <div class="bg-dark-700 rounded-lg p-3 sm:p-4 text-center relative">
             <div class="text-red-400 text-xl sm:text-2xl mb-1">
               <i class="ti ti-thumb-down"></i>
             </div>
-            <div class="flex items-center justify-center gap-1 sm:gap-2 min-h-[2rem]">
-              <div class="video-dislikes text-base sm:text-lg font-semibold text-white">0</div>
-              <div class="video-dislikes-diff text-xs font-medium shrink-0"></div>
-            </div>
+            <div class="video-dislikes-diff text-xs font-medium absolute top-2 right-2"></div>
+            <div class="video-dislikes text-base sm:text-lg font-semibold text-white min-h-[2rem] flex items-center justify-center">0</div>
             <div class="text-xs text-gray-400 mt-1">Dislikes</div>
           </div>          
           <!-- Live Viewers -->
-          <div class="bg-dark-700 rounded-lg p-3 sm:p-4 text-center">
-            <div class="text-purple-400 text-xl sm:text-2xl mb-1">
+          <div class="bg-dark-700 rounded-lg p-3 sm:p-4 text-center relative">
+            <div class="text-amber-400 text-xl sm:text-2xl mb-1">
               <i class="ti ti-users"></i>
             </div>
-            <div class="flex items-center justify-center gap-1 sm:gap-2 min-h-[2rem]">
-              <div class="live-viewers text-base sm:text-lg font-semibold text-white">N/A</div>
-              <div class="live-viewers-diff text-xs font-medium shrink-0"></div>
-            </div>
+            <div class="live-viewers-diff text-xs font-medium absolute top-2 right-2"></div>
+            <div class="live-viewers text-base sm:text-lg font-semibold text-white min-h-[2rem] flex items-center justify-center">N/A</div>
             <div class="text-xs text-gray-400 mt-1">Live Viewers</div>
           </div>
-        </div>
-
+        </div>        
         <!-- Additional Stats -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 text-sm">
           <div class="bg-dark-700 rounded-lg p-3">
             <div class="flex items-center justify-between">
               <span class="text-gray-400">Video ID:</span>
@@ -181,7 +171,13 @@
           <div class="bg-dark-700 rounded-lg p-3">
             <div class="flex items-center justify-between">
               <span class="text-gray-400">Status:</span>
-              <span class="video-status text-white"></span>
+              <span class="video-status text-white flex items-center"></span>
+            </div>
+          </div>
+          <div class="bg-dark-700 rounded-lg p-3">
+            <div class="flex items-center justify-between">
+              <span class="text-gray-400">Uploaded:</span>
+              <span class="video-upload-info text-white text-xs"></span>
             </div>
           </div>          
           <div class="bg-dark-700 rounded-lg p-3">
@@ -200,8 +196,25 @@
 class VideoAnalyticsManager {  constructor() {
     this.videos = new Map();
     this.refreshInterval = null;
-    this.currentPage = 0; 
+    this.currentPage = 0;
+    this.videosPerPage = this.getVideosPerPage();
     this.init();
+    this.setupResizeListener();
+  }
+
+  getVideosPerPage() {
+    return window.innerWidth >= 1024 ? 2 : 1;
+  }
+
+  setupResizeListener() {
+    window.addEventListener('resize', () => {
+      const newVideosPerPage = this.getVideosPerPage();
+      if (newVideosPerPage !== this.videosPerPage) {
+        this.videosPerPage = newVideosPerPage;
+        this.currentPage = Math.floor(this.currentPage * (this.videosPerPage === 1 ? 2 : 0.5));
+        this.updateDisplay();
+      }
+    });
   }
   async init() {
     this.bindEvents();
@@ -262,28 +275,22 @@ class VideoAnalyticsManager {  constructor() {
 
   hideError() {
     document.getElementById('urlError')?.classList.add('hidden');
-  }
-
-  setSubmitLoading(loading) {
-    const submitBtn = document.getElementById('submitBtn');
-    const submitText = document.getElementById('submitText');
-    const submitLoader = document.getElementById('submitLoader');
+  }  setSubmitLoading(loading) {
+    const button = document.getElementById('submitBtn');
+    const text = document.getElementById('submitText');
     
     if (loading) {
-      submitBtn.disabled = true;
-      submitText.textContent = 'Adding...';
-      submitLoader?.classList.remove('hidden');
+      button.disabled = true;
+      text.textContent = 'Adding...';
     } else {
-      submitBtn.disabled = false;
-      submitText.textContent = 'Add Video';
-      submitLoader?.classList.add('hidden');
+      button.disabled = false;
+      text.textContent = 'Add Video';
     }
   }
 
   resetSubmitButton() {
     this.setSubmitLoading(false);
-  }
-  async handleAddVideo(e) {
+  }  async handleAddVideo(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
@@ -299,18 +306,18 @@ class VideoAnalyticsManager {  constructor() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ url })
-      });
-
-      const result = await response.json();
+      });      const result = await response.json();
 
       if (!result.success) {
         this.showError(result.error);
+        this.setSubmitLoading(false);
         return;
       }
 
-      this.addVideo(result.data);
-      this.hideAddVideoModal();
-      this.updateDisplay();
+      showToast('success', 'Video added to analytics successfully');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
 
     } catch (error) {
       console.error('Error adding video:', error);
@@ -320,8 +327,9 @@ class VideoAnalyticsManager {  constructor() {
     }
   }  addVideo(videoData) {
     this.videos.set(videoData.videoId, videoData);
-    this.currentPage = this.videos.size - 1;
-  }  async removeVideo(videoId) {
+    const totalVideos = this.videos.size;
+    this.currentPage = Math.ceil(totalVideos / this.videosPerPage) - 1;
+  }async removeVideo(videoId) {
     const video = this.videos.get(videoId);
     const videoTitle = video ? video.title : 'this video';
     
@@ -337,21 +345,16 @@ class VideoAnalyticsManager {  constructor() {
       try {
         const response = await fetch(`/api/analytics/video/${videoId}`, {
           method: 'DELETE'
-        });
-
-        const result = await response.json();
+        });        const result = await response.json();
 
         if (result.success) {
-          this.videos.delete(videoId);
-          const totalVideos = this.videos.size;
-          if (this.currentPage >= totalVideos && totalVideos > 0) {
-            this.currentPage = totalVideos - 1;
-          } else if (totalVideos === 0) {
-            this.currentPage = 0;
-          }
-          this.updateDisplay();
+          showToast('success', 'Video removed from analytics successfully');
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
         } else {
           console.error('Failed to remove video:', result.error);
+          showToast('error', 'Failed to remove video from analytics');
         }
       } catch (error) {
         console.error('Error removing video:', error);
@@ -427,11 +430,7 @@ class VideoAnalyticsManager {  constructor() {
     const container = document.getElementById('analyticsContainer');
     const emptyState = document.getElementById('emptyState');
     const paginationControls = document.getElementById('paginationControls');
-    const addVideoBtn = document.getElementById('addVideoBtn');
-
-    this.updateVideoCount();
-
-    if (this.videos.size === 0) {
+    const addVideoBtn = document.getElementById('addVideoBtn');    if (this.videos.size === 0) {
       container.innerHTML = '';
       emptyState?.classList.remove('hidden');
       paginationControls?.classList.add('hidden');
@@ -444,7 +443,6 @@ class VideoAnalyticsManager {  constructor() {
       paginationControls?.classList.remove('hidden');
     }
   }
-
   renderCurrentVideo() {
     const container = document.getElementById('analyticsContainer');
     const template = document.getElementById('analyticsCardTemplate');
@@ -452,16 +450,20 @@ class VideoAnalyticsManager {  constructor() {
     container.innerHTML = '';
 
     const videosArray = Array.from(this.videos.values());
+    const totalPages = Math.ceil(videosArray.length / this.videosPerPage);
     
-    if (this.currentPage >= videosArray.length) {
-      this.currentPage = Math.max(0, videosArray.length - 1);
+    if (this.currentPage >= totalPages) {
+      this.currentPage = Math.max(0, totalPages - 1);
     }
     if (this.currentPage < 0) {
       this.currentPage = 0;
     }
 
-    if (videosArray.length > 0 && videosArray[this.currentPage]) {
-      const video = videosArray[this.currentPage];
+    const startIndex = this.currentPage * this.videosPerPage;
+    const endIndex = Math.min(startIndex + this.videosPerPage, videosArray.length);
+
+    for (let i = startIndex; i < endIndex; i++) {
+      const video = videosArray[i];
       const card = template.content.cloneNode(true);
       this.populateCard(card, video);
       container.appendChild(card);
@@ -469,6 +471,7 @@ class VideoAnalyticsManager {  constructor() {
   }  updatePaginationControls() {
     const videosArray = Array.from(this.videos.values());
     const totalVideos = videosArray.length;
+    const totalPages = Math.ceil(totalVideos / this.videosPerPage);
     
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -477,15 +480,12 @@ class VideoAnalyticsManager {  constructor() {
       prevBtn.disabled = this.currentPage <= 0;
     }
     if (nextBtn) {
-      nextBtn.disabled = this.currentPage >= totalVideos - 1;
+      nextBtn.disabled = this.currentPage >= totalPages - 1;
     }
 
-    const pageNumber = document.getElementById('pageNumber');
-    if (pageNumber) {
-      pageNumber.textContent = this.currentPage + 1;
+    const pageNumber = document.getElementById('pageNumber');    if (pageNumber) {
+      pageNumber.textContent = `${this.currentPage + 1}/${totalPages}`;
     }
-
-    this.updateVideoCount();
   }
 
   previousPage() {
@@ -496,28 +496,17 @@ class VideoAnalyticsManager {  constructor() {
     }
   }  nextPage() {
     const totalVideos = this.videos.size;
-    if (this.currentPage < totalVideos - 1) {
+    const totalPages = Math.ceil(totalVideos / this.videosPerPage);
+    if (this.currentPage < totalPages - 1) {
       this.currentPage++;
       this.renderCurrentVideo();
-      this.updatePaginationControls();
-    }
+      this.updatePaginationControls();    }
   }
-  updateVideoCount() {
-    const videoCountElement = document.getElementById('videoCount');
-    if (videoCountElement) {
-      const totalVideos = this.videos.size;
-      if (totalVideos === 0) {
-        videoCountElement.textContent = '';
-      } else {
-        videoCountElement.textContent = `(${totalVideos})`;
-      }
-    }
-  }populateCard(card, video) {
+
+  populateCard(card, video) {
     card.querySelector('[data-video-id]').setAttribute('data-video-id', video.videoId);
-    card.querySelector('.video-thumbnail').src = video.thumbnail;
-    card.querySelector('.video-title').textContent = video.title;
+    card.querySelector('.video-thumbnail').src = video.thumbnail;    card.querySelector('.video-title').textContent = video.title;
     card.querySelector('.video-channel').textContent = video.channelName;
-    card.querySelector('.video-upload-date').textContent = `Uploaded: ${this.formatDate(video.uploadDate)}`;
     
     card.querySelector('.video-views').textContent = this.formatNumber(video.analytics.viewCount);
     card.querySelector('.video-likes').textContent = this.formatNumber(video.analytics.likes);
@@ -540,7 +529,15 @@ class VideoAnalyticsManager {  constructor() {
     });
     
     card.querySelector('.video-id').textContent = video.videoId;
-    card.querySelector('.video-status').textContent = video.isLive ? 'Live' : 'Not Live';
+    
+    const statusElement = card.querySelector('.video-status');
+    if (video.isLive) {
+      statusElement.innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></span>Live';
+    } else {
+      statusElement.textContent = 'Not Live';
+    }
+    
+    card.querySelector('.video-upload-info').textContent = this.formatDate(video.uploadDate);
     card.querySelector('.video-age').textContent = this.calculateVideoAge(video.uploadDate);
 
     card.querySelector('.remove-video-btn').addEventListener('click', () => {
@@ -603,7 +600,6 @@ class VideoAnalyticsManager {  constructor() {
       return 'Unknown';
     }
   }
-
   calculateVideoAge(dateString) {
     if (!dateString) return 'N/A';
     try {
@@ -622,9 +618,9 @@ class VideoAnalyticsManager {  constructor() {
         const hours = diffHours;
         const minutes = diffMins % 60;
         if (hours === 0) {
-          return `${minutes}m ago`;
+          return `${minutes}m`;
         }
-        return `${hours}h ${minutes}m ago`;
+        return `${hours}h ${minutes}m`;
       }
       
       const parts = [];
@@ -649,7 +645,7 @@ class VideoAnalyticsManager {  constructor() {
         parts.push(`${diffDays}d`);
       }
       
-      return parts.join(' ') + ' ago';
+      return parts.join(' ');
     } catch (error) {
       return 'N/A';
     }
@@ -680,14 +676,14 @@ class VideoAnalyticsManager {  constructor() {
         previous === 'N/A' || current === 'N/A' || 
         typeof previous !== 'number' || typeof current !== 'number') {
       element.textContent = '';
-      element.className = 'text-xs font-medium';
+      element.className = 'text-xs font-medium absolute top-2 right-2';
       return;
     }
     
     const diff = current - previous;
     if (diff === 0) {
       element.textContent = '';
-      element.className = 'text-xs font-medium';
+      element.className = 'text-xs font-medium absolute top-2 right-2';
       return;
     }
     
@@ -695,7 +691,7 @@ class VideoAnalyticsManager {  constructor() {
     const colorClass = diff > 0 ? 'text-green-400' : 'text-red-400';
     
     element.textContent = formatted;
-    element.className = `text-xs font-medium ${colorClass} whitespace-nowrap`;
+    element.className = `text-xs font-medium ${colorClass} whitespace-nowrap absolute top-2 right-2`;
   }
 }
 
@@ -800,8 +796,35 @@ function createModalDialog(options) {
         resolve({ confirmed: false });
       }
     };
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleEscape);  
   });
+}
+
+function showToast(type, message) {
+  const toast = document.getElementById('toast');
+  const toastIcon = document.getElementById('toast-icon');
+  const toastMessage = document.getElementById('toast-message');
+  
+  if (type === 'success') {
+    toastIcon.className = 'ti ti-check text-green-400 mr-2';
+    toast.classList.add('border-l-4', 'border-green-400');
+    toast.classList.remove('border-l-4', 'border-red-400', 'border-yellow-400');
+  } else if (type === 'error') {
+    toastIcon.className = 'ti ti-x text-red-400 mr-2';
+    toast.classList.add('border-l-4', 'border-red-400');
+    toast.classList.remove('border-l-4', 'border-green-400', 'border-yellow-400');
+  } else if (type === 'warning') {
+    toastIcon.className = 'ti ti-alert-triangle text-yellow-400 mr-2';
+    toast.classList.add('border-l-4', 'border-yellow-400');
+    toast.classList.remove('border-l-4', 'border-green-400', 'border-red-400');
+  }
+  
+  toastMessage.textContent = message;
+  toast.classList.remove('hidden');
+  
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3000);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -865,7 +888,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   .analytics-card {
-    padding: 0.75rem;
+    padding: 0.75rem;  
   }
 }
+
 </style>

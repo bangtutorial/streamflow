@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    container_name: streamflow-app
+    restart: unless-stopped
+    ports:
+      - "7575:7575"
+    env_file:
+      - .env
+    volumes:
+      - ./db:/app/db
+      - ./logs:/app/logs
+      - ./public/uploads:/app/public/uploads
+    environment:
+      - NODE_ENV=production
+    # Uncomment jika ingin mengatur timezone container
+    # - TZ=Asia/Jakarta 

@@ -57,8 +57,5 @@ echo
 echo "📋 Langkah selanjutnya:"
 echo "1. Buka URL di browser"
 echo "2. Buat username & password"
-echo "3. Sign out setelah login"
-echo "4. Restart: pm2 restart streamflow"
-echo
-echo "⚠️  PENTING: Restart app setelah buat akun!"
+echo "3. Setelah bikin akun, logout lalu login ulang agar database singkron"
 echo "================================"

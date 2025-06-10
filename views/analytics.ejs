@@ -2,7 +2,8 @@
 <div class="flex-1 p-3 pt-6 sm:p-4 sm:pt-8 md:p-6 md:pt-12 lg:pt-6">
   <div class="max-w-7xl mx-auto">    
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">      <div>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">      
+      <div>
         <h1 class="text-2xl font-bold text-white">Video Analytics<% if (videos && videos.length > 0) { %> <span class="text-gray-400 text-2xl font-normal">(<%= videos.length %>)</span><% } %></h1>
         <p class="text-gray-400 mt-1">Monitor your YouTube videos with real-time analytics</p>
       </div>
@@ -113,9 +114,10 @@
           <!-- Remove Button -->
           <button class="remove-video-btn absolute top-2 left-2 w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center justify-center">
             <i class="ti ti-trash text-sm"></i>
-          </button>
-        </div><div class="mt-3">
-          <h3 class="video-title font-semibold text-white text-sm line-clamp-2"></h3>
+          </button>        
+        </div>
+        <div class="mt-3">
+          <h3 class="video-title font-semibold text-white text-sm line-clamp-2 cursor-pointer hover:text-blue-400 transition-colors"></h3>
           <p class="video-channel text-xs text-gray-400 mt-1"></p>
         </div>
       </div>
@@ -430,7 +432,8 @@ class VideoAnalyticsManager {  constructor() {
     const container = document.getElementById('analyticsContainer');
     const emptyState = document.getElementById('emptyState');
     const paginationControls = document.getElementById('paginationControls');
-    const addVideoBtn = document.getElementById('addVideoBtn');    if (this.videos.size === 0) {
+    const addVideoBtn = document.getElementById('addVideoBtn');    
+    if (this.videos.size === 0) {
       container.innerHTML = '';
       emptyState?.classList.remove('hidden');
       paginationControls?.classList.add('hidden');
@@ -483,7 +486,8 @@ class VideoAnalyticsManager {  constructor() {
       nextBtn.disabled = this.currentPage >= totalPages - 1;
     }
 
-    const pageNumber = document.getElementById('pageNumber');    if (pageNumber) {
+    const pageNumber = document.getElementById('pageNumber');    
+    if (pageNumber) {
       pageNumber.textContent = `${this.currentPage + 1}/${totalPages}`;
     }
   }
@@ -529,21 +533,24 @@ class VideoAnalyticsManager {  constructor() {
     });
     
     card.querySelector('.video-id').textContent = video.videoId;
-    
-    const statusElement = card.querySelector('.video-status');
+      const statusElement = card.querySelector('.video-status');
     if (video.isLive) {
       statusElement.innerHTML = '<span class="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></span>Live';
     } else {
-      statusElement.textContent = 'Not Live';
+      statusElement.textContent = 'N/A';
     }
-    
-    card.querySelector('.video-upload-info').textContent = this.formatDate(video.uploadDate);
+      card.querySelector('.video-upload-info').textContent = this.formatDate(video.uploadDate);
     card.querySelector('.video-age').textContent = this.calculateVideoAge(video.uploadDate);
 
     card.querySelector('.remove-video-btn').addEventListener('click', () => {
       this.removeVideo(video.videoId);
     });
-  }  async refreshVideoData() {
+
+    card.querySelector('.video-title').addEventListener('click', () => {
+      const videoUrl = `https://www.youtube.com/watch?v=${video.videoId}`;
+      window.open(videoUrl, '_blank');
+    });
+  }async refreshVideoData() {
     const promises = Array.from(this.videos.keys()).map(async (videoId) => {
       try {
         const response = await fetch(`/api/analytics/video-db/${videoId}`);

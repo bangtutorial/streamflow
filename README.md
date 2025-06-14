@@ -25,7 +25,7 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu melakukan live 
 - **VPS/Server** dengan minimal 1 Core CPU & 1GB RAM
 - **Port** 7575 (dapat disesuaikan di file [.env](.env))
 
-## 🚀 Quick Installation
+## ⚡ Quick Installation
 
 Untuk instalasi otomatis, jalankan perintah berikut:
 
@@ -134,14 +134,12 @@ http://IP_SERVER:PORT
 
 Contoh: `http://88.12.34.56:7575`
 
-**Penting:** Setelah membuat akun admin pertama kali, lakukan **Sign Out** kemudian restart aplikasi:
-```bash
-pm2 restart streamflow
-```
+> [!Important]
+> Setelah membuat akun pertama kali, lakukan **Sign Out** kemudian login kembali untuk sinkronisasi database.
 
 ## 🔐 Reset Password
 
-Jika lupa password atau perlu reset akun admin:
+Jika lupa password atau perlu reset akun:
 
 ```bash
 cd streamflow && node reset-password.js
@@ -203,7 +201,7 @@ Data akan tersimpan secara otomatis di:
 docker-compose exec app node reset-password.js
 ```
 
-## 🔧 Troubleshooting
+## 🔫 Troubleshooting
 
 ### Permission Error
 ```bash
@@ -242,7 +240,7 @@ pm2 restart streamflow
 - Set `NODE_ENV=production`
 - Akses melalui HTTPS untuk cookie session
 
-## 👥 Contributors
+## 💫 Contributors
 
 [![Contributors](https://contrib.rocks/image?repo=bangtutorial/streamflow)](https://github.com/bangtutorial/streamflow/graphs/contributors)
 

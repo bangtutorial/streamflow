@@ -1,14 +1,12 @@
 #!/bin/bash
 
-# StreamFlow Simple Installer
 set -e
 
 echo "================================"
-echo "   StreamFlow Installer  "
+echo "   StreamFlow Quick Installer  "
 echo "================================"
 echo
 
-# Konfirmasi
 read -p "Mulai instalasi? (y/n): " -n 1 -r
 echo
 [[ ! $REPLY =~ ^[Yy]$ ]] && echo "Instalasi dibatalkan." && exit 1
@@ -49,7 +47,6 @@ echo "================================"
 echo "✅ INSTALASI SELESAI!"
 echo "================================"
 
-# Get server IP
 SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || echo "IP_SERVER")
 echo
 echo "🌐 URL Akses: http://$SERVER_IP:7575"
@@ -57,5 +54,5 @@ echo
 echo "📋 Langkah selanjutnya:"
 echo "1. Buka URL di browser"
 echo "2. Buat username & password"
-echo "3. Setelah bikin akun, logout lalu login ulang agar database singkron"
+echo "3. Setelah membuat akun, lakukan Sign Out kemudian login kembali untuk sinkronisasi database"
 echo "================================"

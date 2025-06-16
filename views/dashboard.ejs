@@ -100,7 +100,7 @@
     <div class="bg-gray-800 rounded-lg p-6 shadow-md">      
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold" id="network-disk-title">Internet Speed</h3>
-        <div class="w-10 h-10 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('desktop')" title="Click to switch between Internet Speed and Disk Usage">
+        <div class="w-10 h-10 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('desktop')">
           <i class="ti ti-wifi text-xl text-white" id="toggle-icon-desktop"></i>
         </div>
       </div>
@@ -123,21 +123,82 @@
         </div>
       </div>
     </div>
-  </div>
-  <div class="mt-8">
+  </div>  <div class="mt-8">
     <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
       <h2 class="text-xl font-bold">Streaming Status</h2>
-      <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-        <div class="relative w-full sm:w-64">
-          <input type="text" placeholder="Search streams..."
+      <div class="flex items-center gap-3 w-full sm:w-auto">
+        <div class="relative flex-1 sm:w-64">
+          <input type="text" id="searchInput" placeholder="Search streams..."
             class="w-full bg-dark-700 border border-gray-600 text-white pl-9 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
           <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
         </div>
         <button onclick="openNewStreamModal()"
-          class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+          class="flex-shrink-0 flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
           <i class="ti ti-plus"></i>
           <span>New Stream</span>
         </button>
+      </div>
+    </div>
+      <!-- Stream Tabs -->
+    <div class="mb-6">
+      <!-- Mobile Tabs - Compact with icons only -->
+      <div class="md:hidden border-b border-gray-700">
+        <nav class="-mb-px flex justify-around">          
+          <button class="stream-tab flex flex-col items-center py-3 px-2 border-b-2 font-medium text-xs transition-colors duration-200 text-primary border-primary" 
+                  data-tab="all" onclick="switchTab('all')">
+            <div class="flex items-center">
+              <i class="ti ti-list text-lg text-primary"></i>
+              <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300 min-w-[20px] text-center" id="all-count-mobile">0</span>
+            </div>
+          </button>
+          <button class="stream-tab flex flex-col items-center py-3 px-2 border-b-2 font-medium text-xs transition-colors duration-200 text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-300" 
+                  data-tab="live" onclick="switchTab('live')">
+            <div class="flex items-center">
+              <i class="ti ti-broadcast text-lg text-gray-400"></i>
+              <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300 min-w-[20px] text-center" id="live-count-mobile">0</span>
+            </div>
+          </button>
+          <button class="stream-tab flex flex-col items-center py-3 px-2 border-b-2 font-medium text-xs transition-colors duration-200 text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-300" 
+                  data-tab="scheduled" onclick="switchTab('scheduled')">
+            <div class="flex items-center">
+              <i class="ti ti-calendar-event text-lg text-gray-400"></i>
+              <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300 min-w-[20px] text-center" id="scheduled-count-mobile">0</span>
+            </div>
+          </button>
+          <button class="stream-tab flex flex-col items-center py-3 px-2 border-b-2 font-medium text-xs transition-colors duration-200 text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-300" 
+                  data-tab="offline" onclick="switchTab('offline')">
+            <div class="flex items-center">
+              <i class="ti ti-zzz text-lg text-gray-400"></i>
+              <span class="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300 min-w-[20px] text-center" id="offline-count-mobile">0</span>
+            </div>
+          </button>
+        </nav>
+      </div>
+      
+      <!-- Desktop Tabs - Full with text labels -->
+      <div class="hidden md:block border-b border-gray-700">
+        <nav class="-mb-px flex space-x-8">
+          <button class="stream-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 text-primary border-primary" 
+                  data-tab="all" onclick="switchTab('all')">
+            <i class="ti ti-list mr-2"></i>All Streams
+            <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300" id="all-count">0</span>
+          </button>
+          <button class="stream-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-300" 
+                  data-tab="live" onclick="switchTab('live')">
+            <i class="ti ti-broadcast mr-2"></i>Live
+            <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300" id="live-count">0</span>
+          </button>
+          <button class="stream-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-300" 
+                  data-tab="scheduled" onclick="switchTab('scheduled')">
+            <i class="ti ti-calendar-event mr-2"></i>Scheduled
+            <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300" id="scheduled-count">0</span>
+          </button>
+          <button class="stream-tab py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 text-gray-400 border-transparent hover:text-gray-300 hover:border-gray-300" 
+                  data-tab="offline" onclick="switchTab('offline')">
+            <i class="ti ti-zzz mr-2"></i>Offline
+            <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-700 text-gray-300" id="offline-count">0</span>
+          </button>
+        </nav>
       </div>
     </div>
     <div class="block md:hidden space-y-4">
@@ -147,8 +208,7 @@
         <table class="min-w-full">
           <thead class="bg-gray-700 sticky top-0 z-10">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Stream Name
-              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Stream Name</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Platform</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Start Date</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Schedule</th>
@@ -179,7 +239,7 @@
     <div class="flex min-h-screen items-center justify-center p-4">
       <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
         <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
-          <h3 class="text-lg font-semibold">Create New Stream</h3>
+          <h3 class="text-lg font-semibold">New Stream</h3>
           <button onclick="closeNewStreamModal()" class="text-gray-400 hover:text-white">
             <i class="ti ti-x text-xl"></i>
           </button>
@@ -208,9 +268,19 @@
                         </div>
                       </div>
                       <div id="videoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto">
-                      </div>
+                      </div>                    
                     </div>
-                  </div>
+                  </div>                
+                </div>
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-gray-300">Loop Video</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="loopVideo" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div
+                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
+                    </div>
+                  </label>
                 </div>
                 <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
                   <div class="aspect-video bg-dark-900">
@@ -241,12 +311,12 @@
                       <input type="text" id="rtmpUrl" name="rtmpUrl"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="RTMP URL" required>
-                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      
                       <button type="button" id="platformSelector"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-dark-600 transition-colors"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                         aria-label="Select platform">
-                        <i class="ti ti-list-check text-gray-400 hover:text-primary"></i>
-                      </button>
+                        <i class="ti ti-list-check text-gray-400 hover:text-white transition-colors"></i>
+                      </button>                      
                       <div id="platformDropdown"
                         class="hidden absolute z-10 right-0 mt-1 w-48 bg-dark-700 rounded-lg border border-gray-600 shadow-lg overflow-hidden">
                         <div class="py-1">
@@ -265,7 +335,7 @@
                           <button type="button"
                             class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
                             data-url="rtmps://ingest.global.live.prod.tiktok.com/live">
-                            <i class="ti ti-brand-tiktok text-black text-base mr-2"></i>
+                            <i class="ti ti-brand-tiktok text-gray-200 text-base mr-2"></i>
                             <span class="text-sm">TikTok</span>
                           </button>
                           <button type="button"
@@ -287,11 +357,32 @@
                       <input type="password" id="streamKey" name="streamKey"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Stream Key" required>
-                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                        
                       <button type="button" onclick="toggleStreamKeyVisibility()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                         <i class="ti ti-eye" id="streamKeyToggle"></i>
                       </button>
+                    </div>                  
+                  </div>                
+                </div>
+                <!-- Time Info Section -->
+                <div class="bg-dark-700 rounded-lg p-4 border border-gray-600">
+                  <div class="space-y-2">
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-clock text-yellow-500 mr-1"></i>
+                      <span class="font-bold">Server Time:</span> <span id="serverTimeDisplay" class="text-yellow-500">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-world text-blue-400 mr-1"></i>
+                      <span class="font-bold">Timezone:</span> <span id="timezoneDisplay" class="text-blue-400">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-map-pin text-green-400 mr-1"></i>
+                      <span class="font-bold">Location:</span> <span id="locationDisplay" class="text-green-400">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-network text-purple-400 mr-1"></i>
+                      <span class="font-bold">IP Address:</span> <span id="ipDisplay" class="text-purple-400">loading...</span>
                     </div>
                   </div>
                 </div>
@@ -312,29 +403,14 @@
                       <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
                       <p class="text-sm text-gray-500">Select a video to preview</p>
                     </div>
-                  </div>
-                </div>
+                  </div>                
+                </div>              
               </div>
-            </div>
-            <div class="space-y-2">
+            </div><div class="space-y-2">
               <div class="flex flex-col sm:flex-row sm:items-center">
                 <label class="text-sm font-medium text-white">Schedule Settings</label>
-                <span id="serverTimeDisplay"
-                  class="mt-1 sm:mt-0 sm:ml-2 block sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
-                  Server time: loading...
-                </span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="h-[42px] flex items-center justify-between">
-                  <label class="text-sm text-gray-300">Loop Video</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="loopVideo" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
-                    <div
-                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
-                    </div>
-                  </label>
-                </div>
+              </div>              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <input type="datetime-local"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
@@ -346,27 +422,18 @@
                   <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
                 </div>
               </div>
-            </div>
+            </div>            
             <div class="space-y-4">
               <div class="pt-2 border-t border-gray-700">
-                <button type="button" id="advancedSettingsToggle"
-                  class="flex items-center justify-between w-full text-left">
+                <div class="flex items-center justify-between">                  
                   <div class="flex items-center">
                     <span class="text-sm font-medium text-white">Advanced Settings</span>
-                    <div class="relative ml-2 group">
-                      <i class="ti ti-info-circle text-gray-400 hover:text-primary"></i>
-                      <div
-                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
-                        <div class="text-center">Menggunakan advanced settings, proses streaming akan menjadi lebih
-                          berat karena ada proses re-encoding video</div>
-                        <div
-                          class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
-                </button>
+                  </div><label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="advancedSettingsToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
                 <div id="advancedSettingsContent" class="hidden space-y-6 pt-4">
                   <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -429,10 +496,11 @@
               </div>
             </div>
           </form>
-        </div>
+        </div>        
         <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
           <button onclick="closeNewStreamModal()"
-            class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+            <i class="ti ti-x mr-1.5"></i>
             Cancel
           </button>
           <button type="submit" form="newStreamForm"
@@ -477,9 +545,19 @@
                         </div>
                       </div>
                       <div id="editVideoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto">
-                      </div>
+                      </div>                    
                     </div>
                   </div>
+                </div>                
+                <div class="flex items-center justify-between">
+                  <label class="text-sm text-gray-300">Loop Video</label>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" name="loopVideo" id="editLoopVideo" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div
+                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
+                    </div>
+                  </label>
                 </div>
                 <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
                   <div class="aspect-video bg-dark-900">
@@ -510,12 +588,12 @@
                       <input type="text" id="editRtmpUrl" name="rtmpUrl"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="RTMP URL" required>
-                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      
                       <button type="button" id="editPlatformSelector"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-dark-600 transition-colors"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full transition-colors"
                         aria-label="Select platform">
-                        <i class="ti ti-list-check text-gray-400 hover:text-primary"></i>
-                      </button>
+                        <i class="ti ti-list-check text-gray-400 hover:text-white transition-colors"></i>
+                      </button>                      
                       <div id="editPlatformDropdown"
                         class="hidden absolute z-10 right-0 mt-1 w-48 bg-dark-700 rounded-lg border border-gray-600 shadow-lg overflow-hidden">
                         <div class="py-1">
@@ -534,7 +612,7 @@
                           <button type="button"
                             class="platform-option w-full flex items-center px-4 py-2 hover:bg-dark-600" 
                             data-url="rtmps://ingest.global.live.prod.tiktok.com/live">
-                            <i class="ti ti-brand-tiktok text-black text-base mr-2"></i>
+                            <i class="ti ti-brand-tiktok text-gray-400 text-base mr-2"></i>
                             <span class="text-sm">TikTok</span>
                           </button>
                           <button type="button"
@@ -556,11 +634,32 @@
                       <input type="password" id="editStreamKey" name="streamKey"
                         class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
                         placeholder="Stream Key" required>
-                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                      <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>                      
                       <button type="button" onclick="toggleEditStreamKeyVisibility()"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors">
+                        class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                         <i class="ti ti-eye" id="editStreamKeyToggle"></i>
                       </button>
+                    </div>                  
+                  </div>                
+                </div>
+                <!-- Time Info Section -->
+                <div class="bg-dark-700 rounded-lg p-4 border border-gray-600">
+                  <div class="space-y-2">
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-clock text-yellow-500 mr-1"></i>
+                      <span class="font-bold">Server Time:</span> <span id="editServerTimeDisplay" class="text-yellow-500">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-world text-blue-400 mr-1"></i>
+                      <span class="font-bold">Timezone:</span> <span id="editTimezoneDisplay" class="text-blue-400">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-map-pin text-green-400 mr-1"></i>
+                      <span class="font-bold">Location:</span> <span id="editLocationDisplay" class="text-green-400">loading...</span>
+                    </div>
+                    <div class="text-xs text-gray-300">
+                      <i class="ti ti-network text-purple-400 mr-1"></i>
+                      <span class="font-bold">IP Address:</span> <span id="editIpDisplay" class="text-purple-400">loading...</span>
                     </div>
                   </div>
                 </div>
@@ -581,29 +680,14 @@
                       <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
                       <p class="text-sm text-gray-500">Select a video to preview</p>
                     </div>
-                  </div>
-                </div>
+                  </div>                
+                </div>              
               </div>
-            </div>
-            <div class="space-y-2">
+            </div><div class="space-y-2">
               <div class="flex flex-col sm:flex-row sm:items-center">
                 <label class="text-sm font-medium text-white">Schedule Settings</label>
-                <span id="editServerTimeDisplay"
-                  class="mt-1 sm:mt-0 sm:ml-2 block sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
-                  Server time: loading...
-                </span>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="h-[42px] flex items-center justify-between">
-                  <label class="text-sm text-gray-300">Loop Video</label>
-                  <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" name="loopVideo" id="editLoopVideo" class="sr-only peer" checked>
-                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
-                    <div
-                      class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5">
-                    </div>
-                  </label>
-                </div>
+              </div>              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <input type="datetime-local" id="editScheduleTime"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
@@ -618,24 +702,15 @@
             </div>
             <div class="space-y-4">
               <div class="pt-2 border-t border-gray-700">
-                <button type="button" id="editAdvancedSettingsToggle"
-                  class="flex items-center justify-between w-full text-left">
+                <div class="flex items-center justify-between">                  
                   <div class="flex items-center">
                     <span class="text-sm font-medium text-white">Advanced Settings</span>
-                    <div class="relative ml-2 group">
-                      <i class="ti ti-info-circle text-gray-400 hover:text-primary"></i>
-                      <div
-                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-64 p-2 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
-                        <div class="text-center">Menggunakan advanced settings, proses streaming akan menjadi lebih
-                          berat karena ada proses re-encoding video</div>
-                        <div
-                          class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-dark-600">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
-                </button>
+                  </div><label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="editAdvancedSettingsToggle" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
                 <div id="editAdvancedSettingsContent" class="hidden space-y-6 pt-4">
                   <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -698,10 +773,11 @@
               </div>
             </div>
           </form>
-        </div>
+        </div>        
         <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
           <button onclick="closeEditStreamModal()"
-            class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+            class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+            <i class="ti ti-x mr-1.5"></i>
             Cancel
           </button>
           <button type="submit" form="editStreamForm"
@@ -711,8 +787,7 @@
         </div>
       </div>
     </div>
-  </div>
-  <style>
+  </div>  <style>
     .video-js {
       background-color: #1f2937;
       width: 100%;
@@ -776,20 +851,43 @@
       top: 50% !important;
       left: 50% !important;
       transform: translate(-50%, -50%) !important;
-    }
-    #videoListContainer {
+    }    #videoListContainer {
       scrollbar-width: thin;
       scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+      text-align: left;
     }
     #videoListContainer::-webkit-scrollbar {
       width: 6px;
     }
     #videoListContainer::-webkit-scrollbar-track {
       background: transparent;
-    }
-    #videoListContainer::-webkit-scrollbar-thumb {
+    }    #videoListContainer::-webkit-scrollbar-thumb {
       background-color: rgba(156, 163, 175, 0.3);
       border-radius: 20px;
+    }
+    #editVideoListContainer {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+      text-align: left;
+    }
+    #editVideoListContainer::-webkit-scrollbar {
+      width: 6px;
+    }
+    #editVideoListContainer::-webkit-scrollbar-track {
+      background: transparent;
+    }    
+    #editVideoListContainer::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.3);
+      border-radius: 20px;
+    }
+    #videoListContainer button,
+    #editVideoListContainer button {
+      justify-content: flex-start !important;
+      text-align: left !important;
+    }
+    #videoListContainer .flex-1,
+    #editVideoListContainer .flex-1 {
+      text-align: left !important;
     }
     #videoSearchInput::placeholder {
       color: rgba(156, 163, 175, 0.7);
@@ -880,7 +978,7 @@
     }
     .group:hover .group-hover\:block {
       animation: fadeIn 0.2s;
-    }
+    }    
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -889,6 +987,74 @@
       to {
         opacity: 1;
         transform: translate(-50%, 0);
+      }
+    }
+
+    .countdown-timer {
+      font-family: 'Courier New', monospace;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .countdown-part {
+      display: inline-block;
+      position: relative;
+      margin: 0 2px;
+      font-weight: 700;
+      font-size: 1.1em;
+    }
+
+    .countdown-label {
+      font-size: 0.7em;
+      font-weight: 500;
+      opacity: 0.8;
+      margin-left: 1px;
+    }
+
+    .countdown-timer .countdown-part:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      right: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 2px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 50%;
+      opacity: 0.6;
+    }
+
+    .stream-tab {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stream-tab::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: currentColor;
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .stream-tab.text-primary::before {
+      transform: scaleX(1);
+    }
+
+    .bg-gradient-to-r.from-yellow-500\/20 {
+      animation: gentle-glow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes gentle-glow {
+      0% {
+        box-shadow: 0 0 5px rgba(234, 179, 8, 0.3);
+      }
+      100% {
+        box-shadow: 0 0 15px rgba(234, 179, 8, 0.5);
       }
     }
   </style>
@@ -1004,10 +1170,15 @@
     updateSystemStats();
     setInterval(updateSystemStats, 5000);
     document.getElementById('newStreamForm').addEventListener('submit', function (e) {
-      e.preventDefault();
+      e.preventDefault();      
       const videoId = document.getElementById('selectedVideoId').value;
       if (!videoId) {
-        alert('Please select a video before creating the stream');
+        createModalDialog({
+          type: 'warning',
+          title: 'Video Required',
+          message: 'Please select a video before creating the stream',
+          confirmText: 'OK'
+        });
         const videoSelector = document.querySelector('[onclick="toggleVideoSelector()"]');
         videoSelector.classList.add('border-red-500');
         videoSelector.classList.remove('border-gray-600');
@@ -1021,10 +1192,14 @@
           duration: 300,
           iterations: 1
         });
-        return;
-      }
+        return;      }
       if (!isStreamKeyValid) {
-        alert('Please use a different stream key. This one is already in use.');
+        createModalDialog({
+          type: 'warning',
+          title: 'Invalid Stream Key',
+          message: 'Please use a different stream key. This one is already in use.',
+          confirmText: 'OK'
+        });
         return;
       }
       const formData = {
@@ -1037,7 +1212,7 @@
         loopVideo: document.querySelector('input[name="loopVideo"]').checked,
         orientation: currentOrientation,
         resolution: document.getElementById('currentResolution').textContent.split(' ')[0],
-        useAdvancedSettings: !document.getElementById('advancedSettingsContent').classList.contains('hidden')
+        useAdvancedSettings: document.getElementById('advancedSettingsToggle').checked
       };
       const scheduleTime = document.querySelector('input[type="datetime-local"]').value;
       const duration = document.querySelector('input[type="number"]').value;
@@ -1055,69 +1230,196 @@
           ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
         },
         body: JSON.stringify(formData)
-      })
-        .then(response => response.json())
-        .then(data => {
+      })        
+      .then(response => response.json())        
+      .then(data => {
           if (data.success) {
-            alert('Stream created successfully!');
             closeNewStreamModal();
             setTimeout(() => {
               window.location.reload();
             }, 500);
           } else {
-            alert(`Error: ${data.error || 'Failed to create stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Creation Failed',
+              message: `Error: ${data.error || 'Failed to create stream'}`,
+              confirmText: 'OK'
+            });
           }
-        })
+        })        
         .catch(error => {
           console.error('Error:', error);
-          alert('An error occurred while creating the stream');
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: 'An error occurred while creating the stream',
+            confirmText: 'OK'
+          });
         });
-    });
+    });    
     document.addEventListener('DOMContentLoaded', function () {
       fetch('/api/streams')
         .then(response => response.json())
         .then(data => {
           if (data.success) {
+            window.allStreams = data.streams;            
             displayStreams(data.streams);
             updateStreamCounters(data.streams);
+            setupSearch();
           } else {
             console.error('Error fetching streams:', data.error);
-            showEmptyState();
+            displayStreams([]);
           }
         })
         .catch(error => {
           console.error('Error fetching streams:', error);
-          showEmptyState();
-        });      function updateStreamCounters(streams) {
+          displayStreams([]);
+        });
+
+      let currentTab = 'all';
+      window.currentTab = currentTab;
+
+      function setupSearch() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+          searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const filtered = window.allStreams.filter(stream => 
+              stream.title.toLowerCase().includes(searchTerm) ||
+              (stream.platform && stream.platform.toLowerCase().includes(searchTerm))
+            );
+            displayFilteredStreams(filtered);
+          });
+        }
+      }
+
+      function displayFilteredStreams(streams) {
+        const filteredByTab = filterStreamsByTab(streams, window.currentTab);
+        displayMobileStreams(filteredByTab);
+        displayDesktopStreams(filteredByTab);
+      }      
+      window.switchTab = function(tab) {
+        window.currentTab = tab;
+        
+        document.querySelectorAll('.stream-tab').forEach(tabEl => {
+          tabEl.classList.remove('text-primary', 'border-primary');
+          tabEl.classList.add('text-gray-400', 'border-transparent');
+          
+          const icon = tabEl.querySelector('i');
+          if (icon) {
+            icon.classList.remove('text-primary');
+            icon.classList.add('text-gray-400');
+          }
+        });
+        
+        const activeTabs = document.querySelectorAll(`[data-tab="${tab}"]`);
+        activeTabs.forEach(activeTab => {
+          if (activeTab) {
+            activeTab.classList.remove('text-gray-400', 'border-transparent');
+            activeTab.classList.add('text-primary', 'border-primary');
+            
+            const icon = activeTab.querySelector('i');
+            if (icon) {
+              icon.classList.remove('text-gray-400');
+              icon.classList.add('text-primary');
+            }
+          }
+        });
+        
+        const searchInput = document.getElementById('searchInput');
+        const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+        
+        let filtered = window.allStreams || [];
+        if (searchTerm) {
+          filtered = filtered.filter(stream => 
+            stream.title.toLowerCase().includes(searchTerm) ||
+            (stream.platform && stream.platform.toLowerCase().includes(searchTerm))
+          );
+        }
+        
+        const filteredByTab = filterStreamsByTab(filtered, tab);
+        displayMobileStreams(filteredByTab);
+        displayDesktopStreams(filteredByTab);
+      };
+
+      function filterStreamsByTab(streams, tab) {
+        switch(tab) {
+          case 'live':
+            return streams.filter(stream => stream.status === 'live');
+          case 'scheduled':
+            return streams.filter(stream => stream.status === 'scheduled');
+          case 'offline':
+            return streams.filter(stream => stream.status === 'offline');
+          default:
+            return streams;
+        }
+      }      
+      function updateStreamCounters(streams) {
         const liveStreams = streams.filter(stream => stream.status === 'live').length;
+        const scheduledStreams = streams.filter(stream => stream.status === 'scheduled').length;
+        const offlineStreams = streams.filter(stream => stream.status === 'offline').length;
+        const allStreams = streams.length;
+
         document.querySelector('.hidden.md\\:grid .bg-gray-800:nth-child(1) p.text-3xl').textContent = liveStreams;
         document.querySelector('.grid.grid-cols-2.md\\:hidden .bg-gray-800:nth-child(1) p.text-xl').textContent = liveStreams;
-      }
+        
+        document.getElementById('all-count').textContent = allStreams;
+        document.getElementById('live-count').textContent = liveStreams;
+        document.getElementById('scheduled-count').textContent = scheduledStreams;
+        document.getElementById('offline-count').textContent = offlineStreams;
+        
+        document.getElementById('all-count-mobile').textContent = allStreams;
+        document.getElementById('live-count-mobile').textContent = liveStreams;
+        document.getElementById('scheduled-count-mobile').textContent = scheduledStreams;
+        document.getElementById('offline-count-mobile').textContent = offlineStreams;
+      }      
       function displayStreams(streams) {
-        if (!streams || streams.length === 0) {
-          showEmptyState();
-          return;
-        }
         displayMobileStreams(streams);
         displayDesktopStreams(streams);
       }
       function displayMobileStreams(streams) {
         const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-4');
         mobileContainer.innerHTML = '';
+        
+        if (!streams || streams.length === 0) {
+          const emptyStateCard = document.createElement('div');
+          emptyStateCard.className = 'bg-gray-800 rounded-lg p-6 text-center';
+          emptyStateCard.innerHTML = `
+            <div class="flex flex-col items-center">
+              <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
+                <i class="ti ti-broadcast text-gray-500 text-2xl"></i>
+              </div>
+              <p class="text-gray-400 font-medium mb-2">No streams found</p>
+              <p class="text-gray-500 mb-4">Create your first stream to start broadcasting</p>
+            </div>
+          `;
+          mobileContainer.appendChild(emptyStateCard);
+          return;
+        }
+        
         streams.forEach(stream => {
           const card = createMobileStreamCard(stream);
           mobileContainer.appendChild(card);
         });
-      }
+      }      
       function displayDesktopStreams(streams) {
         const tableBody = document.querySelector('.hidden.md\\:block table tbody');
         Array.from(tableBody.querySelectorAll('tr:not(#empty-state)')).forEach(row => {
           row.remove();
         });
         const emptyState = document.getElementById('empty-state');
+        
+        if (!streams || streams.length === 0) {
+          if (emptyState) {
+            emptyState.style.display = 'table-row';
+          }
+          return;
+        }
+        
         if (emptyState) {
           emptyState.style.display = 'none';
         }
+        
         streams.forEach(stream => {
           const row = createStreamTableRow(stream);
           tableBody.insertBefore(row, emptyState);
@@ -1136,11 +1438,11 @@
           const now = new Date();
           const durationMs = now - startTime;
           const hours = Math.floor(durationMs / (1000 * 60 * 60)).toString().padStart(2, '0');
-          const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+          const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');          
           const seconds = Math.floor((durationMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
           durationDisplay = `${hours}:${minutes}:${seconds}`;
         }
-        const statusBadge = getStatusBadgeHTML(stream.status);
+        const statusBadge = getStatusBadgeHTML(stream.status, '', 'mobile');
         const startDate = stream.start_time ? formatDate(new Date(stream.start_time)) : '';
         const scheduleDate = stream.schedule_time ? formatDate(new Date(stream.schedule_time)) : '';
         const scheduleTime = stream.schedule_time ? formatTime(new Date(stream.schedule_time)) : '';
@@ -1163,14 +1465,15 @@
             formattedDuration = `${stream.duration} min`;
           }
         }
-        card.innerHTML = `
+        card.innerHTML = `        
         <div class="relative">
           <div class="bg-dark-700 aspect-video relative">
             <img src="${thumbnail}" class="w-full h-full object-cover" alt="${stream.title}">
-            <div class="absolute top-2 right-2">
-              ${statusBadge}
-            </div>            ${stream.status === 'live' ? `
-            <div class="absolute bottom-2 right-2 bg-black/70 rounded px-1.5 py-0.5 min-w-[4rem] text-center">
+            <div class="absolute top-2 left-2">
+              ${statusBadge}            
+            </div>            
+            ${stream.status === 'live' ? `
+            <div class="absolute bottom-2 right-2 bg-black/70 rounded-full px-2.5 py-1.5 min-w-[4rem] flex items-center justify-center">
               <span class="text-xs font-medium text-white tabular-nums">
                 <span class="live-duration" data-start-time="${stream.start_time}">${durationDisplay}</span>
               </span>
@@ -1181,7 +1484,7 @@
           <div class="flex items-center justify-between mb-2">
             <div class="font-medium">${stream.title}</div>
             <div class="flex items-center text-sm">
-              <i class="ti ti-brand-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1"></i>
+              <i class="ti ti-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1"></i>
               <span>${stream.platform || 'Custom'}</span>
             </div>
           </div>
@@ -1191,11 +1494,24 @@
           <div class="flex items-center text-sm text-gray-400 mb-2">
             <i class="ti ti-clock mr-1.5"></i>
             <span>Duration: ${formattedDuration}</span>
-          </div>
+          </div>          
           ${stream.status === 'scheduled' ? `
-          <div class="flex items-center text-sm text-yellow-500 mb-3">
-            <i class="ti ti-calendar-event mr-1.5"></i>
-            <span>Starts ${scheduleDate} • ${scheduleTime}</span>
+          <div class="bg-yellow-500/10 rounded-lg p-4 mb-3">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center text-yellow-500">
+                <i class="ti ti-calendar-event mr-2"></i>
+                <span class="font-semibold">Starts in:</span>
+              </div>
+              <i class="ti ti-clock text-yellow-500 animate-pulse"></i>
+            </div>
+            <div class="text-center">
+              <div class="text-2xl font-bold text-white countdown-timer" data-schedule-time="${stream.schedule_time}">
+                Loading...
+              </div>
+              <div class="text-sm text-yellow-400 mt-1">
+                ${scheduleDate} at ${scheduleTime}
+              </div>
+            </div>
           </div>` : `
           <div class="flex items-center text-sm text-gray-400 mb-3">
             <i class="ti ti-calendar mr-1.5"></i>
@@ -1249,10 +1565,9 @@
               <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
               <span class="text-xs font-medium">Live • <span class="live-duration tabular-nums" data-start-time="${stream.start_time}">
                 ${durationDisplay}</span></span>
-            </span>
-          `;
+            </span>          `;
         } else {
-          statusBadge = getStatusBadgeHTML(stream.status);
+          statusBadge = getStatusBadgeHTML(stream.status, '', 'desktop');
         }
         let formattedDuration = '—';
         if (stream.duration) {
@@ -1278,18 +1593,31 @@
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
           <div class="flex items-center">
-            <i class="ti ti-brand-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1.5"></i>
+            <i class="ti ti-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1.5"></i>
             <span class="text-sm">${stream.platform || 'Custom'}</span>
           </div>
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
           <div class="text-sm text-gray-400">${formatDate(startDate) || '--'}</div>
           ${startDate ? `<div class="text-xs text-gray-500">Started: ${formatTime(startDate)}</div>` : ''}
-        </td>
+        </td>        
         <td class="px-6 py-4 whitespace-nowrap">
           ${scheduleDate
-            ? `<div class="text-sm text-yellow-500 font-medium">${formatDate(scheduleDate)}</div>
-               <div class="text-xs text-gray-400">${formatTime(scheduleDate)}</div>`
+            ? stream.status === 'scheduled' 
+              ? `<div class="bg-yellow-500/10 rounded-lg p-3">
+                   <div class="flex items-center text-yellow-500 mb-1">
+                     <i class="ti ti-clock animate-pulse mr-1"></i>
+                     <span class="text-xs font-semibold">Starts in:</span>
+                   </div>
+                   <div class="text-sm font-bold text-white countdown-timer" data-schedule-time="${stream.schedule_time}">
+                     Loading...
+                   </div>
+                   <div class="text-xs text-yellow-400 mt-1">
+                     ${formatDate(scheduleDate)} at ${formatTime(scheduleDate)}
+                   </div>
+                 </div>`
+              : `<div class="text-sm text-yellow-500 font-medium">${formatDate(scheduleDate)}</div>
+                 <div class="text-xs text-gray-400">${formatTime(scheduleDate)}</div>`
             : `<div class="text-sm">--</div>`}
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
@@ -1317,31 +1645,7 @@
           </div>
         </td>
       `;
-        return row;
-      }
-      function showEmptyState() {
-        document.querySelectorAll('tbody tr:not(#empty-state)').forEach(el => {
-          el.style.display = 'none';
-        });
-        const emptyState = document.getElementById('empty-state');
-        if (emptyState) {
-          emptyState.style.display = 'table-row';
-        }
-        document.querySelectorAll('.block.md\\:hidden.space-y-4 > div').forEach(el => {
-          el.style.display = 'none';
-        });
-        const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-4');
-        mobileContainer.innerHTML = `
-        <div class="bg-gray-800 rounded-lg p-6 text-center">
-          <div class="flex flex-col items-center">
-            <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
-              <i class="ti ti-broadcast text-gray-500 text-2xl"></i>
-            </div>
-            <p class="text-gray-400 font-medium mb-2">No streams found</p>
-            <p class="text-gray-500 mb-4">Create your first stream to start broadcasting</p>
-          </div>
-        </div>
-      `;
+        return row;      
       }
       function formatDate(date) {
         if (!date) return '';
@@ -1356,43 +1660,53 @@
           minute: '2-digit',
           hour12: false
         });
-      }
+      }      
       function getPlatformIcon(platform) {
         switch (platform) {
-          case 'YouTube': return 'youtube';
-          case 'Facebook': return 'facebook';
-          case 'Twitch': return 'twitch';
-          case 'TikTok': return 'tiktok';
-          case 'Instagram': return 'instagram';
+          case 'YouTube': return 'brand-youtube';
+          case 'Facebook': return 'brand-facebook';
+          case 'Twitch': return 'brand-twitch';
+          case 'TikTok': return 'brand-tiktok';
           case 'Shopee Live': return 'shopping-bag';
-          case 'Restream.io': return 'live-photo';
           default: return 'broadcast';
         }
-      }
+      }      
       function getPlatformColor(platform) {
         switch (platform) {
           case 'YouTube': return 'red-500';
           case 'Facebook': return 'blue-500';
           case 'Twitch': return 'purple-500';
           case 'TikTok': return 'gray-100';
-          case 'Instagram': return 'pink-500';
           case 'Shopee Live': return 'orange-500';
-          case 'Restream.io': return 'teal-500';
           default: return 'gray-400';
         }
       }
-      function getStatusBadgeHTML(status, duration = '') {
-        switch (status) {
+      function getStatusBadgeHTML(status, duration = '', view = 'desktop') {
+        const getBgClass = (defaultBg) => {
+          if (view === 'mobile') {
+            switch (status) {
+              case 'live':
+                return 'bg-red-500 text-white';
+              case 'scheduled':
+                return 'bg-yellow-500 text-black';
+              case 'offline':
+              default:
+                return 'bg-gray-500 text-white';
+            }
+          }
+          return defaultBg;
+        };
+          switch (status) {          
           case 'live':
             return `
-            <span class="flex items-center bg-red-400/10 text-red-400 rounded-full px-2.5 py-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
+            <span class="flex items-center ${getBgClass('bg-red-400/10 text-red-400')} rounded-full px-2.5 py-1">
+              <span class="w-1.5 h-1.5 rounded-full ${view === 'mobile' ? 'bg-white' : 'bg-red-400'} animate-pulse mr-1.5"></span>
               <span class="text-xs font-medium">Live${duration ? ' • ' + duration : ''}</span>
             </span>
           `;
           case 'scheduled':
             return `
-            <span class="flex items-center bg-yellow-500/10 text-yellow-500 rounded-full px-2.5 py-1">
+            <span class="flex items-center ${getBgClass('bg-yellow-500/10 text-yellow-500')} rounded-full px-2.5 py-1">
               <i class="ti ti-calendar-event text-xs mr-1.5"></i>
               <span class="text-xs font-medium">Scheduled</span>
             </span>
@@ -1400,8 +1714,8 @@
           case 'offline':
           default:
             return `
-            <span class="flex items-center bg-gray-700 text-gray-400 rounded-full px-2.5 py-1">
-              <i class="ti ti-circle-dot text-xs mr-1.5"></i>
+            <span class="flex items-center ${getBgClass('bg-gray-700 text-gray-400')} rounded-full px-2.5 py-1">
+              <i class="ti ti-zzz text-xs mr-1.5"></i>
               <span class="text-xs font-medium">Offline</span>
             </span>
           `;
@@ -1409,8 +1723,8 @@
       }
       function getActionButtonHTML(status, streamId, view = 'desktop') {
         const btnClass = view === 'mobile'
-          ? 'px-4 py-1.5 text-white text-xs font-medium rounded transition-colors'
-          : 'inline-flex items-center px-2.5 py-1.5 text-white text-xs font-medium rounded transition-colors';
+          ? 'flex items-center justify-center px-4 py-1.5 text-white text-xs font-medium rounded transition-colors w-16'
+          : 'inline-flex items-center justify-center px-2.5 py-1.5 text-white text-xs font-medium rounded transition-colors w-16';
         switch (status) {
           case 'live':
             return `
@@ -1419,12 +1733,12 @@
               class="${btnClass} bg-red-500 hover:bg-red-600">
               Stop
             </button>
-          `;
+          `;          
           case 'scheduled':
             return `
             <button
               onclick="cancelSchedule('${streamId}')"
-              class="${btnClass} bg-yellow-500 hover:bg-yellow-600">
+              class="${btnClass} bg-yellow-500 hover:bg-yellow-600 text-black">
               Cancel
             </button>
           `;
@@ -1463,21 +1777,29 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'live' })
-      })
-        .then(response => response.json())
-        .then(data => {
+      })        
+      .then(response => response.json())        
+      .then(data => {
           if (data.success) {
-            const streamMode = data.isAdvancedMode ? "Advanced mode" : "Simple mode";
-            alert(`Stream started successfully! (${streamMode})`);
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to start stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Start Failed',
+              message: `Error: ${data.error || 'Failed to start stream'}`,
+              confirmText: 'OK'
+            });
             restoreButtons();
           }
-        })
+        })        
         .catch(error => {
           console.error('Error starting stream:', error);
-          alert(`An error occurred while starting the stream: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while starting the stream: ${error.message}`,
+            confirmText: 'OK'
+          });
           restoreButtons();
         });
     }
@@ -1504,20 +1826,29 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'offline' })
-      })
-        .then(response => response.json())
-        .then(data => {
+      })        
+      .then(response => response.json())        
+      .then(data => {
           if (data.success) {
-            alert('Stream stopped successfully!');
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to stop stream'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Stop Failed',
+              message: `Error: ${data.error || 'Failed to stop stream'}`,
+              confirmText: 'OK'
+            });
             restoreButtons();
           }
-        })
+        })        
         .catch(error => {
           console.error('Error stopping stream:', error);
-          alert(`An error occurred while stopping the stream: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while stopping the stream: ${error.message}`,
+            confirmText: 'OK'
+          });
           restoreButtons();
         });
     }
@@ -1544,57 +1875,90 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'offline' })
-      })
-        .then(response => response.json())
-        .then(data => {
+      })        .then(response => response.json())        
+      .then(data => {
           if (data.success) {
-            alert('Schedule cancelled successfully!');
             window.location.reload();
           } else {
-            alert(`Error: ${data.error || 'Failed to cancel schedule'}`);
+            createModalDialog({
+              type: 'danger',
+              title: 'Cancel Failed',
+              message: `Error: ${data.error || 'Failed to cancel schedule'}`,
+              confirmText: 'OK'
+            });
             restoreButtons();
           }
-        })
+        })        
         .catch(error => {
           console.error('Error cancelling schedule:', error);
-          alert(`An error occurred while cancelling the schedule: ${error.message}`);
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: `An error occurred while cancelling the schedule: ${error.message}`,
+            confirmText: 'OK'
+          });
           restoreButtons();
         });
     }
     function editStream(streamId) {
       console.log('Edit stream:', streamId);
-    }
+    }    
     function deleteStream(streamId) {
       if (!streamId) return;
-      if (confirm('Are you sure you want to delete this stream?')) {
-        fetch(`/api/streams/${streamId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              window.location.reload();
-            } else {
-              alert('Error: ' + (data.error || 'Failed to delete stream'));
+      
+      createModalDialog({
+        type: 'danger',
+        title: 'Delete Stream',
+        message: 'Are you sure you want to delete this stream? This action cannot be undone.',
+        confirmText: 'Delete',
+        cancelText: 'Cancel'
+      }).then(result => {
+        if (result.confirmed) {
+          fetch(`/api/streams/${streamId}`, {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json'
             }
           })
-          .catch(error => {
-            console.error('Error deleting stream:', error);
-            alert('An error occurred while deleting the stream');
-          });
-      }
-    }
-    function startCountdowns() {
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                window.location.reload();
+              } else {
+                createModalDialog({
+                  type: 'danger',
+                  title: 'Delete Failed',
+                  message: 'Error: ' + (data.error || 'Failed to delete stream'),
+                  confirmText: 'OK'
+                });
+              }
+            })
+            .catch(error => {
+              console.error('Error deleting stream:', error);
+              createModalDialog({
+                type: 'danger',
+                title: 'Error',
+                message: 'An error occurred while deleting the stream',
+                confirmText: 'OK'
+              });
+            });
+        }
+      });
+    }    function startCountdowns() {
+      let hasCountdownExpired = false;
+      
       const updateTimers = () => {
+        let anyCountdownExpired = false;
+        
         document.querySelectorAll('[data-schedule-time]').forEach(el => {
+          if (el.classList.contains('countdown-timer')) return;
+          
           const scheduleTime = new Date(el.dataset.scheduleTime);
           const now = new Date();
           const diff = scheduleTime - now;
           if (diff <= 0) {
             el.textContent = 'Starting soon...';
+            anyCountdownExpired = true;
             return;
           }
           const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -1607,7 +1971,49 @@
           else timeText = `${minutes}m ${seconds}s`;
           el.textContent = `Starts in: ${timeText}`;
         });
+        
+        document.querySelectorAll('.countdown-timer[data-schedule-time]').forEach(el => {
+          const scheduleTime = new Date(el.dataset.scheduleTime);
+          const now = new Date();
+          const diff = scheduleTime - now;
+          
+          if (diff <= 0) {
+            el.innerHTML = '<span class="text-green-400 animate-pulse">Starting Soon!</span>';
+            anyCountdownExpired = true;
+            return;
+          }
+          
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          
+          let timeHTML = '';
+          if (days > 0) {
+            timeHTML = `<span class="countdown-part">${days}<span class="countdown-label">d</span></span> 
+                       <span class="countdown-part">${hours.toString().padStart(2, '0')}<span class="countdown-label">h</span></span> 
+                       <span class="countdown-part">${minutes.toString().padStart(2, '0')}<span class="countdown-label">m</span></span>`;
+          } else if (hours > 0) {
+            timeHTML = `<span class="countdown-part">${hours.toString().padStart(2, '0')}<span class="countdown-label">h</span></span> 
+                       <span class="countdown-part">${minutes.toString().padStart(2, '0')}<span class="countdown-label">m</span></span> 
+                       <span class="countdown-part">${seconds.toString().padStart(2, '0')}<span class="countdown-label">s</span></span>`;
+          } else {
+            timeHTML = `<span class="countdown-part text-orange-400">${minutes.toString().padStart(2, '0')}<span class="countdown-label">m</span></span> 
+                       <span class="countdown-part text-orange-400">${seconds.toString().padStart(2, '0')}<span class="countdown-label">s</span></span>`;
+          }
+          
+          el.innerHTML = timeHTML;
+        });
+        
+        if (anyCountdownExpired && !hasCountdownExpired) {
+          hasCountdownExpired = true;
+          console.log('Countdown expired, refreshing page in 3 seconds...');
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        }
       };
+      
       updateTimers();
       setInterval(updateTimers, 1000);
     }
@@ -1623,17 +2029,27 @@
     function editStream(streamId) {
       if (!streamId) return;
       fetch(`/api/streams/${streamId}`)
-        .then(response => response.json())
+        .then(response => response.json())        
         .then(data => {
           if (data.success) {
             openEditStreamModal(data.stream);
           } else {
-            alert('Error: ' + (data.error || 'Failed to fetch stream data'));
+            createModalDialog({
+              type: 'danger',
+              title: 'Fetch Failed',
+              message: 'Error: ' + (data.error || 'Failed to fetch stream data'),
+              confirmText: 'OK'
+            });
           }
         })
         .catch(error => {
           console.error('Error fetching stream data:', error);
-          alert('An error occurred while fetching stream data');
+          createModalDialog({
+            type: 'danger',
+            title: 'Error',
+            message: 'An error occurred while fetching stream data',
+            confirmText: 'OK'
+          });
         });
     }
     function openEditStreamModal(stream) {
@@ -1700,17 +2116,19 @@
         document.getElementById('editDuration').value = stream.duration;
       } else {
         document.getElementById('editDuration').value = '';
-      }
-      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
+      }      const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
-      const icon = advancedSettingsToggle.querySelector('i');
+      
       if (stream.use_advanced_settings) {
+        advancedSettingsToggle.checked = true;
         advancedSettingsContent.classList.remove('hidden');
-        icon.style.transform = 'rotate(180deg)';
       } else {
-        advancedSettingsContent.classList.add('hidden');
-        icon.style.transform = '';
+        advancedSettingsToggle.checked = false;
+        advancedSettingsContent.classList.add('hidden');      
       }
+      
+      applyEditStreamKeyVisibility();
+      
       const modal = document.getElementById('editStreamModal');
       document.body.style.overflow = 'hidden';
       modal.classList.remove('hidden');
@@ -1749,13 +2167,12 @@
       desktopPreview.classList.add('hidden');
       mobilePreview.classList.add('hidden');
       desktopEmptyPreview.classList.remove('hidden');
-      mobileEmptyPreview.classList.remove('hidden');
+      mobileEmptyPreview.classList.remove('hidden');      
       const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
       if (advancedSettingsContent && advancedSettingsToggle) {
         advancedSettingsContent.classList.add('hidden');
-        const icon = advancedSettingsToggle.querySelector('i');
-        if (icon) icon.style.transform = '';
+        advancedSettingsToggle.checked = false;
       }
     }
     function toggleEditVideoSelector() {
@@ -1906,7 +2323,7 @@
       if (resValue) {
         document.getElementById('editCurrentResolution').textContent = resValue;
       }
-    }
+    }    
     function toggleEditStreamKeyVisibility() {
       const keyInput = document.getElementById('editStreamKey');
       const eyeIcon = document.getElementById('editStreamKeyToggle');
@@ -1914,10 +2331,31 @@
         keyInput.type = 'text';
         eyeIcon.classList.remove('ti-eye');
         eyeIcon.classList.add('ti-eye-off');
+        localStorage.setItem('streamKeyVisibility', 'visible');
       } else {
         keyInput.type = 'password';
         eyeIcon.classList.remove('ti-eye-off');
         eyeIcon.classList.add('ti-eye');
+        localStorage.setItem('streamKeyVisibility', 'hidden');
+      }
+    }
+    
+    function applyEditStreamKeyVisibility() {
+      const keyInput = document.getElementById('editStreamKey');
+      const eyeIcon = document.getElementById('editStreamKeyToggle');
+      
+      if (keyInput && eyeIcon) {
+        const savedVisibility = localStorage.getItem('streamKeyVisibility');
+        
+        if (savedVisibility === 'visible') {
+          keyInput.type = 'text';
+          eyeIcon.classList.remove('ti-eye');
+          eyeIcon.classList.add('ti-eye-off');
+        } else {
+          keyInput.type = 'password';
+          eyeIcon.classList.remove('ti-eye-off');
+          eyeIcon.classList.add('ti-eye');
+        }
       }
     }
     document.addEventListener('DOMContentLoaded', function () {
@@ -1928,15 +2366,25 @@
       const editForm = document.getElementById('editStreamForm');
       if (editForm) {
         editForm.addEventListener('submit', function (e) {
-          e.preventDefault();
+          e.preventDefault();          
           const streamId = document.getElementById('editStreamId').value;
           if (!streamId) {
-            alert('Stream ID is missing.');
+            createModalDialog({
+              type: 'warning',
+              title: 'Missing Stream ID',
+              message: 'Stream ID is missing.',
+              confirmText: 'OK'
+            });
             return;
           }
           const videoId = document.getElementById('editSelectedVideoId').value;
           if (!videoId) {
-            alert('Please select a video before updating the stream.');
+            createModalDialog({
+              type: 'warning',
+              title: 'Video Required',
+              message: 'Please select a video before updating the stream.',
+              confirmText: 'OK'
+            });
             return;
           }
           const formData = {
@@ -1949,7 +2397,7 @@
             loopVideo: document.getElementById('editLoopVideo').checked,
             orientation: currentEditOrientation,
             resolution: document.getElementById('editCurrentResolution').textContent,
-            useAdvancedSettings: !document.getElementById('editAdvancedSettingsContent').classList.contains('hidden')
+            useAdvancedSettings: document.getElementById('editAdvancedSettingsToggle').checked
           };
           const scheduleTime = document.getElementById('editScheduleTime').value;
           const duration = document.getElementById('editDuration').value;
@@ -1967,22 +2415,31 @@
               ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
             },
             body: JSON.stringify(formData)
-          })
-            .then(response => response.json())
-            .then(data => {
+          })            
+          .then(response => response.json())            
+          .then(data => {
               if (data.success) {
-                alert('Stream updated successfully!');
                 closeEditStreamModal();
                 setTimeout(() => {
                   window.location.reload();
                 }, 500);
               } else {
-                alert(`Error: ${data.error || 'Failed to update stream'}`);
+                createModalDialog({
+                  type: 'danger',
+                  title: 'Update Failed',
+                  message: `Error: ${data.error || 'Failed to update stream'}`,
+                  confirmText: 'OK'
+                });
               }
             })
             .catch(error => {
               console.error('Error:', error);
-              alert('An error occurred while updating the stream');
+              createModalDialog({
+                type: 'danger',
+                title: 'Error',
+                message: 'An error occurred while updating the stream',
+                confirmText: 'OK'
+              });
             });
         });
       }
@@ -2007,22 +2464,38 @@
           editPlatformDropdown.classList.add('hidden');
         });
       });
-    }
-    document.addEventListener('DOMContentLoaded', function () {
+    }    document.addEventListener('DOMContentLoaded', function () {
       setupAdvancedSettings('advancedSettingsToggle', 'advancedSettingsContent');
       setupAdvancedSettings('editAdvancedSettingsToggle', 'editAdvancedSettingsContent');
-    });
-    function setupAdvancedSettings(toggleId, contentId) {
+    });    function setupAdvancedSettings(toggleId, contentId) {
       const toggle = document.getElementById(toggleId);
       const content = document.getElementById(contentId);
+      
       if (toggle && content) {
-        toggle.addEventListener('click', function () {
-          content.classList.toggle('hidden');
-          const icon = this.querySelector('i');
-          if (content.classList.contains('hidden')) {
-            icon.style.transform = '';
+        if (!toggle.hasAttribute('data-initialized')) {
+          content.classList.add('hidden');
+          toggle.checked = false;
+          toggle.setAttribute('data-initialized', 'true');
+        }
+        
+        toggle.addEventListener('change', function () {
+          if (this.checked) {
+            createModalDialog({
+              type: 'warning',
+              title: 'Advanced Settings Warning',
+              message: 'Menggunakan advanced settings, proses streaming akan menjadi lebih berat karena ada proses re-encoding video',
+              confirmText: 'OK',
+              cancelText: 'Cancel'
+            }).then(result => {
+              if (result.confirmed) {
+                content.classList.remove('hidden');
+              } else {
+                this.checked = false;
+                content.classList.add('hidden');
+              }
+            });
           } else {
-            icon.style.transform = 'rotate(180deg)';
+            content.classList.add('hidden');
           }
         });
       }
@@ -2039,29 +2512,83 @@
           el.textContent = `${hours}:${minutes}:${seconds}`;
         });
       }, 1000);
-    }
-    function updateServerTime() {
+    }    function updateServerTime() {
       fetch('/api/server-time')
         .then(response => response.json())
         .then(data => {
           if (data.formattedTime) {
-            const timeDisplay = `Server time: ${data.formattedTime}`;
             const createModalDisplay = document.getElementById('serverTimeDisplay');
             if (createModalDisplay) {
-              createModalDisplay.textContent = timeDisplay;
+              createModalDisplay.textContent = data.formattedTime;
             }
             const editModalDisplay = document.getElementById('editServerTimeDisplay');
             if (editModalDisplay) {
-              editModalDisplay.textContent = timeDisplay;
+              editModalDisplay.textContent = data.formattedTime;
             }
           }
         })
         .catch(error => {
           console.error('Error fetching server time:', error);
+        });    
+      }    
+      function updateLocationInfo() {
+      fetch('/api/server-info')
+        .then(response => response.json())
+        .then(data => {
+          const timezone = data.timezone || 'Unknown';
+          const createTimezoneDisplay = document.getElementById('timezoneDisplay');
+          if (createTimezoneDisplay) {
+            createTimezoneDisplay.textContent = timezone;
+          }
+          const editTimezoneDisplay = document.getElementById('editTimezoneDisplay');
+          if (editTimezoneDisplay) {
+            editTimezoneDisplay.textContent = timezone;
+          }
+
+          const location = data.location || 'Unknown';
+          const createLocationDisplay = document.getElementById('locationDisplay');
+          if (createLocationDisplay) {
+            createLocationDisplay.textContent = location;
+          }
+          const editLocationDisplay = document.getElementById('editLocationDisplay');
+          if (editLocationDisplay) {
+            editLocationDisplay.textContent = location;
+          }
+
+          const ip = data.ip || 'Unknown';
+          const createIpDisplay = document.getElementById('ipDisplay');
+          if (createIpDisplay) {
+            createIpDisplay.textContent = ip;
+          }
+          const editIpDisplay = document.getElementById('editIpDisplay');
+          if (editIpDisplay) {
+            editIpDisplay.textContent = ip;
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching location info:', error);
+          const fallbackMessage = 'Failed to load';
+          
+          ['timezoneDisplay', 'editTimezoneDisplay'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = fallbackMessage;
+          });
+          
+          ['locationDisplay', 'editLocationDisplay'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = fallbackMessage;
+          });
+          
+          ['ipDisplay', 'editIpDisplay'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) element.textContent = fallbackMessage;
+          });
         });
     }
+
     document.addEventListener('DOMContentLoaded', function () {
       updateServerTime();
+      updateLocationInfo();
       setInterval(updateServerTime, 1000);
     });
     document.addEventListener('DOMContentLoaded', function () {
@@ -2108,8 +2635,142 @@
             </div>
           `;
             }
-          }
+          }        
         });
       }
     });
+
+    function createModalDialog(options) {
+      const dialog = document.createElement('div');
+      dialog.id = 'custom-modal';
+      dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300';      
+      const themes = {
+        'info': {
+          icon: options.icon || 'ti-info-circle',
+          color: 'text-blue-600',
+          bg: 'bg-blue-600/10',
+          border: 'border-gray-600/50',
+          button: 'bg-blue-600 hover:bg-blue-700',
+          buttonIcon: 'ti-check'
+        },
+        'danger': {
+          icon: options.icon || 'ti-alert-triangle',
+          color: 'text-red-400',
+          bg: 'bg-red-500/10',
+          border: 'border-gray-600/50',
+          button: 'bg-red-500 hover:bg-red-600',
+          buttonIcon: 'ti-trash'
+        },
+        'warning': {
+          icon: options.icon || 'ti-alert-triangle',
+          color: 'text-yellow-400',
+          bg: 'bg-yellow-500/10',
+          border: 'border-yellow-500/50',
+          button: 'bg-yellow-500 hover:bg-yellow-600',
+          buttonIcon: 'ti-alert-circle'        }
+      };
+      
+      const theme = themes[options.type || 'info'];
+      
+      dialog.innerHTML = `
+        <div class="transform transition-all duration-300 opacity-0 scale-95 modal-content max-w-md w-full mx-4">
+          <div class="bg-dark-800 rounded-lg shadow-xl border ${theme.border} overflow-hidden">
+              <div class="px-6 py-5 flex items-center">
+              <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mr-4 shrink-0">
+                <i class="ti ${theme.icon} ${theme.color} text-2xl"></i>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-medium text-white">${options.title}</h3>
+                <p class="text-gray-400 text-sm mt-1">${options.message}</p>
+              </div>
+            </div>
+            
+            ${options.hasInput ? `
+            <div class="px-6 pb-4">
+              <input 
+                type="text" 
+                id="modal-input" 
+                class="bg-dark-900 text-white px-4 py-3 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+                value="${options.inputValue || ''}"
+                placeholder="Enter new title..."
+                autofocus
+              >
+            </div>
+            ` : ''}
+            
+            <div class="px-6 py-4 flex justify-end space-x-3 border-t border-gray-600/50">
+              <button id="modal-cancel-btn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+                <i class="ti ti-x mr-1.5"></i>
+                ${options.cancelText || 'Cancel'}
+              </button>              
+              <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
+                <i class="ti ${theme.buttonIcon} mr-1.5"></i>
+                ${options.confirmText || 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(dialog);
+      document.body.classList.add('overflow-hidden');
+      
+      setTimeout(() => {
+        const modalContent = dialog.querySelector('.modal-content');
+        if (modalContent) {
+          modalContent.classList.replace('opacity-0', 'opacity-100');
+          modalContent.classList.replace('scale-95', 'scale-100');
+        }
+      }, 10);
+      
+      return new Promise((resolve) => {        
+        document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+          const inputValue = options.hasInput ? document.getElementById('modal-input').value : null;
+          closeModalWithAnimation(true, inputValue);
+        });
+        
+        document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+          closeModalWithAnimation();
+        });
+        
+        document.addEventListener('keydown', function escapeHandler(e) {
+          if (e.key === 'Escape') {
+            closeModalWithAnimation();
+            document.removeEventListener('keydown', escapeHandler);
+          }
+        });
+        
+        dialog.addEventListener('click', function (e) {
+          if (e.target === dialog) {
+            closeModalWithAnimation();
+          }
+        });
+        
+        if (options.hasInput) {
+          const input = document.getElementById('modal-input');
+          input.focus();
+          input.select();
+          input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              closeModalWithAnimation(true, input.value);
+            }
+          });
+        }
+        
+        function closeModalWithAnimation(confirmed = false, value = null) {
+          const modalContent = dialog.querySelector('.modal-content');
+          if (modalContent) {
+            modalContent.classList.replace('opacity-100', 'opacity-0');
+            modalContent.classList.replace('scale-100', 'scale-95');
+          }
+          setTimeout(() => {
+            document.body.classList.remove('overflow-hidden');
+            dialog.remove();
+            resolve({ confirmed, value, closeNow: true });
+          }, 200);
+        }
+      });
+    }
+
   </script>

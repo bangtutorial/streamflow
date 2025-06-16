@@ -1,6 +1,6 @@
 const readline = require('readline');
 const bcrypt = require('bcrypt');
-const { db } = require('./db/database');
+require('./db/database');
 const User = require('./models/User');
 require('dotenv').config();
 const rl = readline.createInterface({

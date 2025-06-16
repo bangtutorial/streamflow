@@ -1,6 +1,7 @@
 require('dotenv').config();
 require('./services/logger.js');
 const express = require('express');
+const axios = require('axios');
 const path = require('path');
 const engine = require('ejs-mate');
 const os = require('os');
@@ -14,12 +15,13 @@ const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const User = require('./models/User');
-const { db, checkIfUsersExist } = require('./db/database');
+const { checkIfUsersExist } = require('./db/database');
 const systemMonitor = require('./services/systemMonitor');
 const { uploadVideo } = require('./middleware/uploadMiddleware');
-const { ensureDirectories } = require('./utils/storage');
+const { ensureDirectories, paths } = require('./utils/storage');
 const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
 const Video = require('./models/Video');
+const VideoAnalytics = require('./utils/videoAnalytics');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const streamingService = require('./services/streamingService');
@@ -64,9 +66,7 @@ app.locals.helpers = {
       case 'Facebook': return 'facebook';
       case 'Twitch': return 'twitch';
       case 'TikTok': return 'tiktok';
-      case 'Instagram': return 'instagram';
       case 'Shopee Live': return 'shopping-bag';
-      case 'Restream.io': return 'live-photo';
       default: return 'broadcast';
     }
   },
@@ -76,9 +76,7 @@ app.locals.helpers = {
       case 'Facebook': return 'blue-500';
       case 'Twitch': return 'purple-500';
       case 'TikTok': return 'gray-100';
-      case 'Instagram': return 'pink-500';
       case 'Shopee Live': return 'orange-500';
-      case 'Restream.io': return 'teal-500';
       default: return 'gray-400';
     }
   },
@@ -212,20 +210,6 @@ const videoUpload = multer({
     cb(null, true);
   }
 });
-const csrfProtection = function (req, res, next) {
-  if ((req.path === '/login' && req.method === 'POST') ||
-    (req.path === '/setup-account' && req.method === 'POST')) {
-    return next();
-  }
-  const token = req.body._csrf || req.query._csrf || req.headers['x-csrf-token'];
-  if (!token || !tokens.verify(req.session.csrfSecret, token)) {
-    return res.status(403).render('error', {
-      title: 'Error',
-      error: 'CSRF validation failed. Please try again.'
-    });
-  }
-  next();
-};
 const isAuthenticated = (req, res, next) => {
   if (req.session.userId) {
     return next();
@@ -507,6 +491,35 @@ app.get('/history', isAuthenticated, async (req, res) => {
     });
   }
 });
+app.get('/analytics', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    const videos = await getUserAnalyticsVideos(req.session.userId);
+    res.render('analytics', {
+      title: 'Video Analytics',
+      active: 'analytics',
+      user: user,
+      videos: videos
+    });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.redirect('/dashboard');
+  }
+});
+
+app.get('/updates', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    res.render('updates', {
+      title: 'Updates',
+      active: 'updates',
+      user: user
+    });
+  } catch (error) {
+    console.error('Updates error:', error);
+    res.redirect('/dashboard');
+  }
+});
 app.delete('/api/history/:id', isAuthenticated, async (req, res) => {
   try {
     const db = require('./db/database').db;
@@ -546,6 +559,278 @@ app.delete('/api/history/:id', isAuthenticated, async (req, res) => {
     });
   }
 });
+
+app.post('/api/history/reuse/:id', isAuthenticated, async (req, res) => {
+  try {
+    const db = require('./db/database').db;
+    const historyId = req.params.id;
+    
+    const history = await new Promise((resolve, reject) => {
+      db.get(
+        'SELECT * FROM stream_history WHERE id = ? AND user_id = ?',
+        [historyId, req.session.userId],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+    
+    if (!history) {
+      return res.status(404).json({
+        success: false,
+        error: 'History entry not found or not authorized'
+      });
+    }
+    
+    if (!history.stream_key || !history.rtmp_url) {
+      return res.status(400).json({
+        success: false,
+        error: 'Stream key and RTMP URL not available for this history entry'
+      });
+    }
+    
+    const Stream = require('./models/Stream');
+    const { v4: uuidv4 } = require('uuid');
+    
+    const newStreamData = {
+      id: uuidv4(),
+      title: history.title,
+      video_id: history.video_id,
+      rtmp_url: history.rtmp_url,
+      stream_key: history.stream_key,
+      platform: history.platform,
+      platform_icon: history.platform_icon,
+      bitrate: history.bitrate || 2500,
+      resolution: history.resolution,
+      fps: history.fps || 30,
+      orientation: 'horizontal',
+      loop_video: true,
+      use_advanced_settings: history.use_advanced_settings || false,
+      status: 'offline',
+      user_id: req.session.userId
+    };
+    
+    const newStream = await Stream.create(newStreamData);
+    
+    res.json({ 
+      success: true, 
+      message: 'Stream configuration reused successfully',
+      streamId: newStream.id
+    });
+  } catch (error) {
+    console.error('Error reusing history entry:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to reuse stream configuration'
+    });
+  }
+});
+
+const videoAnalytics = new VideoAnalytics();
+
+app.post('/api/analytics/add-video', isAuthenticated, [
+  body('url').notEmpty().withMessage('URL is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: errors.array()[0].msg
+      });
+    }
+
+    const videoId = videoAnalytics.extractVideoId(req.body.url);
+    if (!videoId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid YouTube URL format'
+      });
+    }
+
+    const analytics = await videoAnalytics.getVideoAnalytics(videoId);
+    if (!analytics.status) {
+      return res.status(400).json({
+        success: false,
+        error: analytics.error
+      });
+    }
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    console.error('Error adding video to analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to add video to analytics'
+    });
+  }
+});
+
+app.get('/api/analytics/video/:videoId', isAuthenticated, async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    const analytics = await videoAnalytics.getVideoAnalytics(videoId);
+    
+    if (!analytics.status) {
+      return res.status(400).json({
+        success: false,
+        error: analytics.error
+      });
+    }
+
+    res.json({
+      success: true,
+      data: analytics
+    });
+  } catch (error) {
+    console.error('Error fetching video analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch video analytics'
+    });
+  }
+});
+
+const { addVideoToAnalytics, getUserAnalyticsVideos, removeVideoFromAnalytics, updateVideoAnalyticsData } = require('./db/database');
+
+app.post('/api/analytics/add-video-db', isAuthenticated, [
+  body('url').notEmpty().withMessage('URL is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: errors.array()[0].msg
+      });
+    }
+
+    const videoId = videoAnalytics.extractVideoId(req.body.url);
+    if (!videoId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid YouTube URL format'
+      });
+    }
+
+    const analytics = await videoAnalytics.getVideoAnalytics(videoId);
+    if (!analytics.status) {
+      return res.status(400).json({
+        success: false,
+        error: analytics.error
+      });
+    }
+
+    const savedVideo = await addVideoToAnalytics(req.session.userId, {
+      videoId: analytics.videoId,
+      title: analytics.title,
+      thumbnail: analytics.thumbnail,
+      channelName: analytics.channelName,
+      uploadDate: analytics.uploadDate,
+      analytics: analytics.analytics,
+      isLive: analytics.isLive
+    });
+
+    res.json({
+      success: true,
+      data: analytics,
+      saved: savedVideo
+    });
+  } catch (error) {
+    console.error('Error adding video to analytics database:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to add video to analytics database'
+    });
+  }
+});
+
+app.get('/api/analytics/videos', isAuthenticated, async (req, res) => {
+  try {
+    const videos = await getUserAnalyticsVideos(req.session.userId);
+    res.json({
+      success: true,
+      data: videos
+    });
+  } catch (error) {
+    console.error('Error fetching analytics videos:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch analytics videos'
+    });
+  }
+});
+
+app.delete('/api/analytics/video/:videoId', isAuthenticated, async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    const removed = await removeVideoFromAnalytics(req.session.userId, videoId);
+    
+    if (removed) {
+      res.json({
+        success: true,
+        message: 'Video removed from analytics'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Video not found in analytics'
+      });
+    }
+  } catch (error) {
+    console.error('Error removing video from analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove video from analytics'
+    });
+  }
+});
+
+app.get('/api/analytics/video-db/:videoId', isAuthenticated, async (req, res) => {
+  try {
+    const videoId = req.params.videoId;
+    
+    const analytics = await videoAnalytics.getVideoAnalytics(videoId);
+    if (!analytics.status) {
+      return res.status(400).json({
+        success: false,
+        error: analytics.error
+      });
+    }
+
+    const updated = await updateVideoAnalyticsData(req.session.userId, videoId, {
+      title: analytics.title,
+      thumbnail: analytics.thumbnail,
+      channelName: analytics.channelName,
+      uploadDate: analytics.uploadDate,
+      analytics: analytics.analytics,
+      isLive: analytics.isLive
+    });
+
+    if (updated) {
+      res.json({
+        success: true,
+        data: analytics
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Video not found in database'
+      });
+    }
+  } catch (error) {
+    console.error('Error refreshing video analytics:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to refresh video analytics'
+    });
+  }
+});
+
 app.get('/api/system-stats', isAuthenticated, async (req, res) => {
   try {
     const stats = await systemMonitor.getSystemStats();
@@ -698,41 +983,7 @@ app.get('/settings', isAuthenticated, async (req, res) => {
     res.redirect('/dashboard');
   }
 });
-app.post('/settings/integrations/gdrive', isAuthenticated, [
-  body('apiKey').notEmpty().withMessage('API Key is required'),
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.render('settings', {
-        title: 'Settings',
-        active: 'settings',
-        user: await User.findById(req.session.userId),
-        error: errors.array()[0].msg,
-        activeTab: 'integrations'
-      });
-    }
-    await User.update(req.session.userId, {
-      gdrive_api_key: req.body.apiKey
-    });
-    return res.render('settings', {
-      title: 'Settings',
-      active: 'settings',
-      user: await User.findById(req.session.userId),
-      success: 'Google Drive API key saved successfully!',
-      activeTab: 'integrations'
-    });
-  } catch (error) {
-    console.error('Error saving Google Drive API key:', error);
-    res.render('settings', {
-      title: 'Settings',
-      active: 'settings',
-      user: await User.findById(req.session.userId),
-      error: 'An error occurred while saving your Google Drive API key',
-      activeTab: 'integrations'
-    });
-  }
-});
+
 app.post('/upload/video', isAuthenticated, uploadVideo.single('video'), async (req, res) => {
   try {
     console.log('Upload request received:', req.file);
@@ -816,7 +1067,6 @@ app.post('/api/videos/upload', isAuthenticated, videoUpload.single('video'), asy
         }
         const thumbnailFilename = `thumb-${path.parse(req.file.filename).name}.jpg`;
         const thumbnailPath = `/uploads/thumbnails/${thumbnailFilename}`;
-        const fullThumbnailPath = path.join(__dirname, 'public', thumbnailPath);
         ffmpeg(fullFilePath)
           .screenshots({
             timestamps: ['10%'],
@@ -964,45 +1214,8 @@ app.get('/stream/:videoId', isAuthenticated, async (req, res) => {
     res.status(500).send('Error streaming video');
   }
 });
-app.get('/api/settings/gdrive-status', isAuthenticated, async (req, res) => {
-  try {
-    const user = await User.findById(req.session.userId);
-    res.json({
-      hasApiKey: !!user.gdrive_api_key,
-      message: user.gdrive_api_key ? 'Google Drive API key is configured' : 'No Google Drive API key found'
-    });
-  } catch (error) {
-    console.error('Error checking Google Drive API status:', error);
-    res.status(500).json({ error: 'Failed to check API key status' });
-  }
-});
-app.post('/api/settings/gdrive-api-key', isAuthenticated, [
-  body('apiKey').notEmpty().withMessage('API Key is required'),
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: errors.array()[0].msg
-      });
-    }
-    await User.update(req.session.userId, {
-      gdrive_api_key: req.body.apiKey
-    });
-    return res.json({
-      success: true,
-      message: 'Google Drive API key saved successfully!'
-    });
-  } catch (error) {
-    console.error('Error saving Google Drive API key:', error);
-    res.status(500).json({
-      success: false,
-      error: 'An error occurred while saving your Google Drive API key'
-    });
-  }
-});
-app.post('/api/videos/import-drive', isAuthenticated, [
+
+app.post('/api/videos/import-drive-direct', isAuthenticated, [
   body('driveUrl').notEmpty().withMessage('Google Drive URL is required')
 ], async (req, res) => {
   try {
@@ -1010,37 +1223,24 @@ app.post('/api/videos/import-drive', isAuthenticated, [
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, error: errors.array()[0].msg });
     }
+    
     const { driveUrl } = req.body;
-    const user = await User.findById(req.session.userId);
-    if (!user.gdrive_api_key) {
-      return res.status(400).json({
-        success: false,
-        error: 'Google Drive API key is not configured'
-      });
-    }
-    const { extractFileId, downloadFile } = require('./utils/googleDriveService');
-    try {
-      const fileId = extractFileId(driveUrl);
-      const jobId = uuidv4();
-      processGoogleDriveImport(jobId, user.gdrive_api_key, fileId, req.session.userId)
-        .catch(err => console.error('Drive import failed:', err));
-      return res.json({
-        success: true,
-        message: 'Video import started',
-        jobId: jobId
-      });
-    } catch (error) {
-      console.error('Google Drive URL parsing error:', error);
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid Google Drive URL format'
-      });
-    }
+    const jobId = uuidv4();
+    
+    processGoogleDriveDirectImport(jobId, driveUrl, req.session.userId)
+      .catch(err => console.error('Direct drive import failed:', err));
+    
+    return res.json({
+      success: true,
+      message: 'Video import started (Direct Download)',
+      jobId: jobId
+    });
   } catch (error) {
-    console.error('Error importing from Google Drive:', error);
+    console.error('Error importing from Google Drive (direct):', error);
     res.status(500).json({ success: false, error: 'Failed to import video' });
   }
 });
+
 app.get('/api/videos/import-status/:jobId', isAuthenticated, async (req, res) => {
   const jobId = req.params.jobId;
   if (!importJobs[jobId]) {
@@ -1051,53 +1251,127 @@ app.get('/api/videos/import-status/:jobId', isAuthenticated, async (req, res) =>
     status: importJobs[jobId]
   });
 });
+
+app.post('/api/videos/import-cancel/:jobId', isAuthenticated, async (req, res) => {
+  const jobId = req.params.jobId;
+  
+  try {
+    if (!importJobs[jobId]) {
+      return res.status(404).json({ success: false, error: 'Import job not found' });
+    }
+    
+    importJobs[jobId] = {
+      ...importJobs[jobId],
+      status: 'cancelled',
+      message: 'Import cancelled by user'
+    };
+    
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 30000);
+    
+    return res.json({
+      success: true,
+      message: 'Import cancelled successfully'
+    });
+  } catch (error) {
+    console.error('Error cancelling import:', error);
+    res.status(500).json({ success: false, error: 'Failed to cancel import' });
+  }
+});
+
 const importJobs = {};
-async function processGoogleDriveImport(jobId, apiKey, fileId, userId) {
-  const { downloadFile } = require('./utils/googleDriveService');
+
+async function processGoogleDriveDirectImport(jobId, driveUrl, userId) {
+  const { GDriveDownloader } = require('./utils/googleDriveDownloader');
   const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
-  const ffmpeg = require('fluent-ffmpeg');
+  const path = require('path');
+  const fs = require('fs');
+  
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
   
   importJobs[jobId] = {
     status: 'downloading',
     progress: 0,
-    message: 'Starting download...'
+    message: 'Starting direct download...'
   };
   
   try {
-    const result = await downloadFile(apiKey, fileId, (progress) => {
+    const downloader = new GDriveDownloader();
+    
+    const fileId = downloader.extractFileId(driveUrl);
+    if (!fileId) {
+      throw new Error('Cannot extract File ID from Google Drive URL');
+    }
+    
+    const uploadsDir = paths.videos;
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    
+    const tempFileName = `gdrive_${fileId}_${Date.now()}.tmp`;
+    const outputPath = path.join(uploadsDir, tempFileName);
+    
+    const progressCallback = (progress) => {
+      if (importJobs[jobId] && importJobs[jobId].status === 'cancelled') {
+        throw new Error('Import dibatalkan oleh pengguna');
+      }
+      
+      const downloadProgress = Math.min(80, Math.round(progress.percentage * 0.8)); 
+      const filename = progress.fileName || 'Unknown file';
       importJobs[jobId] = {
         status: 'downloading',
-        progress: progress.progress,
-        message: `Downloading ${progress.filename}: ${progress.progress}%`
+        progress: downloadProgress,
+        message: `${progress.percentage}% (${formatBytes(progress.downloaded)}/${formatBytes(progress.total)})`,
+        filename: filename
       };
-    });
+    };
+    
+    const localFilePath = await downloader.downloadFile(driveUrl, outputPath, progressCallback);
+    
+    if (importJobs[jobId] && importJobs[jobId].status === 'cancelled') {
+      if (fs.existsSync(localFilePath)) {
+        fs.unlinkSync(localFilePath);
+      }
+      return;
+    }
+    
+    const stats = fs.statSync(localFilePath);
+    const originalFilename = downloader.fileName || `gdrive_${fileId}.mp4`;
+    const finalFilename = `${fileId}_${Date.now()}_${originalFilename}`;
+    const finalPath = path.join(uploadsDir, finalFilename);
+    
+    fs.renameSync(localFilePath, finalPath);
+    
+    const result = {
+      localFilePath: finalPath,
+      filename: finalFilename,
+      originalFilename: originalFilename,
+      fileSize: stats.size
+    };
     
     importJobs[jobId] = {
       status: 'processing',
-      progress: 100,
+      progress: 90,
       message: 'Processing video...'
     };
     
+    if (importJobs[jobId] && importJobs[jobId].status === 'cancelled') {
+      if (fs.existsSync(finalPath)) {
+        fs.unlinkSync(finalPath);
+      }
+      return;
+    }
+    
     const videoInfo = await getVideoInfo(result.localFilePath);
-    
-    const metadata = await new Promise((resolve, reject) => {
-      ffmpeg.ffprobe(result.localFilePath, (err, metadata) => {
-        if (err) return reject(err);
-        resolve(metadata);
-      });
-    });
-    
-    let resolution = '';
-    let bitrate = null;
-    
-    const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
-    if (videoStream) {
-      resolution = `${videoStream.width}x${videoStream.height}`;
-    }
-    
-    if (metadata.format && metadata.format.bit_rate) {
-      bitrate = Math.round(parseInt(metadata.format.bit_rate) / 1000);
-    }
+    const resolution = videoInfo.resolution || '1280x720';
+    const bitrate = videoInfo.bitrate || null;
     
     const thumbnailName = path.basename(result.filename, path.extname(result.filename)) + '.jpg';
     const thumbnailRelativePath = await generateThumbnail(result.localFilePath, thumbnailName)
@@ -1124,24 +1398,27 @@ async function processGoogleDriveImport(jobId, apiKey, fileId, userId) {
     importJobs[jobId] = {
       status: 'complete',
       progress: 100,
-      message: 'Video imported successfully',
+      message: 'Video imported successfully (Direct Download)',
       videoId: video.id
     };
+    
     setTimeout(() => {
       delete importJobs[jobId];
     }, 5 * 60 * 1000);
+    
   } catch (error) {
-    console.error('Error processing Google Drive import:', error);
+    console.error('Error processing Google Drive direct import:', error);
     importJobs[jobId] = {
       status: 'failed',
       progress: 0,
-      message: error.message || 'Failed to import video'
+      message: error.message || 'Failed to import video (Direct Download)'
     };
     setTimeout(() => {
       delete importJobs[jobId];
     }, 5 * 60 * 1000);
   }
 }
+
 app.get('/api/stream/videos', isAuthenticated, async (req, res) => {
   try {
     const videos = await Video.findAll(req.session.userId);
@@ -1166,7 +1443,7 @@ app.get('/api/stream/videos', isAuthenticated, async (req, res) => {
   }
 });
 const Stream = require('./models/Stream');
-const { title } = require('process');
+require('process');
 app.get('/api/streams', isAuthenticated, async (req, res) => {
   try {
     const filter = req.query.filter;
@@ -1208,15 +1485,9 @@ app.post('/api/streams', isAuthenticated, [
     } else if (req.body.rtmpUrl.includes('tiktok.com')) {
       platform = 'TikTok';
       platform_icon = 'ti-brand-tiktok';
-    } else if (req.body.rtmpUrl.includes('instagram.com')) {
-      platform = 'Instagram';
-      platform_icon = 'ti-brand-instagram';
     } else if (req.body.rtmpUrl.includes('shopee.io')) {
       platform = 'Shopee Live';
       platform_icon = 'ti-brand-shopee';
-    } else if (req.body.rtmpUrl.includes('restream.io')) {
-      platform = 'Restream.io';
-      platform_icon = 'ti-live-photo';
     }
     const streamData = {
       title: req.body.streamTitle,
@@ -1282,7 +1553,31 @@ app.put('/api/streams/:id', isAuthenticated, async (req, res) => {
     const updateData = {};
     if (req.body.streamTitle) updateData.title = req.body.streamTitle;
     if (req.body.videoId) updateData.video_id = req.body.videoId;
-    if (req.body.rtmpUrl) updateData.rtmp_url = req.body.rtmpUrl;
+    if (req.body.rtmpUrl) {
+      updateData.rtmp_url = req.body.rtmpUrl;
+      
+      let platform = 'Custom';
+      let platform_icon = 'ti-broadcast';
+      if (req.body.rtmpUrl.includes('youtube.com')) {
+        platform = 'YouTube';
+        platform_icon = 'ti-brand-youtube';
+      } else if (req.body.rtmpUrl.includes('facebook.com')) {
+        platform = 'Facebook';
+        platform_icon = 'ti-brand-facebook';
+      } else if (req.body.rtmpUrl.includes('twitch.tv')) {
+        platform = 'Twitch';
+        platform_icon = 'ti-brand-twitch';
+      } else if (req.body.rtmpUrl.includes('tiktok.com')) {
+        platform = 'TikTok';
+        platform_icon = 'ti-brand-tiktok';
+      } else if (req.body.rtmpUrl.includes('shopee.io')) {
+        platform = 'Shopee Live';
+        platform_icon = 'ti-brand-shopee';
+      }
+      
+      updateData.platform = platform;
+      updateData.platform_icon = platform_icon;
+    }
     if (req.body.streamKey) updateData.stream_key = req.body.streamKey;
     if (req.body.bitrate) updateData.bitrate = parseInt(req.body.bitrate);
     if (req.body.resolution) updateData.resolution = req.body.resolution;
@@ -1481,6 +1776,40 @@ app.get('/api/server-time', (req, res) => {
     formattedTime: formattedTime
   });
 });
+
+app.get('/api/server-info', async (req, res) => {
+  try {
+    const response = await axios.get('https://ipinfo.io/json');
+    const data = response.data;
+    
+    let location = 'Unknown';
+    if (data.city && data.region && data.country) {
+      location = `${data.city}, ${data.region}, ${data.country}`;
+    } else if (data.city && data.country) {
+      location = `${data.city}, ${data.country}`;
+    } else if (data.country) {
+      location = data.country;
+    }
+    
+    res.json({
+      ip: data.ip || 'Unknown',
+      location: location,
+      timezone: data.timezone || 'Unknown',
+      city: data.city || 'Unknown',
+      region: data.region || 'Unknown',
+      country: data.country || 'Unknown'
+    });
+  } catch (error) {
+    console.error('Error fetching server info from ipinfo.io:', error);
+    res.status(500).json({
+      error: 'Failed to fetch server information',
+      ip: 'Failed to load',
+      location: 'Failed to load',
+      timezone: 'Failed to load'
+    });
+  }
+});
+
 app.listen(port, '0.0.0.0', async () => {
   const ipAddresses = getLocalIpAddresses();
   console.log(`StreamFlow running at:`);
@@ -1507,5 +1836,76 @@ app.listen(port, '0.0.0.0', async () => {
     await streamingService.syncStreamStatuses();
   } catch (error) {
     console.error('Failed to sync stream statuses:', error);
+  }
+});
+
+app.get('/api/github/commits', isAuthenticated, async (req, res) => {
+  try {
+    const https = require('https');
+    
+    const options = {
+      hostname: 'api.github.com',
+      path: '/repos/bangtutorial/streamflow/commits?per_page=3',
+      method: 'GET',
+      headers: {
+        'User-Agent': 'StreamFlow-App'
+      }
+    };
+
+    const githubReq = https.request(options, (githubRes) => {
+      let data = '';
+      
+      githubRes.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      githubRes.on('end', () => {
+        try {
+          const commits = JSON.parse(data);
+          
+          if (githubRes.statusCode !== 200) {
+            return res.status(500).json({ 
+              success: false, 
+              error: 'Failed to fetch commits from GitHub' 
+            });
+          }
+          
+          const formattedCommits = commits.map(commit => ({
+            id: commit.sha.substring(0, 7),
+            message: commit.commit.message.split('\n')[0],
+            author: commit.commit.author.name,
+            date: commit.commit.author.date,
+            url: commit.html_url
+          }));
+          
+          res.json({
+            success: true,
+            commits: formattedCommits
+          });
+        } catch (parseError) {
+          console.error('Error parsing GitHub response:', parseError);
+          res.status(500).json({ 
+            success: false, 
+            error: 'Failed to parse GitHub response' 
+          });
+        }
+      });
+    });
+    
+    githubReq.on('error', (error) => {
+      console.error('GitHub API request error:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to connect to GitHub API' 
+      });
+    });
+    
+    githubReq.end();
+  } catch (error) {
+    console.error('Error fetching GitHub commits:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
   }
 });

@@ -1,4 +1,4 @@
-const { db, checkIfUsersExist } = require('../db/database');
+const { db } = require('../db/database');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 class User {

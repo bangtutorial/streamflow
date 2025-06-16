@@ -28,6 +28,9 @@ function openNewStreamModal() {
     const icon = advancedSettingsToggle.querySelector('i');
     if (icon) icon.style.transform = '';
   }
+  
+  applyStreamKeyVisibility();
+  
   requestAnimationFrame(() => {
     modal.classList.add('active');
   });
@@ -299,16 +302,38 @@ document.addEventListener('DOMContentLoaded', () => {
     resolutionSelect.addEventListener('change', updateResolutionDisplay);
     setVideoOrientation('horizontal');
   }
+  
+  applyStreamKeyVisibility();
 });
 function toggleStreamKeyVisibility() {
   const streamKeyInput = document.getElementById('streamKey');
   const streamKeyToggle = document.getElementById('streamKeyToggle');
+  
   if (streamKeyInput.type === 'password') {
     streamKeyInput.type = 'text';
     streamKeyToggle.className = 'ti ti-eye-off';
+    localStorage.setItem('streamKeyVisibility', 'visible');
   } else {
     streamKeyInput.type = 'password';
     streamKeyToggle.className = 'ti ti-eye';
+    localStorage.setItem('streamKeyVisibility', 'hidden');
+  }
+}
+
+function applyStreamKeyVisibility() {
+  const streamKeyInput = document.getElementById('streamKey');
+  const streamKeyToggle = document.getElementById('streamKeyToggle');
+  
+  if (streamKeyInput && streamKeyToggle) {
+    const savedVisibility = localStorage.getItem('streamKeyVisibility');
+    
+    if (savedVisibility === 'visible') {
+      streamKeyInput.type = 'text';
+      streamKeyToggle.className = 'ti ti-eye-off';
+    } else {
+      streamKeyInput.type = 'password';
+      streamKeyToggle.className = 'ti ti-eye';
+    }
   }
 }
 document.addEventListener('DOMContentLoaded', function () {
@@ -324,7 +349,6 @@ document.addEventListener('DOMContentLoaded', function () {
   platformOptions.forEach(option => {
     option.addEventListener('click', function () {
       const platformUrl = this.getAttribute('data-url');
-      const platformName = this.querySelector('span').textContent;
       rtmpInput.value = platformUrl;
       platformDropdown.classList.add('hidden');
       updatePlatformIcon(this.querySelector('i').className);
@@ -371,15 +395,11 @@ document.addEventListener('DOMContentLoaded', function () {
       } else if (url.includes('facebook.com')) {
         currentPlatform = 'Facebook';
       } else if (url.includes('twitch.tv')) {
-        currentPlatform = 'Twitch';
+        currentPlatform = 'Twitch';      
       } else if (url.includes('tiktok.com')) {
         currentPlatform = 'TikTok';
-      } else if (url.includes('instagram.com')) {
-        currentPlatform = 'Instagram';
       } else if (url.includes('shopee.io')) {
         currentPlatform = 'Shopee Live';
-      } else if (url.includes('restream.io')) {
-        currentPlatform = 'Restream.io';
       } else {
         currentPlatform = 'Custom';
       }
@@ -433,4 +453,28 @@ function validateStreamKeyForPlatform(streamKey, platform) {
       console.error('Error validating stream key:', error);
     });
 }
+
+document.addEventListener('click', function(event) {
+  const dropdown = document.getElementById('videoSelectorDropdown');
+  const button = document.querySelector('[onclick="toggleVideoSelector()"]');
+  const editDropdown = document.getElementById('editVideoSelectorDropdown');
+  const editButton = document.querySelector('[onclick="toggleEditVideoSelector()"]');
+  
+  if (dropdown && !dropdown.contains(event.target) && button && !button.contains(event.target)) {
+    dropdown.classList.add('hidden');
+    const searchInput = document.getElementById('videoSearchInput');
+    if (searchInput) {
+      searchInput.value = '';
+    }
+  }
+  
+  if (editDropdown && !editDropdown.contains(event.target) && editButton && !editButton.contains(event.target)) {
+    editDropdown.classList.add('hidden');
+    const editSearchInput = document.getElementById('editVideoSearchInput');
+    if (editSearchInput) {
+      editSearchInput.value = '';
+    }
+  }
+});
+
 document.addEventListener('DOMContentLoaded', initModal);

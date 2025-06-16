@@ -3,7 +3,7 @@ const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const { getVideoDurationInSeconds } = require('get-video-duration');
 const fs = require('fs');
 const path = require('path');
-const { getUniqueFilename, paths } = require('./storage');
+const { paths } = require('./storage');
 ffmpeg.setFfmpegPath(ffmpegPath);
 const getVideoInfo = async (filepath) => {
   try {

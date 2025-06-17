@@ -98,9 +98,23 @@ nano .env
 
 ### 3. Konfigurasi Firewall
 
+**PENTING: Buka port SSH terlebih dahulu untuk menghindari terputusnya koneksi!**
+
+Buka port SSH (biasanya port 22):
+```bash
+sudo ufw allow ssh
+# atau jika menggunakan port custom SSH
+# sudo ufw allow [PORT_SSH_ANDA]
+```
+
 Buka port aplikasi (default: 7575):
 ```bash
 sudo ufw allow 7575
+```
+
+Verifikasi aturan firewall sebelum mengaktifkan:
+```bash
+sudo ufw status verbose
 ```
 
 Aktifkan firewall:
@@ -108,7 +122,7 @@ Aktifkan firewall:
 sudo ufw enable
 ```
 
-Verifikasi status firewall:
+Verifikasi status firewall setelah aktif:
 ```bash
 sudo ufw status
 ```

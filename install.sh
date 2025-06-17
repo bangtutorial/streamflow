@@ -33,6 +33,7 @@ echo "🕐 Setup timezone ke Asia/Jakarta..."
 sudo timedatectl set-timezone Asia/Jakarta
 
 echo "🔧 Setup firewall..."
+sudo ufw allow ssh
 sudo ufw allow 7575
 sudo ufw --force enable
 

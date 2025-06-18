@@ -1,11 +1,12 @@
 const Stream = require('../models/Stream');
 const scheduledTerminations = new Map();
-const SCHEDULE_LOOKAHEAD_SECONDS = 60;
+const scheduledStarts = new Map(); 
+const SCHEDULE_LOOKAHEAD_SECONDS = 10; 
 let streamingService = null;
 function init(streamingServiceInstance) {
   streamingService = streamingServiceInstance;
   console.log('Stream scheduler initialized');
-  setInterval(checkScheduledStreams, 60 * 1000);
+  setInterval(checkScheduledStreams, 10 * 1000);
   setInterval(checkStreamDurations, 60 * 1000);
   checkScheduledStreams();
   checkStreamDurations();
@@ -18,20 +19,53 @@ async function checkScheduledStreams() {
     }
     const now = new Date();
     const lookAheadTime = new Date(now.getTime() + SCHEDULE_LOOKAHEAD_SECONDS * 1000);
+    
     console.log(`Checking for scheduled streams (${now.toISOString()} to ${lookAheadTime.toISOString()})`);
+    
     const streams = await Stream.findScheduledInRange(now, lookAheadTime);
+    
     if (streams.length > 0) {
       console.log(`Found ${streams.length} streams to schedule start`);
       for (const stream of streams) {
-        console.log(`Starting scheduled stream: ${stream.id} - ${stream.title}`);
-        const result = await streamingService.startStream(stream.id);
-        if (result.success) {
-          console.log(`Successfully started scheduled stream: ${stream.id}`);
-          if (stream.duration) {
-            scheduleStreamTermination(stream.id, stream.duration);
+        if (scheduledStarts.has(stream.id)) {
+          continue;
+        }
+        
+        const scheduleTime = new Date(stream.schedule_time);
+        const timeDiff = scheduleTime - now;
+        
+        if (timeDiff <= 5000) {
+          console.log(`Starting scheduled stream: ${stream.id} - ${stream.title} (${timeDiff}ms early)`);
+          const result = await streamingService.startStream(stream.id);
+          if (result.success) {
+            console.log(`Successfully started scheduled stream: ${stream.id}`);
+            if (stream.duration) {
+              scheduleStreamTermination(stream.id, stream.duration);
+            }
+          } else {
+            console.error(`Failed to start scheduled stream ${stream.id}: ${result.error}`);
           }
         } else {
-          console.error(`Failed to start scheduled stream ${stream.id}: ${result.error}`);
+          console.log(`Scheduling precise start for stream ${stream.id} in ${timeDiff}ms`);
+          const timeoutId = setTimeout(async () => {
+            try {
+              scheduledStarts.delete(stream.id);
+              
+              const result = await streamingService.startStream(stream.id);
+              if (result.success) {
+                console.log(`Successfully started scheduled stream: ${stream.id} at exact time`);
+                if (stream.duration) {
+                  scheduleStreamTermination(stream.id, stream.duration);
+                }
+              } else {
+                console.error(`Failed to start scheduled stream ${stream.id}: ${result.error}`);
+              }
+            } catch (error) {
+              console.error(`Error starting scheduled stream ${stream.id}:`, error);
+            }
+          }, timeDiff);
+          
+          scheduledStarts.set(stream.id, timeoutId);
         }
       }
     }
@@ -91,12 +125,26 @@ function cancelStreamTermination(streamId) {
   }
   return false;
 }
+
+function cancelStreamStart(streamId) {
+  if (scheduledStarts.has(streamId)) {
+    clearTimeout(scheduledStarts.get(streamId));
+    scheduledStarts.delete(streamId);
+    console.log(`Cancelled scheduled start for stream ${streamId}`);
+    return true;
+  }
+  return false;
+}
+
 function handleStreamStopped(streamId) {
-  return cancelStreamTermination(streamId);
+  const terminationCancelled = cancelStreamTermination(streamId);
+  const startCancelled = cancelStreamStart(streamId);
+  return terminationCancelled || startCancelled;
 }
 module.exports = {
   init,
   scheduleStreamTermination,
   cancelStreamTermination,
+  cancelStreamStart,
   handleStreamStopped
 };

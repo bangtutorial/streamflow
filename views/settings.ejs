@@ -3,7 +3,6 @@
   <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
     <div>
       <h2 class="text-2xl font-bold">Settings</h2>
-      <p class="text-gray-400 text-sm mt-1">Manage your account and preferences</p>
     </div>
   </div>
   
@@ -12,16 +11,11 @@
       <button class="settings-tab active mr-2 py-2 px-4 text-primary border-b-2 border-primary font-medium"
         data-tab="profile">
         <i class="ti ti-user mr-2"></i>Profile
-      </button>
+      </button>      
       <button
         class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-white border-b-2 border-transparent hover:border-gray-700 font-medium"
         data-tab="security">
         <i class="ti ti-shield-lock mr-2"></i>Security
-      </button>
-      <button
-        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-white border-b-2 border-transparent hover:border-gray-700 font-medium"
-        data-tab="integrations">
-        <i class="ti ti-plug mr-2"></i>Integrations
       </button>
     </div>
   </div>
@@ -75,7 +69,7 @@
           <div class="pt-4">
             <button type="submit"
               class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
-              Save Profile Changes
+              Save Changes
             </button>
           </div>
         </form>
@@ -115,9 +109,12 @@
                 id="toggle-password">
                 <i class="ti ti-eye"></i>
               </button>
-            </div>
-            <div class="text-xs text-gray-400 mt-1">
-              Password must be at least 8 characters and include uppercase, lowercase and a number
+            </div>              
+            <div class="mt-2 sm:max-w-md">
+              <div class="w-full bg-gray-700 rounded-full h-1.5">
+                <div id="password-strength" class="bg-gray-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+              <div id="password-feedback" class="text-xs text-gray-400 mt-1">Use 8+ characters with letters, numbers & symbols</div>
             </div>
           </div>
           
@@ -139,59 +136,7 @@
               Change Password
             </button>
           </div>
-        </form>
-
-      </div>
-    </div>
-    
-    <div id="integrations-tab" class="settings-content hidden">
-      <div class="p-6">
-        <h3 class="text-lg font-semibold mb-6">Integration Settings</h3>
-          <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0">
-              <i class="ti ti-brand-google-drive text-xl" style="color: #4285F4;"></i>
-            </div>
-            <div class="min-w-0 flex-1">
-              <h4 class="font-medium">Google Drive</h4>
-              <p class="text-sm text-gray-400 hidden sm:block">Connect to import and manage videos</p>
-              <p class="text-sm text-gray-400 sm:hidden">Connect to import and manage videos</p>
-            </div>
-          </div>
-          <div class="flex-shrink-0 ml-3">
-            <span id="gdrive-status"
-              class="<%= user.gdrive_api_key ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400' %> px-2 py-1 text-xs rounded whitespace-nowrap">
-              <%= user.gdrive_api_key ? 'Connected' : 'Not Connected' %>
-            </span>
-          </div>
-        </div>
-        
-        <form id="gdrive-form" class="space-y-4" action="/settings/integrations/gdrive" method="post">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <input type="hidden" name="activeTab" value="integrations">
-          <div class="space-y-2">
-            <label for="gdrive-api-key" class="block text-sm font-medium text-gray-300">API Key</label>
-            <div class="relative sm:max-w-md">
-              <input type="password" id="gdrive-api-key" name="apiKey"
-                class="bg-dark-900 text-white pl-4 pr-10 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="Enter your Google Drive API key" value="<%= user.gdrive_api_key || '' %>">
-              <button type="button"
-                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white"
-                id="toggle-api-key">
-                <i class="ti ti-eye"></i>
-              </button>
-            </div>
-            <p class="text-xs text-gray-400">You can get your API key from the <a
-                href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google
-                Cloud Console</a></p>
-          </div>
-          <div class="pt-2">
-            <button type="submit"
-              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
-              Save & Connect
-            </button>
-          </div>
-        </form>
+        </form>      
       </div>
     </div>
   </div>
@@ -223,14 +168,14 @@
         tab.addEventListener('click', () => {
           const tabName = tab.getAttribute('data-tab');
           activateTab(tabName);
-        });
-      });
-    <% if (typeof activeTab !== 'undefined' && activeTab) { %>
+        });      });
+        <% if (typeof activeTab !== 'undefined' && activeTab && (activeTab === 'profile' || activeTab === 'security')) { %>
         activateTab('<%= activeTab %>');
-    <% } else { %>
+      <% } else { %>
         activateTab('profile');
-    <% } %>
-    const profileUpload = document.getElementById('profile-upload');
+      <% } %>
+      
+      const profileUpload = document.getElementById('profile-upload');
       const profilePreview = document.getElementById('profile-preview');
       profileUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
@@ -277,17 +222,7 @@
           e.preventDefault();
           showToast('error', 'New passwords do not match.');
           return false;
-        }
-      });
-      const gdriveForm = document.getElementById('gdrive-form');
-      gdriveForm.addEventListener('submit', (e) => {
-        const apiKey = document.getElementById('gdrive-api-key').value;
-        if (!apiKey) {
-          e.preventDefault();
-          showToast('error', 'Please enter your Google Drive API key.');
-          return false;
-        }
-      });
+        }      });
       const togglePassword = document.getElementById('toggle-password');
       const newPasswordField = document.getElementById('new-password');
       togglePassword.addEventListener('click', () => {
@@ -299,41 +234,215 @@
           togglePassword.innerHTML = '<i class="ti ti-eye"></i>';
         }
       });
-      const toggleApiKey = document.getElementById('toggle-api-key');
-      const apiKeyField = document.getElementById('gdrive-api-key');
-      toggleApiKey.addEventListener('click', () => {
-        if (apiKeyField.type === 'password') {
-          apiKeyField.type = 'text';
-          toggleApiKey.innerHTML = '<i class="ti ti-eye-off"></i>';
+
+      function calculatePasswordStrength(password) {
+        let score = 0;
+        if (password.length >= 8) score += 1;
+        if (password.length >= 12) score += 1;
+        if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+        if (/[0-9]/.test(password)) score += 0.5;
+        if (/[^a-zA-Z0-9]/.test(password)) score += 0.5;
+        return {
+          score: Math.min(4, Math.floor(score))
+        };
+      }
+
+      newPasswordField.addEventListener('input', function (e) {
+        const password = e.target.value;
+        const strength = calculatePasswordStrength(password);
+        const strengthBar = document.getElementById('password-strength');
+        const feedback = document.getElementById('password-feedback');
+        
+        strengthBar.style.width = strength.score * 25 + '%';
+        
+        if (strength.score === 0) {
+          strengthBar.className = 'bg-gray-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Use 8+ characters with letters, numbers & symbols';
+          feedback.className = 'text-xs text-gray-400 mt-1';
+        } else if (strength.score === 1) {
+          strengthBar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Too weak - password needs improvement';
+          feedback.className = 'text-xs text-red-400 mt-1';
+        } else if (strength.score === 2) {
+          strengthBar.className = 'bg-yellow-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Could be stronger - add more variety';
+          feedback.className = 'text-xs text-yellow-500 mt-1';
+        } else if (strength.score === 3) {
+          strengthBar.className = 'bg-green-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Good password';
+          feedback.className = 'text-xs text-green-500 mt-1';
         } else {
-          apiKeyField.type = 'password';
-          toggleApiKey.innerHTML = '<i class="ti ti-eye"></i>';
-        }
-      });
-      function showToast(type, message) {
-        const toast = document.getElementById('toast');
-        const toastIcon = document.getElementById('toast-icon');
-        const toastMessage = document.getElementById('toast-message');
+          strengthBar.className = 'bg-green-500 h-1.5 rounded-full transition-all duration-300';
+          feedback.textContent = 'Strong password - excellent!';
+          feedback.className = 'text-xs text-green-500 mt-1';
+        }      });
+        function showToast(type, message) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-dark-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+        
+        let iconClass = '';
         if (type === 'success') {
-          toastIcon.className = 'ti ti-check text-green-400 mr-2';
-          toast.classList.add('border-l-4', 'border-green-400');
-          toast.classList.remove('border-l-4', 'border-red-400');
+          iconClass = 'ti ti-check text-green-400';
         } else if (type === 'error') {
-          toastIcon.className = 'ti ti-x text-red-400 mr-2';
-          toast.classList.add('border-l-4', 'border-red-400');
-          toast.classList.remove('border-l-4', 'border-green-400');
+          iconClass = 'ti ti-x text-red-400';
+        } else if (type === 'warning') {
+          iconClass = 'ti ti-alert-triangle text-yellow-400';
+        } else {
+          iconClass = 'ti ti-info-circle text-blue-400';
         }
-        toastMessage.textContent = message;
-        toast.classList.remove('hidden');
+        
+        toast.innerHTML = `
+          <div class="flex items-center">
+            <i class="${iconClass} mr-2"></i>
+            <span>${message}</span>
+          </div>
+        `;
+        document.body.appendChild(toast);
+
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+          }
+          .animate-fade-in {
+            animation: fadeIn 0.3s ease-out;
+          }
+          .animate-fade-out {
+            animation: fadeOut 0.3s ease-in;
+          }
+        `;
+        if (!document.querySelector('style[data-toast-styles]')) {
+          style.setAttribute('data-toast-styles', 'true');
+          document.head.appendChild(style);
+        }
+
         setTimeout(() => {
-          toast.classList.add('hidden');
+          toast.classList.remove('animate-fade-in');
+          toast.classList.add('animate-fade-out');
+          setTimeout(() => {
+            document.body.removeChild(toast);
+          }, 300);
         }, 3000);
       }
-    <% if (typeof success !== 'undefined' && success) { %>
-        showToast('success', '<%= success %>');
-    <% } %>
+
     <% if (typeof error !== 'undefined' && error) { %>
         showToast('error', '<%= error %>');
     <% } %>
-  });
+    });
+
+    function createModalDialog(options) {
+    const dialog = document.createElement('div');
+    dialog.id = 'custom-modal';
+    dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300';
+    
+    const themes = {
+      'info': {
+        icon: options.icon || 'ti-info-circle',
+        color: 'text-blue-600',
+        bg: 'bg-blue-600/10',
+        border: 'border-gray-600/50',
+        button: 'bg-blue-600 hover:bg-blue-700',
+        buttonIcon: 'ti-check'
+      },
+      'danger': {
+        icon: options.icon || 'ti-alert-triangle',
+        color: 'text-red-400',
+        bg: 'bg-red-500/10',
+        border: 'border-gray-600/50',
+        button: 'bg-red-500 hover:bg-red-600',
+        buttonIcon: 'ti-trash'
+      },
+      'warning': {
+        icon: options.icon || 'ti-alert-triangle',
+        color: 'text-yellow-400',
+        bg: 'bg-yellow-500/10',
+        border: 'border-yellow-500/50',
+        button: 'bg-yellow-500 hover:bg-yellow-600',
+        buttonIcon: 'ti-alert-circle'
+      },
+    };
+    
+    const theme = themes[options.type || 'info'];
+    
+    dialog.innerHTML = `
+      <div class="transform transition-all duration-300 opacity-0 scale-95 modal-content max-w-md w-full mx-4">
+        <div class="bg-dark-800 rounded-lg shadow-xl border ${theme.border} overflow-hidden">
+          
+          <div class="px-6 py-5 flex items-center">
+            <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mr-4 shrink-0">
+              <i class="ti ${theme.icon} ${theme.color} text-2xl"></i>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-lg font-medium text-white">${options.title}</h3>
+              <p class="text-gray-400 text-sm mt-1">${options.message}</p>
+            </div>
+          </div>
+          
+          <div class="px-6 py-4 flex justify-end space-x-3 border-t border-gray-600/50">
+            <button id="modal-cancel-btn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+              <i class="ti ti-x mr-1.5"></i>
+              ${options.cancelText || 'Cancel'}
+            </button>
+            <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
+              <i class="ti ${theme.buttonIcon} mr-1.5"></i>
+              ${options.confirmText || 'Confirm'}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    document.body.classList.add('overflow-hidden');
+    
+    setTimeout(() => {
+      const modalContent = dialog.querySelector('.modal-content');
+      if (modalContent) {
+        modalContent.classList.replace('opacity-0', 'opacity-100');
+        modalContent.classList.replace('scale-95', 'scale-100');
+      }
+    }, 10);
+    
+    return new Promise((resolve) => {
+      document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+        resolve({ confirmed: true, closeNow: false });
+      });
+      
+      document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+        closeModalWithAnimation();
+      });
+      
+      document.addEventListener('keydown', function escapeHandler(e) {
+        if (e.key === 'Escape') {
+          closeModalWithAnimation();
+          document.removeEventListener('keydown', escapeHandler);
+        }
+      });
+      
+      dialog.addEventListener('click', function (e) {
+        if (e.target === dialog) {
+          closeModalWithAnimation();
+        }
+      });
+      
+      function closeModalWithAnimation(confirmed = false) {
+        const modalContent = dialog.querySelector('.modal-content');
+        if (modalContent) {
+          modalContent.classList.replace('opacity-100', 'opacity-0');
+          modalContent.classList.replace('scale-100', 'scale-95');
+        }
+        setTimeout(() => {
+          document.body.classList.remove('overflow-hidden');
+          dialog.remove();
+          resolve({ confirmed, closeNow: true });
+        }, 200);
+      }
+    });
+  }
+
   </script>

@@ -98,7 +98,8 @@ nano .env
 
 ### 3. Konfigurasi Firewall
 
-**PENTING: Buka port SSH terlebih dahulu untuk menghindari terputusnya koneksi!**
+> [!Important]
+> Buka port **SSH** terlebih dahulu untuk menghindari terputusnya koneksi!
 
 Buka port SSH (biasanya port 22):
 ```bash

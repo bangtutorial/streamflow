@@ -1,0 +1,986 @@
+<% layout('layout') -%>
+<div class="flex-1 p-3 pt-6 sm:p-4 sm:pt-8 md:p-6 md:pt-12 lg:pt-6">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-white mb-2">System Logs</h1>
+    </div>    
+    <!-- Log Controls -->
+    <div class="bg-dark-800 rounded-lg border border-gray-700 p-4 mb-6">
+      <!-- Desktop View -->
+      <div class="hidden sm:flex flex-row gap-4 items-center justify-between">        
+        <div class="flex flex-wrap gap-2">
+          <button id="filter-all" class="log-filter-btn active" data-level="all">
+            <i class="ti ti-list mr-1"></i>
+            All
+          </button>
+          <button id="filter-error" class="log-filter-btn" data-level="error">
+            <i class="ti ti-alert-circle mr-1"></i>
+            Errors
+          </button>
+          <button id="filter-warn" class="log-filter-btn" data-level="warn">
+            <i class="ti ti-alert-triangle mr-1"></i>
+            Warnings
+          </button>
+          <button id="filter-info" class="log-filter-btn" data-level="info">
+            <i class="ti ti-info-circle mr-1"></i>
+            Info
+          </button>
+          <button id="filter-stream" class="log-filter-btn" data-category="stream">
+            <i class="ti ti-broadcast mr-1"></i>
+            Stream
+          </button>
+          <button id="filter-ffmpeg" class="log-filter-btn" data-category="ffmpeg">
+            <i class="ti ti-video mr-1"></i>
+            FFmpeg
+          </button>
+          <button id="filter-api" class="log-filter-btn" data-category="api">
+            <i class="ti ti-api mr-1"></i>
+            API
+          </button>
+        </div>          
+        <div class="flex gap-2">
+          <button id="clear-logs" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors text-sm min-w-[80px]">
+            <i class="ti ti-trash mr-1"></i>
+            Clear
+          </button>
+        </div>
+      </div>      
+      <!-- Mobile View -->
+      <div class="sm:hidden">
+        <!-- Filter and Clear in one row -->
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <button id="mobile-filter-dropdown" class="w-full flex items-center justify-between px-3 py-2 bg-dark-700 border border-gray-600 rounded-md text-white text-sm">
+              <div class="flex items-center">
+                <i id="mobile-filter-icon" class="ti ti-list mr-2"></i>
+                <span id="mobile-filter-text">All Logs</span>
+              </div>
+              <i class="ti ti-chevron-down"></i>
+            </button>
+            <div id="mobile-filter-menu" class="absolute top-full left-0 right-0 mt-1 bg-dark-700 border border-gray-600 rounded-md shadow-lg z-10 hidden">
+              <button class="mobile-filter-option w-full flex items-center px-3 py-2 text-white text-sm hover:bg-dark-600 active" data-level="all" data-icon="ti-list">
+                <i class="ti ti-list mr-2"></i>
+                All Logs
+              </button>
+              <button class="mobile-filter-option w-full flex items-center px-3 py-2 text-white text-sm hover:bg-dark-600" data-level="error" data-icon="ti-alert-circle">
+                <i class="ti ti-alert-circle mr-2"></i>
+                Errors
+              </button>
+              <button class="mobile-filter-option w-full flex items-center px-3 py-2 text-white text-sm hover:bg-dark-600" data-level="warn" data-icon="ti-alert-triangle">
+                <i class="ti ti-alert-triangle mr-2"></i>
+                Warnings
+              </button>
+              <button class="mobile-filter-option w-full flex items-center px-3 py-2 text-white text-sm hover:bg-dark-600" data-level="info" data-icon="ti-info-circle">
+                <i class="ti ti-info-circle mr-2"></i>
+                Info
+              </button>
+              <button class="mobile-filter-option w-full flex items-center px-3 py-2 text-white text-sm hover:bg-dark-600" data-category="stream" data-icon="ti-broadcast">
+                <i class="ti ti-broadcast mr-2"></i>
+                Stream
+              </button>
+              <button class="mobile-filter-option w-full flex items-center px-3 py-2 text-white text-sm hover:bg-dark-600" data-category="ffmpeg" data-icon="ti-video">
+                <i class="ti ti-video mr-2"></i>
+                FFmpeg
+              </button>
+              <button class="mobile-filter-option w-full flex items-center px-3 py-2 text-white text-sm hover:bg-dark-600" data-category="api" data-icon="ti-api">
+                <i class="ti ti-api mr-2"></i>
+                API
+              </button>
+            </div>
+          </div>
+          <button id="mobile-clear-logs" class="flex items-center justify-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors text-sm min-w-[80px]">
+            <i class="ti ti-trash mr-1 text-sm"></i>
+            <span>Clear</span>
+          </button>
+        </div>
+      </div>    
+    </div>    
+    
+    <!-- Log Stats -->
+    <div class="mb-6">      
+      <!-- Desktop View -->
+      <div class="hidden sm:grid grid-cols-2 md:grid-cols-6 gap-4">          
+        <div class="bg-dark-800 rounded-lg p-4">
+          <div class="flex items-center mb-2">
+            <i class="ti ti-list-details text-green-400 mr-2"></i>
+            <div class="text-xs text-green-400 font-medium">Total Logs</div>
+          </div>
+          <div class="text-2xl font-bold text-gray-400" id="total-logs">0</div>
+        </div>
+        <div class="bg-dark-800 rounded-lg p-4">
+          <div class="flex items-center mb-2">
+            <i class="ti ti-alert-circle text-red-400 mr-2"></i>
+            <div class="text-xs text-red-400 font-medium">Errors</div>
+          </div>
+          <div class="text-2xl font-bold text-gray-400" id="error-count">0</div>
+        </div>
+        <div class="bg-dark-800 rounded-lg p-4">
+          <div class="flex items-center mb-2">
+            <i class="ti ti-alert-triangle text-amber-400 mr-2"></i>
+            <div class="text-xs text-amber-400 font-medium">Warnings</div>
+          </div>
+          <div class="text-2xl font-bold text-gray-400" id="warn-count">0</div>
+        </div>
+        <div class="bg-dark-800 rounded-lg p-4">
+          <div class="flex items-center mb-2">
+            <i class="ti ti-info-circle text-white mr-2"></i>
+            <div class="text-xs text-white font-medium">Info</div>
+          </div>
+          <div class="text-2xl font-bold text-gray-400" id="info-count">0</div>
+        </div>        
+        <div class="bg-dark-800 rounded-lg p-4">
+          <div class="flex items-center mb-2">
+            <i class="ti ti-file-text text-white mr-2"></i>
+            <div class="text-xs text-white font-medium">Log</div>
+          </div>
+          <div class="text-2xl font-bold text-gray-400" id="log-count">0</div>
+        </div>
+        <div class="bg-dark-800 rounded-lg p-4">
+          <div class="flex items-center mb-2">
+            <i class="ti ti-bug text-white mr-2"></i>
+            <div class="text-xs text-white font-medium">Debug</div>
+          </div>
+          <div class="text-2xl font-bold text-gray-400" id="debug-count">0</div>
+        </div>
+      </div>        
+      <!-- Mobile View - Compact Single Card -->
+      <div class="sm:hidden bg-dark-800 rounded-lg p-3 border border-gray-700">
+        <div class="grid grid-cols-3 gap-2">            
+          <div class="flex flex-col">
+            <div class="flex items-center mb-1">
+              <i class="ti ti-list-details text-green-400 text-xs mr-1"></i>
+              <span class="text-xs text-green-400 font-medium">Total Logs</span>
+            </div>
+            <span class="text-sm font-bold text-gray-400" id="total-logs-mobile">0</span>
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center mb-1">
+              <i class="ti ti-alert-circle text-red-400 text-xs mr-1"></i>
+              <span class="text-xs text-red-400 font-medium">Errors</span>
+            </div>
+            <span class="text-sm font-bold text-gray-400" id="error-count-mobile">0</span>
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center mb-1">
+              <i class="ti ti-alert-triangle text-amber-400 text-xs mr-1"></i>
+              <span class="text-xs text-amber-400 font-medium">Warnings</span>
+            </div>
+            <span class="text-sm font-bold text-gray-400" id="warn-count-mobile">0</span>
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center mb-1">
+              <i class="ti ti-info-circle text-white text-xs mr-1"></i>
+              <span class="text-xs text-white font-medium">Info</span>
+            </div>
+            <span class="text-sm font-bold text-gray-400" id="info-count-mobile">0</span>
+          </div>          
+          <div class="flex flex-col">
+            <div class="flex items-center mb-1">
+              <i class="ti ti-file-text text-white text-xs mr-1"></i>
+              <span class="text-xs text-white font-medium">Log</span>
+            </div>
+            <span class="text-sm font-bold text-gray-400" id="log-count-mobile">0</span>
+          </div>
+          <div class="flex flex-col">
+            <div class="flex items-center mb-1">
+              <i class="ti ti-bug text-white text-xs mr-1"></i>
+              <span class="text-xs text-white font-medium">Debug</span>
+            </div>
+            <span class="text-sm font-bold text-gray-400" id="debug-count-mobile">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Log Container -->
+    <div class="bg-dark-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="bg-dark-700 px-3 sm:px-4 py-2 border-b border-gray-700">
+        <div class="flex items-center justify-between">
+          <h3 class="text-white font-medium text-sm sm:text-base">Live Logs</h3>          
+          <div class="flex items-center text-xs sm:text-sm text-gray-400">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1 sm:mr-2"></span>
+            <span id="log-status">Connected</span>
+          </div>
+        </div>      
+      </div>
+      
+      <div id="log-container" class="h-80 sm:h-[32rem] overflow-y-auto bg-black text-green-400 font-mono text-xs sm:text-sm">
+        <div id="log-content" class="p-2 sm:p-4">
+          <div class="flex items-center justify-center h-full text-gray-500">
+            <div class="text-center">
+              <i class="ti ti-loader-2 text-xl sm:text-2xl mb-2 animate-spin"></i>
+              <p class="text-xs sm:text-sm">Loading logs...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.log-filter-btn {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  border: 1px solid #4b5563;
+  color: #d1d5db;
+  background-color: transparent;
+  transition: all 0.2s ease;
+  min-width: 85px;
+  text-align: center;
+}
+
+.log-filter-btn:hover {
+  color: white;
+  border-color: #6b7280;
+}
+
+.log-filter-btn.active {
+  background-color: #0055ff;
+  border-color: #0055ff;
+  color: white;
+}
+
+.log-entry {
+  padding: 0.25rem 0.5rem;
+  border-left: 4px solid;
+  transition: background-color 0.2s ease;
+}
+
+.log-entry:hover {
+  background-color: rgba(17, 24, 39, 0.5);
+}
+
+.log-entry.error, .log-entry.stream-error {
+  border-left-color: #ef4444;
+  color: #fca5a5;
+}
+
+.log-entry.warn {
+  border-left-color: #eab308;
+  color: #fde047;
+}
+
+.log-entry.info {
+  border-left-color: #3b82f6;
+  color: #93c5fd;
+}
+
+.log-entry.log {
+  border-left-color: #10b981;
+  color: #6ee7b7;
+}
+
+.log-entry.debug {
+  border-left-color: #8b5cf6;
+  color: #c4b5fd;
+}
+
+.log-entry.stream-start {
+  border-left-color: #10b981;
+  color: #6ee7b7;
+  background-color: rgba(16, 185, 129, 0.1);
+}
+
+.log-entry.stream-stop {
+  border-left-color: #f97316;
+  color: #fdba74;
+  background-color: rgba(249, 115, 22, 0.1);
+}
+
+.log-entry.ffmpeg {
+  border-left-color: #06b6d4;
+  color: #67e8f9;
+  background-color: rgba(6, 182, 212, 0.1);
+}
+
+.log-entry.upload {
+  border-left-color: #8b5cf6;
+  color: #c4b5fd;
+  background-color: rgba(139, 92, 246, 0.1);
+}
+
+.log-entry.download {
+  border-left-color: #06b6d4;
+  color: #67e8f9;
+  background-color: rgba(6, 182, 212, 0.1);
+}
+
+.log-entry.analytics {
+  border-left-color: #f59e0b;
+  color: #fbbf24;
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.log-entry.auth {
+  border-left-color: #ec4899;
+  color: #f9a8d4;
+  background-color: rgba(236, 72, 153, 0.1);
+}
+
+.log-entry.api {
+  border-left-color: #6366f1;
+  color: #a5b4fc;
+  background-color: rgba(99, 102, 241, 0.1);
+}
+
+.log-timestamp {
+  color: #6b7280;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+  min-width: 140px;
+  display: none;
+}
+
+.log-timestamp-mobile {
+  margin-right: 0.5rem;
+  min-width: 80px;
+  line-height: 1.1;
+  display: block;
+}
+
+@media (min-width: 640px) {
+  .log-timestamp {
+    display: inline-block;
+  }
+  .log-timestamp-mobile {
+    display: none;
+  }
+}
+
+.log-level {
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-right: 0.5rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  min-width: 60px;
+  display: inline-block;
+  text-align: center;
+}
+
+.log-level.error {
+  background-color: #7f1d1d;
+  color: #fecaca;
+}
+
+.log-level.warn {
+  background-color: #78350f;
+  color: #fef3c7;
+}
+
+.log-level.info {
+  background-color: #1e3a8a;
+  color: #bfdbfe;
+}
+
+.log-level.log {
+  background-color: #064e3b;
+  color: #a7f3d0;
+}
+
+.log-level.debug {
+  background-color: #581c87;
+  color: #ddd6fe;
+}
+
+.log-message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.log-category-badge {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  margin-right: 0.5rem;
+  font-weight: 500;
+}
+
+.log-category-badge.stream-start {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.log-category-badge.stream-stop {
+  background-color: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+}
+
+.log-category-badge.stream-error {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.log-category-badge.ffmpeg {
+  background-color: rgba(6, 182, 212, 0.2);
+  color: #67e8f9;
+}
+
+.log-category-badge.upload {
+  background-color: rgba(139, 92, 246, 0.2);
+  color: #c4b5fd;
+}
+
+.log-category-badge.download {
+  background-color: rgba(6, 182, 212, 0.2);
+  color: #67e8f9;
+}
+
+.log-category-badge.analytics {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.log-category-badge.auth {
+  background-color: rgba(236, 72, 153, 0.2);
+  color: #f9a8d4;
+}
+
+.log-category-badge.api {
+  background-color: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+}
+
+#log-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+#log-container::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+#log-container::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+#log-container::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+.mobile-filter-option.active {
+  background-color: #374151 !important;
+}
+
+.mobile-filter-option:hover {
+  background-color: #374151;
+}
+
+.mobile-filter-option:active {
+  background-color: #4b5563;
+}
+
+#mobile-filter-dropdown .ti-chevron-down {
+  transition: transform 0.2s ease;
+}
+
+#mobile-filter-menu {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+@media (max-width: 1023px) {
+  .mobile-filter-option {
+    min-height: 44px; 
+  }
+  
+  #mobile-filter-dropdown, #mobile-clear-logs {
+    min-height: 44px;
+  }
+}
+</style>
+
+<script>
+class LogViewer {  
+    constructor() {
+    this.logs = [];
+    this.filteredLogs = [];
+    this.currentFilter = 'all';
+    this.refreshInterval = null;
+    
+    this.initializeElements();
+    this.bindEvents();
+    this.initializeMobileState();
+    this.loadLogs();
+    this.startAutoRefresh();
+  }
+  
+  initializeMobileState() {
+    this.setMobileFilter('all', 'ti-list', 'All Logs');
+  }  
+  
+  initializeElements() {
+    this.logContainer = document.getElementById('log-container');
+    this.logContent = document.getElementById('log-content');
+    this.logStatus = document.getElementById('log-status');
+    
+    this.totalLogs = document.getElementById('total-logs');
+    this.errorCount = document.getElementById('error-count');
+    this.warnCount = document.getElementById('warn-count');
+    this.infoCount = document.getElementById('info-count');
+    this.logCount = document.getElementById('log-count');
+    this.debugCount = document.getElementById('debug-count');
+    this.refreshBtn = document.getElementById('refresh-logs');
+    this.clearBtn = document.getElementById('clear-logs');
+    this.filterBtns = document.querySelectorAll('.log-filter-btn');
+    
+    this.mobileFilterDropdown = document.getElementById('mobile-filter-dropdown');
+    this.mobileFilterMenu = document.getElementById('mobile-filter-menu');
+    this.mobileFilterIcon = document.getElementById('mobile-filter-icon');    
+    this.mobileFilterText = document.getElementById('mobile-filter-text');
+    this.mobileFilterOptions = document.querySelectorAll('.mobile-filter-option');
+    
+    this.mobileClearBtn = document.getElementById('mobile-clear-logs');
+  }
+    
+  bindEvents() {
+    this.clearBtn.addEventListener('click', () => this.clearLogs());
+    
+    this.filterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const filterValue = btn.dataset.level || btn.dataset.category;
+        this.setFilter(filterValue);
+      });
+    });
+    
+    this.bindMobileEvents();
+  }
+  
+  bindMobileEvents() {
+    this.mobileFilterDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleMobileFilterMenu();
+    });
+    
+    this.mobileFilterOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        const filterValue = option.dataset.level || option.dataset.category;
+        const iconClass = option.dataset.icon;
+        const text = option.textContent.trim();
+        
+        this.setMobileFilter(filterValue, iconClass, text);
+        this.setFilter(filterValue);
+        this.hideMobileFilterMenu();
+      });    });    
+    this.mobileClearBtn.addEventListener('click', () => this.clearLogs());
+    
+    document.addEventListener('click', () => {
+      this.hideMobileFilterMenu();
+    });
+  }
+  
+  toggleMobileFilterMenu() {
+    const isHidden = this.mobileFilterMenu.classList.contains('hidden');
+    if (isHidden) {
+      this.mobileFilterMenu.classList.remove('hidden');
+      this.mobileFilterDropdown.querySelector('.ti-chevron-down').style.transform = 'rotate(180deg)';
+    } else {
+      this.hideMobileFilterMenu();
+    }
+  }
+  
+  hideMobileFilterMenu() {
+    this.mobileFilterMenu.classList.add('hidden');
+    this.mobileFilterDropdown.querySelector('.ti-chevron-down').style.transform = 'rotate(0deg)';
+  }
+  
+  setMobileFilter(filterValue, iconClass, text) {
+    this.mobileFilterIcon.className = `ti ${iconClass} mr-2`;
+    this.mobileFilterText.textContent = text;
+    
+    this.mobileFilterOptions.forEach(option => {
+      const isActive = (option.dataset.level === filterValue) || (option.dataset.category === filterValue);
+      option.classList.toggle('active', isActive);
+      if (isActive) {
+        option.style.backgroundColor = '#374151';
+      } else {
+        option.style.backgroundColor = '';
+      }    });
+  }
+  
+  async loadLogs() {
+    try {
+      const response = await fetch('/api/logs');
+      const data = await response.json();
+      
+      if (data.success) {
+        this.logs = data.logs;
+        this.applyFilter();
+        this.updateStats();
+        this.logStatus.textContent = 'Connected';
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error) {
+      console.error('Failed to load logs:', error);
+      this.logStatus.textContent = 'Error';
+      this.showError('Failed to load logs: ' + error.message);
+    }
+  }
+
+  setFilter(level) {
+    this.currentFilter = level;
+    
+    this.filterBtns.forEach(btn => {
+      const isActive = (btn.dataset.level === level) || (btn.dataset.category === level);
+      btn.classList.toggle('active', isActive);
+    });
+    
+    if (!this.mobileFilterMenu.classList.contains('hidden')) {
+      const activeOption = Array.from(this.mobileFilterOptions).find(option => 
+        (option.dataset.level === level) || (option.dataset.category === level)
+      );
+      
+      if (activeOption) {
+        const iconClass = activeOption.dataset.icon;
+        const text = activeOption.textContent.trim();
+        this.setMobileFilter(level, iconClass, text);
+      }
+    }
+    
+    this.applyFilter();
+  }
+
+  applyFilter() {
+    if (this.currentFilter === 'all') {
+      this.filteredLogs = this.logs;
+    } else if (this.currentFilter === 'stream') {
+      this.filteredLogs = this.logs.filter(log => 
+        log.category === 'stream-start' || 
+        log.category === 'stream-stop' || 
+        log.category === 'stream-error'
+      );
+    } else if (['ffmpeg', 'api', 'upload', 'download', 'analytics', 'auth'].includes(this.currentFilter)) {
+      this.filteredLogs = this.logs.filter(log => log.category === this.currentFilter);
+    } else {
+      this.filteredLogs = this.logs.filter(log => log.level === this.currentFilter);
+    }
+    
+    this.renderLogs();
+  }  
+  renderLogs() {
+    if (this.filteredLogs.length === 0) {
+      this.logContent.innerHTML = `
+        <div class="flex items-center justify-center h-full text-gray-500">
+          <div class="text-center">
+            <i class="ti ti-file-text text-2xl mb-2"></i>
+            <p>No logs to display</p>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    const html = this.filteredLogs.map(log => {
+      const date = new Date(log.timestamp);
+      
+      const desktopTimestamp = date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      
+      const mobileDate = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+      });
+      
+      const mobileTime = date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      
+      const message = this.escapeHtml(log.message);
+      const categoryClass = log.category || log.level;
+        let categoryBadge = '';
+      let levelBadge = '';
+      
+      if (log.category && log.category !== 'general') {
+        const categoryNames = {
+          'stream-start': 'START',
+          'stream-stop': 'STOP',
+          'stream-error': 'ERROR',
+          'ffmpeg': 'FFMPEG',
+          'upload': 'UPLOAD',
+          'download': 'DOWNLOAD',
+          'analytics': 'ANALYTICS',
+          'auth': 'AUTH',
+          'api': 'API'
+        };
+        const categoryName = categoryNames[log.category] || log.category.toUpperCase();
+        categoryBadge = `<span class="log-category-badge ${log.category}">${categoryName}</span>`;
+      } else {
+        levelBadge = `<span class="log-level ${log.level}">${log.level}</span>`;
+      }
+
+      return `
+        <div class="log-entry ${categoryClass}" data-level="${log.level}" data-category="${log.category}">
+          <div class="flex items-start">
+            <span class="log-timestamp">${desktopTimestamp}</span>
+            <div class="log-timestamp-mobile">
+              <div class="text-xs text-gray-500">${mobileDate}</div>
+              <div class="text-xs text-gray-400">${mobileTime}</div>
+            </div>
+            ${levelBadge}
+            ${categoryBadge}
+            <span class="log-message">${message}</span>
+          </div>
+        </div>
+      `;
+    }).join('');    
+    this.logContent.innerHTML = html;
+  }
+
+  updateStats() {
+    const stats = {
+      total: this.logs.length,
+      error: 0,
+      warn: 0,
+      info: 0,
+      log: 0,
+      debug: 0
+    };
+
+    this.logs.forEach(log => {
+      if (stats.hasOwnProperty(log.level)) {
+        stats[log.level]++;
+      }
+    });
+
+    this.totalLogs.textContent = stats.total;
+    this.errorCount.textContent = stats.error;
+    this.warnCount.textContent = stats.warn;
+    this.infoCount.textContent = stats.info;
+    this.logCount.textContent = stats.log;
+    this.debugCount.textContent = stats.debug;
+    
+    const totalLogsMobile = document.getElementById('total-logs-mobile');
+    const errorCountMobile = document.getElementById('error-count-mobile');
+    const warnCountMobile = document.getElementById('warn-count-mobile');
+    const infoCountMobile = document.getElementById('info-count-mobile');
+    const logCountMobile = document.getElementById('log-count-mobile');
+    const debugCountMobile = document.getElementById('debug-count-mobile');
+    
+    if (totalLogsMobile) totalLogsMobile.textContent = stats.total;
+    if (errorCountMobile) errorCountMobile.textContent = stats.error;
+    if (warnCountMobile) warnCountMobile.textContent = stats.warn;
+    if (infoCountMobile) infoCountMobile.textContent = stats.info;
+    if (logCountMobile) logCountMobile.textContent = stats.log;
+    if (debugCountMobile) debugCountMobile.textContent = stats.debug;
+  }
+  
+  async clearLogs() {
+    const result = await this.createModalDialog({
+      type: 'danger',
+      title: 'Clear All Logs',
+      message: 'Are you sure you want to clear all logs? This action cannot be undone.',
+      confirmText: 'Clear Logs',
+      cancelText: 'Cancel'
+    });
+    
+    if (result.confirmed) {
+      try {
+        const response = await fetch('/api/logs', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          this.logs = [];
+          this.filteredLogs = [];
+          this.renderLogs();
+          this.updateStats();
+          console.log('Logs cleared successfully');
+        } else {
+          throw new Error(result.error || 'Failed to clear logs');
+        }
+      } catch (error) {
+        console.error('Error clearing logs:', error);
+        await this.createModalDialog({
+          type: 'danger',
+          title: 'Error',
+          message: 'Failed to clear logs: ' + error.message,
+          confirmText: 'OK',
+          showCancel: false
+        });
+      }    }
+  }
+
+  startAutoRefresh() {
+    this.refreshInterval = setInterval(() => {
+      this.loadLogs();
+    }, 5000);
+  }
+
+  stopAutoRefresh() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+  }
+
+  showError(message) {
+    this.logContent.innerHTML = `
+      <div class="flex items-center justify-center h-full text-red-400">
+        <div class="text-center">
+          <i class="ti ti-alert-circle text-2xl mb-2"></i>
+          <p>${message}</p>
+        </div>
+      </div>
+    `;
+  }
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  createModalDialog(options) {
+    return new Promise((resolve) => {
+      const dialog = document.createElement('div');
+      dialog.id = 'custom-modal';
+      dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300';
+      
+      const themes = {
+        'info': {
+          icon: options.icon || 'ti-info-circle',
+          color: 'text-blue-600',
+          bg: 'bg-blue-600/10',
+          border: 'border-gray-600/50',
+          button: 'bg-blue-600 hover:bg-blue-700',
+          buttonIcon: 'ti-check'
+        },
+        'danger': {
+          icon: options.icon || 'ti-alert-triangle',
+          color: 'text-red-400',
+          bg: 'bg-red-500/10',
+          border: 'border-gray-600/50',
+          button: 'bg-red-500 hover:bg-red-600',
+          buttonIcon: 'ti-trash'
+        },
+        'warning': {
+          icon: options.icon || 'ti-alert-triangle',
+          color: 'text-yellow-400',
+          bg: 'bg-yellow-500/10',
+          border: 'border-yellow-500/50',
+          button: 'bg-yellow-500 hover:bg-yellow-600',
+          buttonIcon: 'ti-alert-circle'
+        }
+      };
+      
+      const theme = themes[options.type || 'info'];
+      
+      dialog.innerHTML = `
+        <div class="transform transition-all duration-300 opacity-0 scale-95 modal-content max-w-md w-full mx-4">
+          <div class="bg-dark-800 rounded-lg shadow-xl border ${theme.border} overflow-hidden">
+            <div class="px-6 py-5 flex items-center">
+              <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mr-4 shrink-0">
+                <i class="ti ${theme.icon} ${theme.color} text-2xl"></i>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-medium text-white">${options.title}</h3>
+                <p class="text-gray-400 text-sm mt-1">${options.message}</p>
+              </div>
+            </div>
+            
+            <div class="px-6 py-4 flex justify-end space-x-3 border-t border-gray-600/50">
+              ${options.showCancel !== false ? `
+                <button id="modal-cancel-btn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
+                  <i class="ti ti-x mr-1.5"></i>
+                  ${options.cancelText || 'Cancel'}
+                </button>
+              ` : ''}
+              <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
+                <i class="ti ${theme.buttonIcon} mr-1.5"></i>
+                ${options.confirmText || 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(dialog);
+      document.body.classList.add('overflow-hidden');
+      
+      setTimeout(() => {
+        const modalContent = dialog.querySelector('.modal-content');
+        if (modalContent) {
+          modalContent.classList.replace('opacity-0', 'opacity-100');
+          modalContent.classList.replace('scale-95', 'scale-100');
+        }
+      }, 10);
+      
+      const cleanup = () => {
+        const modalContent = dialog.querySelector('.modal-content');
+        if (modalContent) {
+          modalContent.classList.replace('opacity-100', 'opacity-0');
+          modalContent.classList.replace('scale-100', 'scale-95');
+        }
+        setTimeout(() => {
+          document.body.classList.remove('overflow-hidden');
+          dialog.remove();
+        }, 200);
+      };
+      
+      document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+        cleanup();
+        resolve({ confirmed: true });
+      });
+      
+      if (options.showCancel !== false) {
+        document.getElementById('modal-cancel-btn').addEventListener('click', () => {
+          cleanup();
+          resolve({ confirmed: false });
+        });
+      }
+      
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+          cleanup();
+          resolve({ confirmed: false });
+        }
+      });
+      
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          cleanup();
+          document.removeEventListener('keydown', handleEscape);
+          resolve({ confirmed: false });
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+    });
+  }
+
+  destroy() {
+    this.stopAutoRefresh();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  window.logViewer = new LogViewer();
+});
+
+window.addEventListener('beforeunload', () => {
+  if (window.logViewer) {
+    window.logViewer.destroy();
+  }
+});
+</script>
+
+  </div>
+</div>

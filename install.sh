@@ -42,6 +42,7 @@ sudo npm install -g pm2
 
 echo "▶️ Starting StreamFlow..."
 pm2 start app.js --name streamflow
+pm2 save
 
 echo
 echo "================================"

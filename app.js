@@ -1456,12 +1456,10 @@ app.get("/api/streams/:id", isAuthenticated, async (req, res) => {
         .json({ success: false, error: "Stream not found" });
     }
     if (stream.user_id !== req.session.userId) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Not authorized to access this stream",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to access this stream",
+      });
     }
     res.json({ success: true, stream });
   } catch (error) {
@@ -1478,12 +1476,10 @@ app.put("/api/streams/:id", isAuthenticated, async (req, res) => {
         .json({ success: false, error: "Stream not found" });
     }
     if (stream.user_id !== req.session.userId) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Not authorized to update this stream",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to update this stream",
+      });
     }
     const updateData = {};
     if (req.body.streamTitle) updateData.title = req.body.streamTitle;
@@ -1537,12 +1533,10 @@ app.delete("/api/streams/:id", isAuthenticated, async (req, res) => {
         .json({ success: false, error: "Stream not found" });
     }
     if (stream.user_id !== req.session.userId) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "Not authorized to delete this stream",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "Not authorized to delete this stream",
+      });
     }
     await Stream.delete(req.params.id, req.session.userId);
     res.json({ success: true, message: "Stream deleted successfully" });

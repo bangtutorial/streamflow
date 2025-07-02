@@ -1,5 +1,7 @@
 # Logs
-# logs # comment this because its needed for docker compose
+# comment this folder because its needed for docker compose
+# logs
+# leave *.log here to just ignore the logs directory
 *.log
 npm-debug.log*
 yarn-debug.log*

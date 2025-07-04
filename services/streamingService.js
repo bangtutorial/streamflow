@@ -353,7 +353,7 @@ async function saveStreamHistory(stream) {
       console.log(`[StreamingService] Not saving history for stream ${stream.id} - duration too short (${durationSeconds}s)`);
       return false;
     }
-    const videoDetails = stream.video_id ? await Video.findById(stream.video_id) : null;
+    const videoDetails = stream.video_id ? await Video.findById(stream.video_id) : null;    
     const historyData = {
       id: uuidv4(),
       stream_id: stream.id,
@@ -369,20 +369,23 @@ async function saveStreamHistory(stream) {
       end_time: stream.end_time || new Date().toISOString(),
       duration: durationSeconds,
       use_advanced_settings: stream.use_advanced_settings ? 1 : 0,
+      stream_key: stream.stream_key,
+      rtmp_url: stream.rtmp_url,
       user_id: stream.user_id
     };
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject) => {      
       db.run(
         `INSERT INTO stream_history (
           id, stream_id, title, platform, platform_icon, video_id, video_title,
-          resolution, bitrate, fps, start_time, end_time, duration, use_advanced_settings, user_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          resolution, bitrate, fps, start_time, end_time, duration, use_advanced_settings, 
+          stream_key, rtmp_url, user_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           historyData.id, historyData.stream_id, historyData.title,
           historyData.platform, historyData.platform_icon, historyData.video_id, historyData.video_title,
           historyData.resolution, historyData.bitrate, historyData.fps,
           historyData.start_time, historyData.end_time, historyData.duration,
-          historyData.use_advanced_settings, historyData.user_id
+          historyData.use_advanced_settings, historyData.stream_key, historyData.rtmp_url, historyData.user_id
         ],
         function (err) {
           if (err) {

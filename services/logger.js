@@ -41,4 +41,58 @@ console.debug = (...args) => {
   originalConsoleDebug.apply(console, args);
   writeToLogFile('debug', ...args);
 };
+
+console.streamStart = (message, data = {}) => {
+  const logMessage = `[STREAM START] ${message}`;
+  console.log(logMessage);
+  if (Object.keys(data).length > 0) {
+    console.log(`Stream data: ${JSON.stringify(data)}`);
+  }
+};
+
+console.streamStop = (message, data = {}) => {
+  const logMessage = `[STREAM STOP] ${message}`;
+  console.log(logMessage);
+  if (Object.keys(data).length > 0) {
+    console.log(`Stream data: ${JSON.stringify(data)}`);
+  }
+};
+
+console.streamError = (message, error = null) => {
+  const logMessage = `[STREAM ERROR] ${message}`;
+  console.error(logMessage);
+  if (error) {
+    console.error(`Error details: ${error.message || error}`);
+  }
+};
+
+console.ffmpeg = (message) => {
+  const logMessage = `[FFMPEG] ${message}`;
+  console.log(logMessage);
+};
+
+console.upload = (message) => {
+  const logMessage = `[UPLOAD] ${message}`;
+  console.log(logMessage);
+};
+
+console.download = (message) => {
+  const logMessage = `[DOWNLOAD] ${message}`;
+  console.log(logMessage);
+};
+
+console.analytics = (message) => {
+  const logMessage = `[ANALYTICS] ${message}`;
+  console.log(logMessage);
+};
+
+console.auth = (message) => {
+  const logMessage = `[AUTH] ${message}`;
+  console.log(logMessage);
+};
+
+console.api = (message) => {
+  const logMessage = `[API] ${message}`;
+  console.log(logMessage);
+};
 console.log('Logger initialized. Output will be written to console and logs/app.log');

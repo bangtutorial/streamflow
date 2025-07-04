@@ -1,51 +1,67 @@
 <% layout('layout') -%>
-  <% function formatFileSize(bytes) { if (bytes < 1024) return bytes + ' B' ; else if (bytes < 1048576) return (bytes /
-    1024).toFixed(1) + ' KB' ; else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB' ; else return
-    (bytes / 1073741824).toFixed(1) + ' GB' ; } function formatDate(dateString) { const date=new Date(dateString); const
-    options={ day: 'numeric' , month: 'short' , year: 'numeric' }; return date.toLocaleDateString('en-US', options); }
-    function formatDuration(seconds) { if (!seconds) return '00:00' ; const minutes=Math.floor(seconds / 60); const
-    remainingSeconds=Math.floor(seconds % 60); return `${minutes.toString().padStart(2, '0'
-    )}:${remainingSeconds.toString().padStart(2, '0' )}`; } %>
-
+  <% function formatFileSize(bytes) {
+    if (bytes < 1024) {
+      return bytes + ' B';
+    } else if (bytes < 1048576) {
+      return (bytes / 1024).toFixed(1) + ' KB';
+    } else if (bytes < 1073741824) {
+      return (bytes / 1048576).toFixed(1) + ' MB';
+    } else {
+      return (bytes / 1073741824).toFixed(1) + ' GB';
+    }
+  } function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }) + ', ' + date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } function formatDuration(seconds) {
+    if (!seconds) return '00:00';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  } %>
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
       <div>
-        <h2 class="text-2xl font-bold">Video Gallery</h2>
-        <p class="text-gray-400 text-sm mt-1">Manage your videos for streaming</p>
+        <h2 class="text-2xl font-bold">Video Gallery<% if (videos && videos.length > 0) { %> <span class="text-gray-400 font-normal">(<%= videos.length %>)</span><% } %></h2>
       </div>
-      <div class="flex flex-wrap gap-3">
+      <div class="flex gap-3">
         <button onclick="openUploadModal()"
-          class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+          class="flex-1 flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 h-10 rounded-lg transition-colors text-sm font-medium">
           <i class="ti ti-upload"></i>
-          <span>Upload Video</span>
+          <span>Upload</span>
         </button>
         <button onclick="openGDriveModal()"
-          class="flex items-center gap-2 bg-[#4285F4]/20 border border-[#4285F4]/50 hover:bg-[#4285F4]/30 text-white px-4 py-2 rounded-lg transition-colors">
+          class="flex-1 flex items-center justify-center gap-2 bg-[#4285F4]/20 border border-[#4285F4]/50 hover:bg-[#4285F4]/30 text-white px-4 py-2 h-10 rounded-lg transition-colors text-sm font-medium">
           <i class="ti ti-brand-google-drive text-[#4285F4]"></i>
-          <span>Import from Drive</span>
+          <span>Import</span>
+        </button>
+        <button id="clear-all-videos" class="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 h-10 rounded-lg transition-colors text-sm font-medium<% if (!videos || videos.length === 0) { %> hidden<% } %>">
+          <i class="ti ti-trash"></i>
+          <span>Clear</span>
         </button>
       </div>
     </div>
-
     <div class="bg-gray-800 rounded-lg p-4 mb-6">
-      <div class="flex flex-row items-center gap-3">
-
-        <div class="relative w-full sm:w-80 md:w-96">
+      <div class="flex flex-row items-center justify-between gap-4">
+        <div class="relative flex-1 max-w-md">
           <input type="text" placeholder="Search videos..."
             class="w-full bg-dark-700 text-white pl-9 pr-4 py-2.5 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
           <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
         </div>
-
-        <div class="w-32">
-          <select
-            class="w-full bg-dark-700 border border-gray-600 text-white px-3 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
-            <option selected>Newest</option>
-            <option>Oldest</option>
-          </select>
-        </div>
+        <button id="sort-toggle-btn" class="w-12 h-11 flex items-center justify-center bg-dark-700 border border-gray-600 hover:bg-dark-600 text-white rounded-lg focus:outline-none focus:ring-1 focus:ring-primary transition-colors" title="Sort: Newest">
+          <i id="sort-icon" class="ti ti-sort-descending text-lg"></i>
+        </button>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+    <!-- Desktop grid layout (hidden on mobile) -->
+    <div class="hidden md:grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
       <% if (videos && videos.length> 0) { %>
         <% videos.forEach(function(video) { %>
           <div class="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
@@ -75,9 +91,9 @@
                 <%= video.title %>
               </h3>
               <div class="flex items-center justify-between">
-                <div class="text-xs text-gray-400 flex items-center">
+                <div class="text-xs text-gray-400 flex items-center">                  
                   <span>
-                    <%= new Date(video.upload_date).toLocaleDateString() %>
+                    <%= formatDate(video.upload_date) %>
                   </span>
                   <span class="mx-1">•</span>
                   <span>
@@ -100,19 +116,98 @@
             </div>
           </div>
           <% }); %>
-            <% } else { %>
+            <% } else { %>              
               <div class="col-span-full text-center py-12">
                 <div class="text-gray-500 mb-3">
-                  <i class="ti ti-file-video text-6xl"></i>
+                  <i class="ti ti-video-off text-4xl"></i>
                 </div>
-                <h3 class="text-xl font-medium text-gray-300 mb-1">No videos yet</h3>
+                <h3 class="text-xl font-medium text-gray-500 mb-1">No videos yet</h3>
                 <p class="text-gray-500 mb-4">Upload your first video to get started</p>
               </div>
               <% } %>
     </div>
 
+    <!-- Mobile compact layout (visible only on mobile) -->
+    <div class="md:hidden space-y-3">
+      <% if (videos && videos.length> 0) { %>
+        <% videos.forEach(function(video) { %>          
+          <div class="bg-dark-700 rounded-lg p-3 hover:bg-dark-600 transition-colors relative">
+            <!-- Action buttons - Top Right Corner -->
+            <div class="absolute top-2 right-2 flex gap-1 z-10">
+              <button class="bg-dark-800/80 hover:bg-dark-600 text-gray-400 hover:text-white p-2 rounded-lg transition-colors backdrop-blur-sm"
+                onclick="showRenameDialog('<%= video.id %>', '<%= video.title %>')">
+                <i class="ti ti-pencil text-sm"></i>
+              </button>
+              <button class="bg-dark-800/80 hover:bg-red-600 text-gray-400 hover:text-white p-2 rounded-lg transition-colors backdrop-blur-sm"
+                onclick="showDeleteDialog('<%= video.id %>', '<%= video.title %>')">
+                <i class="ti ti-trash text-sm"></i>
+              </button>
+            </div>
+
+            <div class="flex gap-3">
+              <!-- Thumbnail -->
+              <div class="relative flex-shrink-0 w-20 h-14 rounded overflow-hidden">
+                <img src="<%= video.thumbnail_path %>" alt="<%= video.title %>" class="w-full h-full object-cover">
+                
+                <!-- Play button overlay -->
+                <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <button
+                    class="play-button bg-black/60 hover:bg-primary/80 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                    data-video-id="<%= video.id %>" data-video-title="<%= video.title %>"
+                    onclick="playVideo('<%= video.id %>', '<%= video.title %>')">
+                    <i class="ti ti-player-play-filled text-xs text-white"></i>
+                  </button>
+                </div>
+
+                <!-- Duration badge -->
+                <span class="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1 py-0.5 rounded">
+                  <%= typeof formatDuration==='function' ? formatDuration(video.duration) : (video.duration ?
+                    Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0' )
+                    : '0:00' ) %>
+                </span>
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1 min-w-0 pr-16">
+                <!-- Title and details -->
+                <div class="space-y-1">
+                  <h3 class="font-medium text-white text-sm leading-tight line-clamp-2 break-words">
+                    <%= video.title %>
+                  </h3>
+                  <div class="flex flex-col text-xs text-gray-400 space-y-0.5">
+                    <div class="flex items-center">
+                      <i class="ti ti-calendar text-[10px] mr-1 flex-shrink-0"></i>
+                      <span class="truncate">
+                        <%= formatDate(video.upload_date) %>
+                      </span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="ti ti-file text-[10px] mr-1 flex-shrink-0"></i>
+                      <span class="truncate">
+                        <%= typeof formatFileSize==='function' ? formatFileSize(video.file_size) : (video.file_size / (1024
+                          * 1024)).toFixed(1) + ' MB' %>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <% }); %>
+            <% } else { %>              
+              <div class="text-center py-12">
+                <div class="text-gray-500 mb-3">
+                  <i class="ti ti-video-off text-4xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-500 mb-1">No videos yet</h3>
+                <p class="text-gray-500 mb-4">Upload your first video to get started</p>
+              </div>
+              <% } %>
+    </div>
+
+    <% if (videos && videos.length > 0) { %>
     <div class="mt-6 flex items-center justify-between">
-      <p class="text-sm text-gray-400">Showing 1-4 of 12 videos</p>
+      <p class="text-sm text-gray-400">Showing 1-<%= Math.min(videos.length, 4) %> of <%= videos.length %> videos</p>
       <div class="flex items-center gap-2">
         <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 text-gray-400">
           <i class="ti ti-chevron-left"></i>
@@ -134,6 +229,7 @@
         </button>
       </div>
     </div>
+    <% } %>
 
 
     <div id="uploadModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity">
@@ -158,48 +254,62 @@
               <div id="uploadDropzone"
                 class="border-2 border-dashed border-gray-600 hover:border-primary/70 rounded-lg p-8 text-center transition-all cursor-pointer"
                 data-state="idle">
-                <div class="flex flex-col items-center justify-center">
-
+                <div class="flex flex-col items-center justify-center">                  
                   <div class="mb-3 transition-all" id="dropzoneIconContainer">
                     <i class="ti ti-upload text-4xl text-gray-500"></i>
-                  </div>
-                  <p class="text-gray-300 mb-2">Drag and drop video files here</p>
-                  <p class="text-gray-500 text-sm mb-4">Or click to browse</p>
+                  </div>                  
+                  <p class="text-gray-300 mb-2">Drag and drop video file(s) here</p>
+                  <p class="text-gray-500 text-sm mb-4">You can select single or multiple files</p>
                   <label
                     class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors inline-block cursor-pointer">
-                    <span>Select files</span>
+                    <span>Choose file(s)</span>
                     <input type="file" name="video" accept="video/mp4,video/avi,video/quicktime" class="hidden"
-                      id="videoFileInput">
+                      id="videoFileInput" multiple>
                   </label>
                   <p class="text-gray-500 text-xs mt-4">Supported formats: MP4, AVI, MOV</p>
                 </div>
-              </div>
-
-              <div id="selectedFileInfo" class="mt-4 hidden">
+              </div>              
+              <div id="selectedFileInfo" class="mt-4 hidden">                
                 <div class="bg-dark-700/50 p-4 rounded-lg border border-gray-600/50">
-                  <div class="flex items-start">
-                    <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
-                      <i class="ti ti-file-video text-blue-400"></i>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                      <p id="selectedFileName" class="font-medium break-words"></p>
-                      <p id="selectedFileSize" class="text-xs text-gray-400 mt-1"></p>
-                    </div>
-                    <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white ml-2 shrink-0">
+                  <div class="flex items-start justify-between mb-2">
+                    <h4 class="font-medium text-white" id="selectedFilesTitle">Selected File(s)</h4>
+                    <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white">
                       <i class="ti ti-x"></i>
                     </button>
                   </div>
+                  <div id="selectedFilesList" class="space-y-2 max-h-32 overflow-y-auto">
+                    <!-- Files will be listed here -->
+                  </div>                  
+                  <div class="mt-3 pt-3 border-t border-gray-600">
+                    <p class="text-sm text-gray-400" id="fileCountSummary">
+                      <span id="totalFilesCount">0</span> file(s) selected • 
+                      <span id="totalFilesSize">0 MB</span> total
+                    </p>
+                  </div>
                 </div>
-              </div>
-
+              </div>              
               <div class="mt-6 hidden" id="uploadProgress">
-                <div class="flex justify-between items-start text-sm mb-1.5">
-                  <span id="uploadProgressFilename" class="break-words mr-2 flex-1 min-w-0">Uploading...</span>
-                  <span id="uploadProgressPercent" class="text-blue-400 ml-2 shrink-0">0%</span>
-                </div>
-                <div class="w-full bg-dark-700 rounded-full h-2.5 overflow-hidden">
-                  <div id="uploadProgressBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
-                    style="width: 0%"></div>
+                <div class="bg-dark-700/50 p-4 rounded-lg border border-gray-600/50">
+                  <!-- Header untuk multiple files -->
+                  <div class="flex justify-between items-center mb-3" id="uploadProgressHeader">
+                    <h4 class="font-medium text-white">Upload Progress</h4>
+                    <span id="overallProgress" class="text-sm text-gray-400">0 / 0</span>
+                  </div>
+                  
+                  <!-- Overall progress bar untuk multiple files -->
+                  <div class="mb-3" id="overallProgressSection">
+                    <div class="flex justify-between text-sm mb-1">
+                      <span class="text-gray-300">Overall Progress</span>
+                      <span id="overallPercentage" class="text-blue-400">0%</span>
+                    </div>
+                    <div class="w-full bg-dark-700 rounded-full h-2">
+                      <div id="overallProgressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                  </div>
+                  
+                  <div class="space-y-2 max-h-48 overflow-y-auto" id="uploadFilesList">
+                    <!-- Individual file progress will be shown here -->
+                  </div>
                 </div>
               </div>
             </form>
@@ -219,14 +329,7 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <div id="toast"
-      class="fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden flex items-center">
-      <i id="toast-icon" class="mr-2"></i>
-      <span id="toast-message"></span>
-    </div>
-
+    </div>    
     <div id="gDriveModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity">
       <div class="flex items-center justify-center min-h-screen p-4">
         <div id="gdriveModalContent"
@@ -280,7 +383,7 @@
           return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
         return `${minutes}:${secs.toString().padStart(2, '0')}`;
-      }
+      }      
       function formatDate(dateString) {
         if (!dateString) return 'Unknown date';
         const date = new Date(dateString);
@@ -288,6 +391,10 @@
           year: 'numeric',
           month: 'short',
           day: 'numeric'
+        }) + ', ' + date.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
         });
       }
       function formatFileSize(bytes) {
@@ -296,30 +403,55 @@
         const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
+      }    
       function showToast(type, message) {
-        const toast = document.getElementById('toast');
-        const toastIcon = document.getElementById('toast-icon');
-        const toastMessage = document.getElementById('toast-message');
-        if (type === 'success') {
-          toastIcon.className = 'ti ti-check text-green-400 mr-2';
-          toast.classList.add('border-l-4', 'border-green-400');
-          toast.classList.remove('border-l-4', 'border-red-400', 'border-yellow-400');
-        } else if (type === 'error') {
-          toastIcon.className = 'ti ti-x text-red-400 mr-2';
-          toast.classList.add('border-l-4', 'border-red-400');
-          toast.classList.remove('border-l-4', 'border-green-400', 'border-yellow-400');
-        } else if (type === 'warning') {
-          toastIcon.className = 'ti ti-alert-triangle text-yellow-400 mr-2';
-          toast.classList.add('border-l-4', 'border-yellow-400');
-          toast.classList.remove('border-l-4', 'border-green-400', 'border-red-400');
-        }
-        toastMessage.textContent = message;
-        toast.classList.remove('hidden');
-        setTimeout(() => {
-          toast.classList.add('hidden');
-        }, 3000);
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-4 right-4 bg-dark-800 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+      
+      let iconClass = '';
+      if (type === 'success') {
+        iconClass = 'ti ti-check text-green-400';
+      } else if (type === 'error') {
+        iconClass = 'ti ti-x text-red-400';
+      } else if (type === 'warning') {
+        iconClass = 'ti ti-alert-triangle text-yellow-400';
+      } else {
+        iconClass = 'ti ti-info-circle text-blue-400';
       }
+      
+      toast.innerHTML = `
+      <div class="flex items-center">
+        <i class="${iconClass} mr-2"></i>
+        <span>${message}</span>
+      </div>
+    `;
+      document.body.appendChild(toast);
+      const style = document.createElement('style');
+      style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(20px); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+      .animate-fade-out {
+        animation: fadeOut 0.3s ease-out forwards;
+      }
+    `;
+      document.head.appendChild(style);
+      setTimeout(() => {
+        toast.classList.remove('animate-fade-in');
+        toast.classList.add('animate-fade-out');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);      
+      }, 3000);
+    }
       function openUploadModal() {
         const modal = document.getElementById('uploadModal');
         const modalContent = document.getElementById('uploadModalContent');
@@ -348,7 +480,7 @@
         document.getElementById('uploadDropzone').classList.remove('hidden');
         document.getElementById('uploadProgress').classList.add('hidden');
         document.getElementById('uploadButton').disabled = true;
-        document.getElementById('uploadProgressBar').style.width = '0%';
+        document.getElementById('overallProgressBar').style.width = '0%';
         const dropzone = document.getElementById('uploadDropzone');
         dropzone.setAttribute('data-state', 'idle');
         dropzone.classList.remove('border-primary', 'bg-primary/5');
@@ -386,182 +518,80 @@
           modal.classList.add('hidden');
           document.body.classList.remove('overflow-hidden');
         }, 200);
-      }
+      }      
       async function checkGDriveAPIKey() {
-        try {
-          const response = await fetch('/api/settings/gdrive-status');
-          const data = await response.json();
-          const modalContent = document.getElementById('gdriveModalBody');
-          if (data.hasApiKey) {
-            modalContent.innerHTML = `
-        <div class="p-6">
-          
-          <div class="text-center mb-5">
-            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-              <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
+        showDirectDownloadInterface();
+      }      
+      function showDirectDownloadInterface() {
+        const modalContent = document.getElementById('gdriveModalBody');        
+        modalContent.innerHTML = `
+          <div class="p-6">
+            <div class="text-center mb-6">
+              <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
+              </div>
+              <h4 class="text-lg font-medium mb-1">Import from Google Drive</h4>
+              <p class="text-gray-400 text-sm">Import video using direct download</p>
             </div>
-            <h4 class="text-lg font-medium mb-1">Import from Google Drive</h4>
-            <p class="text-gray-400 text-sm">Enter a Google Drive link to your video</p>
-          </div>
-          
-          <div class="relative mb-2">
-            <input 
-              type="text" 
-              id="gdrive-link" 
-              class="bg-dark-700 text-white pl-10 pr-4 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
-              placeholder="https://drive.google.com/file/d/..."
-            >
-            <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          </div>
-          <p class="text-xs text-gray-500 mb-4">Make sure the file is shared with <strong>Anyone with the link</strong></p>
-          
-          <button id="import-drive-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
-            <i class="ti ti-download mr-2"></i>
-            <span>Import Video</span>
-          </button>
-        </div>
-      `;
-            document.getElementById('import-drive-button').addEventListener('click', async function () {
-              const link = document.getElementById('gdrive-link').value;
-              if (!link) {
-                showToast('error', 'Please enter a Google Drive link');
-                return;
-              }
-              this.disabled = true;
-              this.innerHTML = `
-          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Processing...
-        `;
-              try {
-                const response = await fetch('/api/videos/import-drive', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
-                  },
-                  body: JSON.stringify({ driveUrl: link })
-                });
-                const result = await response.json();
-                if (result.success) {
-                  showImportProgressModal(result.jobId);
-                  closeGDriveModal();
-                } else {
-                  showToast('error', result.error || 'Failed to import video');
-                  this.disabled = false;
-                  this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
-                }
-              } catch (error) {
-                showToast('error', 'An error occurred while importing the video');
-                this.disabled = false;
-                this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
-              }
-            });
-          } else {
-            modalContent.innerHTML = `
-        <div class="p-6">
-          
-          <div class="text-center mb-5">
-            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-              <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
+            
+            <div class="relative mb-2">
+              <input 
+                type="text" 
+                id="gdrive-link-direct" 
+                class="bg-dark-700 text-white pl-10 pr-4 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
+                placeholder="https://drive.google.com/file/d/..."
+              >
+              <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
             </div>
-            <h4 class="text-lg font-medium mb-1">Connect Google Drive</h4>
-            <p class="text-gray-400 text-sm">API key needed to access Drive videos</p>
+            <p class="text-xs text-gray-500 mb-4">Make sure the file is shared with <strong>Anyone with the link</strong></p>
+            <div class="flex justify-center">
+              <button id="import-drive-direct-button" class="bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
+                <i class="ti ti-download mr-2"></i>
+                <span>Import Video</span>
+              </button>
+            </div>
           </div>
-          
-          <div class="relative mb-2">
-            <input 
-              type="password" 
-              id="gdrive-api-key-setup" 
-              class="bg-dark-700 text-white pl-10 pr-10 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
-              placeholder="Enter your Google Drive API key"
-            >
-            <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <button type="button" id="toggle-api-key-visibility" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
-              <i class="ti ti-eye"></i>
-            </button>
-          </div>
-          <p class="text-xs text-gray-500 mb-4 flex items-center justify-between">
-            <span>Get your API key from the <a href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google Cloud Console</a>.</span> 
-            <a href="https://youtu.be/SS-uOm-ysFE" target="_blank" class="inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-1.5 py-0.5 rounded-md">
-              <i class="ti ti-brand-youtube"></i>
-              <span>Tutorial</span>
-            </a>
-          </p>
-          
-          <button id="save-api-key-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
-            <i class="ti ti-device-floppy mr-2"></i>
-            <span>Save API Key</span>
-          </button>
-        </div>
-      `;
-            document.getElementById('toggle-api-key-visibility').addEventListener('click', function () {
-              const apiKeyField = document.getElementById('gdrive-api-key-setup');
-              const toggleBtn = this.querySelector('i');
-              if (apiKeyField.type === 'password') {
-                apiKeyField.type = 'text';
-                toggleBtn.classList.remove('ti-eye');
-                toggleBtn.classList.add('ti-eye-off');
-              } else {
-                apiKeyField.type = 'password';
-                toggleBtn.classList.remove('ti-eye-off');
-                toggleBtn.classList.add('ti-eye');
-              }
-            });
-            document.getElementById('save-api-key-button').addEventListener('click', async function () {
-              const apiKey = document.getElementById('gdrive-api-key-setup').value;
-              if (!apiKey) {
-                showToast('error', 'Please enter a Google Drive API key');
-                return;
-              }
-              this.disabled = true;
-              this.innerHTML = `
-    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-    Saving...
-  `;
-              try {
-                const response = await fetch('/api/settings/gdrive-api-key', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
-                  },
-                  body: JSON.stringify({ apiKey })
-                });
-                const result = await response.json();
-                if (result.success) {
-                  showToast('success', 'API key saved successfully');
-                  this.innerHTML = `
-        <i class="ti ti-check mr-2"></i>
-        <span>API Key Saved!</span>
-      `;
-                  this.classList.remove('bg-primary', 'hover:bg-primary/90');
-                  this.classList.add('bg-green-500', 'hover:bg-green-600');
-                  
-                  setTimeout(() => {
-                    closeGDriveModal();
-                  }, 1500);
-                } else {
-                  showToast('error', result.error || 'Failed to save API key');
-                  this.disabled = false;
-                  this.innerHTML = `<i class="ti ti-device-floppy mr-2"></i><span>Save API Key</span>`;
-                }
-              } catch (error) {
-                showToast('error', 'An error occurred while saving the API key');
-                this.disabled = false;
-                this.innerHTML = `<i class="ti ti-device-floppy mr-2"></i><span>Save API Key</span>`;
-              }
-            });
+        `;        
+        document.getElementById('import-drive-direct-button').addEventListener('click', async function () {
+          const link = document.getElementById('gdrive-link-direct').value;          
+          if (!link) {
+            showToast('error', 'Please enter a Google Drive link');
+            return;
           }
-        } catch (error) {
-          console.error('Error checking Google Drive API key status:', error);
-          showToast('error', 'Failed to check API key status');
-        }
+          
+          this.disabled = true;
+          this.innerHTML = `
+            <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing...
+          `;
+          
+          try {
+            const response = await fetch('/api/videos/import-drive-direct', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+              },
+              body: JSON.stringify({ driveUrl: link })
+            });
+            const result = await response.json();
+            if (result.success) {
+              showImportProgressModal(result.jobId);
+              closeGDriveModal();              
+            } else {
+              showToast('error', result.error || 'Failed to import video');
+              this.disabled = false;
+              this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
+            }
+          } catch (error) {
+            showToast('error', 'An error occurred while importing video');
+            this.disabled = false;
+            this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
+          }
+        });
       }
       function openVideoPreviewModal(title, videoSrc, details) {
         document.querySelector('#videoPreviewModal .video-title').textContent = title;
@@ -577,65 +607,712 @@
         videoPlayer.pause();
         document.getElementById('videoPreviewModal').classList.add('hidden');
         document.body.style.overflow = 'auto';
-      }
-
+      }      
       function playVideo(videoId, videoTitle) {
         const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity';
+        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-sm transition-all duration-300';
         modal.id = 'video-player-modal';
+        
         modal.innerHTML = `
-        <div class="relative w-full max-w-4xl mx-auto">
-          <div class="bg-dark-800 rounded-lg overflow-hidden shadow-xl">
+        <!-- Modal Backdrop -->
+        <div class="absolute inset-0 bg-black/80"></div>
+        
+        <!-- Modal Content -->
+        <div class="relative w-full h-auto md:max-w-7xl mx-auto p-2 md:p-4 transform transition-all duration-300 opacity-0 scale-95 z-10 max-w-4xl" id="player-container">
+          <div class="bg-gradient-to-br from-dark-800/95 to-dark-900/95 backdrop-blur-xl rounded-lg md:rounded-2xl overflow-hidden shadow-2xl border border-gray-700/50 h-auto flex flex-col max-h-[90vh]">
             
-            <div class="flex items-center justify-between p-4 border-b border-gray-600">
-              <div class="flex items-center">
-                <h3 class="text-lg font-medium">${videoTitle || 'Now Playing'}</h3>
+            <!-- Enhanced Mobile-First Header -->
+            <div class="flex items-center justify-between p-3 md:p-6 bg-gradient-to-r from-dark-800/80 to-dark-700/80 border-b border-gray-600/30 flex-shrink-0">
+              <div class="flex items-center min-w-0 flex-1">
+                <div class="w-8 h-8 md:w-12 md:h-12 rounded-lg md:rounded-xl bg-gradient-to-br from-primary/20 to-blue-600/20 flex items-center justify-center mr-2 md:mr-4 flex-shrink-0">
+                  <i class="ti ti-player-play text-primary text-sm md:text-xl"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h3 class="text-sm md:text-xl font-semibold text-white truncate mb-0 md:mb-1 leading-tight">${videoTitle || 'Now Playing'}</h3>                  
+                  <div class="hidden md:flex items-center gap-4 text-sm text-gray-400">
+                    <span class="flex items-center gap-1">
+                      <i class="ti ti-clock-hour-3 text-xs"></i>
+                      <span id="video-duration">--:--</span>
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <i class="ti ti-device-tv text-xs"></i>
+                      <span id="video-resolution">Loading...</span>
+                    </span>
+                  </div>                  
+                  <!-- Mobile Stats Row -->
+                  <div class="flex md:hidden items-center gap-3 text-xs text-gray-400 mt-1">
+                    <span id="video-duration-mobile">--:--</span>
+                    <span class="text-gray-600">•</span>
+                    <span id="video-resolution-mobile">Loading...</span>
+                    <span class="text-gray-600">•</span>
+                    <span id="video-fps-mobile">30fps</span>
+                    <span class="text-gray-600">•</span>
+                    <span>MP4</span>
+                  </div>
+                </div>
+              </div>              
+              <div class="flex items-center gap-1 md:gap-3 ml-2 md:ml-4">
+                <button id="fullscreen-btn" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-200" title="Fullscreen">
+                  <i class="ti ti-maximize text-sm md:text-lg"></i>
+                </button>
+                <button id="close-player-btn" class="w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center text-gray-400 hover:text-white hover:bg-red-500/20 hover:text-red-400 transition-all duration-200" title="Close">
+                  <i class="ti ti-x text-sm md:text-lg"></i>
+                </button>
               </div>
-              <button id="close-player-btn" class="rounded-full w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
-                <i class="ti ti-x"></i>
-              </button>
             </div>
-            
-            <div class="bg-dark-700 flex justify-center" style="height: 53vh; max-height: 600px;">
-              <video 
-                id="native-player"
-                class="h-full max-h-full max-w-full object-contain"
-                controls 
-                preload="auto"
-                autoplay
-              >
-                <source src="/stream/${videoId}" type="video/mp4">
-                Your browser does not support HTML5 video.
-              </video>
+              <!-- Responsive Video Container -->
+            <div class="relative bg-black flex-1 md:flex-none video-container-mobile md:video-container-desktop" style="min-height: 200px;">
+              <!-- Mobile: Centered aspect ratio container, Desktop: Aspect ratio -->
+              <div class="absolute inset-0 md:relative md:inset-auto" style="aspect-ratio: 16/9; min-height: 200px;">
+                <video 
+                  id="native-player"
+                  class="w-full h-full object-contain"
+                  preload="auto"
+                  autoplay
+                  controlsList="nodownload"
+                  disablePictureInPicture
+                  playsinline
+                  webkit-playsinline
+                >
+                  <source src="/stream/${videoId}" type="video/mp4">
+                  Your browser does not support HTML5 video.
+                </video>
+              </div>
+              
+              <!-- Beautiful Loading Overlay -->
+              <div id="loading-overlay" class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-black/90 to-gray-900/90 backdrop-blur-sm">
+                <div class="text-center px-4">
+                  <div class="relative w-16 md:w-20 h-16 md:h-20 mx-auto mb-4 md:mb-6">
+                    <div class="absolute inset-0 border-3 md:border-4 border-primary/30 rounded-full"></div>
+                    <div class="absolute inset-0 border-3 md:border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
+                    <div class="absolute inset-2 flex items-center justify-center">
+                      <i class="ti ti-player-play text-primary text-lg md:text-xl"></i>
+                    </div>
+                  </div>
+                  <h4 class="text-white text-lg md:text-xl font-semibold mb-2">Loading Video</h4>
+                  <p class="text-gray-300 text-sm mb-4">Preparing your content...</p>
+                  <div class="flex items-center justify-center gap-2 text-xs text-gray-400">
+                    <div class="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                    <div class="w-2 h-2 bg-primary rounded-full animate-pulse" style="animation-delay: 0.2s"></div>
+                    <div class="w-2 h-2 bg-primary rounded-full animate-pulse" style="animation-delay: 0.4s"></div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Error State -->
+              <div id="error-overlay" class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-black/90 to-red-900/20 backdrop-blur-sm hidden">
+                <div class="text-center max-w-md mx-auto p-4 md:p-6">
+                  <div class="w-16 md:w-20 h-16 md:h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-4 md:mb-6 mx-auto">
+                    <i class="ti ti-alert-triangle text-red-400 text-2xl md:text-3xl"></i>
+                  </div>
+                  <h4 class="text-white text-lg md:text-xl font-semibold mb-2">Failed to Load Video</h4>
+                  <p class="text-gray-300 text-sm mb-4">There was an error loading this video. Please try again later.</p>
+                  <button id="retry-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 md:px-6 py-2 rounded-lg transition-colors font-medium text-sm md:text-base">
+                    <i class="ti ti-refresh mr-2"></i>
+                    Retry
+                  </button>
+                </div>
+              </div>
+                <!-- Mobile Controls Overlay -->
+              <div id="mobile-controls" class="md:hidden absolute inset-0 pointer-events-none">
+                <div class="absolute bottom-4 left-4 right-4 pointer-events-auto">
+                  <div class="bg-black/70 backdrop-blur-sm rounded-lg p-3 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                      <button id="mobile-play-pause" class="w-10 h-10 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center text-primary">
+                        <i class="ti ti-player-pause text-lg"></i>
+                      </button>
+                      <div class="text-white text-sm">
+                        <div class="font-medium truncate max-w-32" id="mobile-title">${videoTitle || 'Now Playing'}</div>
+                        <div class="text-xs text-gray-300" id="mobile-time">00:00 / 00:00</div>
+                      </div>
+                    </div>                    
+                    <div class="flex items-center gap-2">
+                      <button id="mobile-volume" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-white">
+                        <i class="ti ti-volume text-sm"></i>
+                      </button>
+                      <div class="mobile-volume-slider relative w-12 h-6 flex items-center cursor-pointer" id="mobile-volume-container">                        
+                        <div class="w-full h-1 bg-white/30 rounded-full relative" id="mobile-volume-bar">
+                          <div class="h-full bg-primary rounded-full transition-all duration-100 ease-out" id="mobile-volume-fill" style="width: 100%"></div>
+                          <div class="absolute w-2 h-2 bg-white rounded-full shadow-sm top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-100 ease-out" id="mobile-volume-thumb" style="left: 100%"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+                <!-- Desktop Controls Overlay -->
+              <div id="desktop-controls" class="hidden md:block absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300">
+                <div class="absolute bottom-4 left-4 right-4 pointer-events-auto">
+                  <div class="bg-gradient-to-t from-black/80 via-black/40 to-transparent rounded-lg p-4">
+                    <!-- Progress Bar -->
+                    <div class="mb-3">                      
+                      <div class="relative h-1 bg-white/30 rounded-full cursor-pointer group" id="progress-bar">
+                        <div class="absolute h-full bg-primary rounded-full transition-all duration-100 ease-out" id="progress-fill" style="width: 0%"></div>
+                        <div class="absolute w-2 h-2 bg-primary rounded-full shadow-sm top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-100 ease-out opacity-0 group-hover:opacity-100" id="progress-thumb" style="left: 0%"></div>
+                      </div>
+                    </div>
+                    
+                    <!-- Control Buttons -->
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                        <button id="desktop-play-pause" class="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-all duration-200">
+                          <i class="ti ti-player-pause text-lg"></i>
+                        </button>
+                          <div class="flex items-center gap-2">                          
+                            <button id="desktop-volume-btn" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-colors">
+                            <i class="ti ti-volume text-sm"></i>
+                          </button>                          
+                          <div class="volume-slider-container relative w-12 h-6 flex items-center cursor-pointer" id="volume-container">                            
+                            <div class="w-full h-1 bg-white/30 rounded-full relative" id="volume-bar">
+                              <div class="h-full bg-primary rounded-full transition-all duration-100 ease-out" id="volume-fill" style="width: 100%"></div>
+                              <div class="absolute w-2 h-2 bg-white rounded-full shadow-sm top-1/2 -translate-y-1/2 -translate-x-1/2 transition-all duration-100 ease-out" id="volume-thumb" style="left: 100%"></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="text-white text-sm" id="desktop-time">
+                          <span id="current-time">0:00</span> / <span id="total-time">0:00</span>
+                        </div>                      
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>            
+            <!-- Enhanced Footer with Stats - Hidden on Mobile -->
+            <div class="hidden md:block px-6 py-4 bg-gradient-to-r from-dark-800/60 to-dark-700/60 border-t border-gray-600/30 flex-shrink-0">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-6 text-sm">
+                  <div class="flex items-center gap-2 text-gray-300">
+                    <i class="ti ti-device-desktop text-primary text-sm"></i>
+                    <span id="video-fps">30fps</span>
+                  </div>
+                  <div class="flex items-center gap-2 text-gray-300">
+                    <i class="ti ti-file-type-video text-primary text-sm"></i>
+                    <span>MP4</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      `;
-        document.body.appendChild(modal);
+      `;        
+      document.body.appendChild(modal);
         document.body.classList.add('overflow-hidden');
-        document.getElementById('close-player-btn').addEventListener('click', function () {
-          const videoElement = document.getElementById('native-player');
-          if (videoElement) videoElement.pause();
-          document.getElementById('video-player-modal').remove();
-          document.body.classList.remove('overflow-hidden');
+        
+        setTimeout(() => {
+          const container = document.getElementById('player-container');
+          container.classList.remove('opacity-0', 'scale-95');
+          container.classList.add('opacity-100', 'scale-100');
+        }, 50);
+          const video = document.getElementById('native-player');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const errorOverlay = document.getElementById('error-overlay');
+        const durationSpan = document.getElementById('video-duration');
+        const durationSpanMobile = document.getElementById('video-duration-mobile');        
+        const resolutionSpan = document.getElementById('video-resolution');
+        const resolutionSpanMobile = document.getElementById('video-resolution-mobile');
+        const fpsSpan = document.getElementById('video-fps');
+        const fpsSpanMobile = document.getElementById('video-fps-mobile');        
+        const mobileControls = document.getElementById('mobile-controls');
+        const mobilePlayPause = document.getElementById('mobile-play-pause');
+        const mobileTime = document.getElementById('mobile-time');
+        const mobileVolume = document.getElementById('mobile-volume');
+        const mobileVolumeContainer = document.getElementById('mobile-volume-container');
+        const mobileVolumeBar = document.getElementById('mobile-volume-bar');
+        const mobileVolumeFill = document.getElementById('mobile-volume-fill');
+        const mobileVolumeThumb = document.getElementById('mobile-volume-thumb');
+          
+        const desktopControls = document.getElementById('desktop-controls');
+        const desktopPlayPause = document.getElementById('desktop-play-pause');
+        const desktopVolumeBtn = document.getElementById('desktop-volume-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressFill = document.getElementById('volume-fill');
+        const progressThumb = document.getElementById('progress-thumb');
+        const volumeBar = document.getElementById('volume-bar');
+        const volumeFill = document.getElementById('volume-fill');
+        const volumeThumb = document.getElementById('volume-thumb');
+        const currentTimeSpan = document.getElementById('current-time');
+        const totalTimeSpan = document.getElementById('total-time');
+          let controlsTimeout;
+        let isMobile = window.innerWidth < 768;
+        
+        function showMobileControls() {
+          if (!isMobile) return;
+          mobileControls.style.opacity = '1';
+          clearTimeout(controlsTimeout);
+          controlsTimeout = setTimeout(() => {
+            if (!video.paused) {
+              mobileControls.style.opacity = '0';
+            }
+          }, 3000);
+        }
+        
+        function showDesktopControls() {
+          if (isMobile) return;
+          desktopControls.style.opacity = '1';
+          clearTimeout(controlsTimeout);
+          controlsTimeout = setTimeout(() => {
+            if (!video.paused) {
+              desktopControls.style.opacity = '0';
+            }
+          }, 3000);
+        }
+        
+        function formatTime(seconds) {
+          const minutes = Math.floor(seconds / 60);
+          const secs = Math.floor(seconds % 60);
+          return `${minutes}:${secs.toString().padStart(2, '0')}`;
+        }
+        if (isMobile) {
+          video.addEventListener('touchstart', showMobileControls);
+          video.addEventListener('click', showMobileControls);
+          mobileControls.style.transition = 'opacity 0.3s ease';
+          showMobileControls();
+        } else {
+          video.addEventListener('mousemove', showDesktopControls);
+          video.addEventListener('click', showDesktopControls);
+          desktopControls.addEventListener('mouseenter', () => {
+            clearTimeout(controlsTimeout);
+            desktopControls.style.opacity = '1';
+          });
+          desktopControls.addEventListener('mouseleave', () => {
+            if (!video.paused) {
+              controlsTimeout = setTimeout(() => {
+                desktopControls.style.opacity = '0';
+              }, 1000);
+            }
+          });
+          showDesktopControls();
+        }
+        
+        mobilePlayPause.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (video.paused) {
+            video.play();
+            mobilePlayPause.innerHTML = '<i class="ti ti-player-pause text-lg"></i>';
+          } else {
+            video.pause();
+            mobilePlayPause.innerHTML = '<i class="ti ti-player-play text-lg"></i>';
+          }
+          showMobileControls();
+        });        
+        mobileVolume.addEventListener('click', (e) => {
+          e.stopPropagation();
+          video.muted = !video.muted;
+          updateMobileVolumeDisplay();
+          showMobileControls();
         });
+
+        let isMobileDraggingVolume = false;
+        
+        function updateMobileVolumeFromEvent(e) {
+          const rect = mobileVolumeBar.getBoundingClientRect();
+          const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          video.volume = percent;
+          if (percent > 0) video.muted = false;
+          updateMobileVolumeDisplay();
+          showMobileControls();
+        }
+        
+        mobileVolumeContainer.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          isMobileDraggingVolume = true;
+          const touch = e.touches[0];
+          updateMobileVolumeFromEvent(touch);
+        });
+        
+        mobileVolumeContainer.addEventListener('touchmove', (e) => {
+          if (isMobileDraggingVolume) {
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.touches[0];
+            updateMobileVolumeFromEvent(touch);
+          }
+        });
+        
+        mobileVolumeContainer.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          isMobileDraggingVolume = false;
+        });
+          mobileVolumeContainer.addEventListener('click', (e) => {
+          e.stopPropagation();
+          updateMobileVolumeFromEvent(e);
+        });
+
+        function updateMobileVolumeDisplay() {
+          const volumePercent = video.muted ? 0 : video.volume * 100;
+          mobileVolumeFill.style.width = volumePercent + '%';
+          
+          if (mobileVolumeThumb) {
+            mobileVolumeThumb.style.left = volumePercent + '%';
+          }
+          
+          if (video.muted || video.volume === 0) {
+            mobileVolume.innerHTML = '<i class="ti ti-volume-off text-sm"></i>';
+          } else {
+            mobileVolume.innerHTML = '<i class="ti ti-volume text-sm"></i>';
+          }
+        }
+
+        if (!isMobile) {
+          desktopPlayPause.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (video.paused) {
+              video.play();
+              desktopPlayPause.innerHTML = '<i class="ti ti-player-pause text-lg"></i>';
+            } else {
+              video.pause();
+              desktopPlayPause.innerHTML = '<i class="ti ti-player-play text-lg"></i>';
+            }
+            showDesktopControls();
+          });
+          
+          desktopVolumeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            video.muted = !video.muted;
+            updateVolumeDisplay();
+            showDesktopControls();
+          });
+          
+          progressBar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = progressBar.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            video.currentTime = percent * video.duration;
+            showDesktopControls();
+          });
+          let isDraggingVolume = false;
+          const volumeContainer = document.getElementById('volume-container');
+          
+          function updateVolumeFromEvent(e) {
+            const rect = volumeBar.getBoundingClientRect();
+            const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            video.volume = percent;
+            if (percent > 0) video.muted = false;
+            updateVolumeDisplay();
+            showDesktopControls();
+          }
+          
+          volumeContainer.addEventListener('mouseenter', () => {
+            volumeTooltip.style.opacity = '1';
+          });
+          
+          volumeContainer.addEventListener('mouseleave', () => {
+            if (!isDraggingVolume) {
+              volumeTooltip.style.opacity = '0';
+            }
+          });
+          
+          volumeContainer.addEventListener('mousemove', (e) => {
+            if (isDraggingVolume) {
+              updateVolumeFromEvent(e);
+            }
+          });
+          
+          volumeContainer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            isDraggingVolume = true;
+            updateVolumeFromEvent(e);
+            volumeContainer.style.cursor = 'grabbing';
+          });
+          
+          document.addEventListener('mousemove', (e) => {
+            if (isDraggingVolume) {
+              updateVolumeFromEvent(e);
+            }
+          });
+          
+          document.addEventListener('mouseup', () => {
+            if (isDraggingVolume) {
+              isDraggingVolume = false;
+              volumeContainer.style.cursor = 'pointer';
+              volumeTooltip.style.opacity = '0';
+            }
+          });
+          volumeBar.addEventListener('click', (e) => {
+            if (!isDraggingVolume) {
+              e.stopPropagation();
+              updateVolumeFromEvent(e);
+            }
+          });
+          
+          volumeContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const delta = e.deltaY > 0 ? -0.05 : 0.05;
+            video.volume = Math.max(0, Math.min(1, video.volume + delta));
+            if (video.volume > 0) video.muted = false;
+            updateVolumeDisplay();
+            showDesktopControls();
+          });
+        }
+        function updateVolumeDisplay() {
+          if (!isMobile) {
+            const volumePercent = video.muted ? 0 : video.volume * 100;
+            volumeFill.style.width = volumePercent + '%';
+            
+            if (volumeThumb) {
+              volumeThumb.style.left = volumePercent + '%';
+            }
+          }
+        }
+        
+        function updateMobileVolumeDisplay() {
+          const volumePercent = video.muted ? 0 : video.volume * 100;
+          mobileVolumeFill.style.width = volumePercent + '%';
+          
+          if (mobileVolumeThumb) {
+            mobileVolumeThumb.style.left = volumePercent + '%';
+          }
+          
+          if (video.muted || video.volume === 0) {
+            mobileVolume.innerHTML = '<i class="ti ti-volume-off text-sm"></i>';
+          } else {
+            mobileVolume.innerHTML = '<i class="ti ti-volume text-sm"></i>';
+          }
+        }
+
+        video.addEventListener('loadstart', () => {
+          loadingOverlay.classList.remove('hidden');
+          errorOverlay.classList.add('hidden');
+        });
+        
+        video.addEventListener('canplay', () => {
+          loadingOverlay.classList.add('hidden');
+        });
+          video.addEventListener('loadedmetadata', () => {
+          const duration = video.duration;
+          if (duration && !isNaN(duration)) {
+            const hours = Math.floor(duration / 3600);
+            const minutes = Math.floor((duration % 3600) / 60);
+            const seconds = Math.floor(duration % 60);
+            
+            let formattedDuration;
+            if (hours > 0) {
+              formattedDuration = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            } else {
+              formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+            
+            if (durationSpan) durationSpan.textContent = formattedDuration;
+            if (durationSpanMobile) durationSpanMobile.textContent = formattedDuration;
+            if (totalTimeSpan) totalTimeSpan.textContent = formatTime(duration);
+          }
+          
+          if (video.videoWidth && video.videoHeight) {
+            const quality = video.videoHeight >= 1080 ? 'FHD' : video.videoHeight >= 720 ? 'HD' : 'SD';
+            const resolutionText = isMobile ? quality : `${video.videoWidth}x${video.videoHeight} (${quality})`;
+            if (resolutionSpan) resolutionSpan.textContent = resolutionText;
+            if (resolutionSpanMobile) resolutionSpanMobile.textContent = quality;
+          } else {
+            if (resolutionSpan) resolutionSpan.textContent = 'Standard';
+            if (resolutionSpanMobile) resolutionSpanMobile.textContent = 'SD';
+          }
+          
+          updateVolumeDisplay();
+        });
+          video.addEventListener('timeupdate', () => {
+          const current = video.currentTime;
+          const duration = video.duration;
+          
+          if (isMobile && mobileTime) {
+            const formatTime = (time) => {
+              const minutes = Math.floor(time / 60);
+              const seconds = Math.floor(time % 60);
+              return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            };
+            
+            if (duration && !isNaN(duration)) {
+              mobileTime.textContent = `${formatTime(current)} / ${formatTime(duration)}`;
+            }
+          } else if (!isMobile) {
+            if (currentTimeSpan) currentTimeSpan.textContent = formatTime(current);
+            
+            if (duration && !isNaN(duration)) {
+              const progressPercent = (current / duration) * 100;
+              progressFill.style.width = progressPercent + '%';
+              progressThumb.style.left = progressPercent + '%';
+            }
+          }
+        });
+          video.addEventListener('play', () => {
+          if (mobilePlayPause) {
+            mobilePlayPause.innerHTML = '<i class="ti ti-player-pause text-lg"></i>';
+          }
+          if (!isMobile && desktopPlayPause) {
+            desktopPlayPause.innerHTML = '<i class="ti ti-player-pause text-lg"></i>';
+          }
+        });
+        
+        video.addEventListener('pause', () => {
+          if (mobilePlayPause) {
+            mobilePlayPause.innerHTML = '<i class="ti ti-player-play text-lg"></i>';
+          }
+          if (!isMobile && desktopPlayPause) {
+            desktopPlayPause.innerHTML = '<i class="ti ti-player-play text-lg"></i>';
+            desktopControls.style.opacity = '1';
+          }
+          if (isMobile) {
+            mobileControls.style.opacity = '1';
+          }
+        });
+          video.addEventListener('volumechange', () => {
+          if (mobileVolume) {
+            mobileVolume.innerHTML = video.muted ? 
+              '<i class="ti ti-volume-off text-sm"></i>' : 
+              '<i class="ti ti-volume text-sm"></i>';
+          }
+          updateVolumeDisplay();
+        });
+          video.addEventListener('error', () => {
+          loadingOverlay.classList.add('hidden');
+          errorOverlay.classList.remove('hidden');
+        });
+        
+        document.addEventListener('keydown', (e) => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+          
+          switch(e.key) {
+            case ' ':
+              e.preventDefault();
+              if (video.paused) {
+                video.play();
+              } else {
+                video.pause();
+              }
+              break;
+            case 'ArrowUp':
+              e.preventDefault();
+              video.volume = Math.min(1, video.volume + 0.1);
+              video.muted = false;
+              updateVolumeDisplay();
+              showDesktopControls();
+              break;
+            case 'ArrowDown':
+              e.preventDefault();
+              video.volume = Math.max(0, video.volume - 0.1);
+              updateVolumeDisplay();
+              showDesktopControls();
+              break;
+            case 'ArrowLeft':
+              e.preventDefault();
+              video.currentTime = Math.max(0, video.currentTime - 10);
+              showDesktopControls();
+              break;
+            case 'ArrowRight':
+              e.preventDefault();
+              video.currentTime = Math.min(video.duration, video.currentTime + 10);
+              showDesktopControls();
+              break;
+            case 'm':
+            case 'M':
+              e.preventDefault();
+              video.muted = !video.muted;
+              updateVolumeDisplay();
+              showDesktopControls();
+              break;
+            case 'f':
+            case 'F':
+              e.preventDefault();
+              if (document.fullscreenElement) {
+                document.exitFullscreen();
+              } else if (video.requestFullscreen) {
+                video.requestFullscreen();
+              }
+              break;
+          }
+        });
+        
+        document.getElementById('retry-btn').addEventListener('click', () => {
+          errorOverlay.classList.add('hidden');
+          loadingOverlay.classList.remove('hidden');
+          video.load();
+        });
+        document.getElementById('close-player-btn').addEventListener('click', function () {
+          closePlayer();
+        });
+        
+        document.getElementById('fullscreen-btn').addEventListener('click', function () {
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
+          } else if (video.requestFullscreen) {
+            video.requestFullscreen();
+          } else if (video.webkitRequestFullscreen) {
+            video.webkitRequestFullscreen();
+          } else if (video.msRequestFullscreen) {
+            video.msRequestFullscreen();
+          } else {
+            showToast('error', 'Fullscreen not supported');
+          }
+        });
+        window.addEventListener('resize', () => {
+          const newIsMobile = window.innerWidth < 768;
+          if (newIsMobile !== isMobile) {
+            isMobile = newIsMobile;
+            if (isMobile) {
+              desktopControls.style.opacity = '0';
+              showMobileControls();
+            } else {
+              mobileControls.style.opacity = '0';
+              showDesktopControls();
+            }
+          }
+        });
+        
         document.addEventListener('keydown', function escapeHandler(e) {
           if (e.key === 'Escape') {
-            const videoElement = document.getElementById('native-player');
-            if (videoElement) videoElement.pause();
-            document.getElementById('video-player-modal').remove();
-            document.body.classList.remove('overflow-hidden');
+            closePlayer();
             document.removeEventListener('keydown', escapeHandler);
+          } else if (!isMobile) {
+            if (e.key === ' ' || e.key === 'Spacebar') {
+              e.preventDefault();
+              if (video.paused) {
+                video.play();
+              } else {
+                video.pause();
+              }            
+            } else if (e.key === 'f' || e.key === 'F') {
+              e.preventDefault();
+              document.getElementById('fullscreen-btn').click();
+            } else if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              video.volume = Math.min(1, video.volume + 0.1);
+            } else if (e.key === 'ArrowDown') {
+              e.preventDefault();
+              video.volume = Math.max(0, video.volume - 0.1);
+            } else if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              video.currentTime = Math.max(0, video.currentTime - 10);
+            } else if (e.key === 'ArrowRight') {
+              e.preventDefault();
+              video.currentTime = Math.min(video.duration, video.currentTime + 10);
+            } else if (e.key === 'm' || e.key === 'M') {
+              e.preventDefault();
+              video.muted = !video.muted;
+            }
           }
         });
         modal.addEventListener('click', function (e) {
-          if (e.target === modal) {
-            const videoElement = document.getElementById('native-player');
-            if (videoElement) videoElement.pause();
-            document.getElementById('video-player-modal').remove();
-            document.body.classList.remove('overflow-hidden');
+          if (e.target === modal || e.target.classList.contains('bg-black/80')) {
+            closePlayer();
           }
         });
+        
+        function closePlayer() {
+          const container = document.getElementById('player-container');
+          container.classList.remove('opacity-100', 'scale-100');
+          container.classList.add('opacity-0', 'scale-95');
+          
+          setTimeout(() => {
+            if (video) video.pause();
+            modal.remove();
+            document.body.classList.remove('overflow-hidden');
+          }, 200);
+        }
       }
 
       function deleteVideo(videoId, videoTitle) {
@@ -686,88 +1363,309 @@
             });
         }
       }
-      document.addEventListener('DOMContentLoaded', function () {
+      document.addEventListener('DOMContentLoaded', function () {        
         function formatFileSize(bytes) {
           if (bytes === 0) return '0 Bytes';
           const k = 1024;
           const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
           const i = Math.floor(Math.log(bytes) / Math.log(k));
           return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+        }        
         const videoFileInput = document.getElementById('videoFileInput');
         const selectedFileInfo = document.getElementById('selectedFileInfo');
-        const selectedFileName = document.getElementById('selectedFileName');
-        const selectedFileSize = document.getElementById('selectedFileSize');
+        const selectedFilesList = document.getElementById('selectedFilesList');
+        const totalFilesCount = document.getElementById('totalFilesCount');
+        const totalFilesSize = document.getElementById('totalFilesSize');
         const clearFileButton = document.getElementById('clearFileButton');
         const uploadDropzone = document.getElementById('uploadDropzone');
         const uploadButton = document.getElementById('uploadButton');
         const uploadProgress = document.getElementById('uploadProgress');
-        const uploadProgressBar = document.getElementById('uploadProgressBar');
-        const uploadProgressPercent = document.getElementById('uploadProgressPercent');
-        const uploadProgressFilename = document.getElementById('uploadProgressFilename');
+        const overallProgressBar = document.getElementById('overallProgressBar');
+        const overallPercentage = document.getElementById('overallPercentage');
+        const overallProgress = document.getElementById('overallProgress');
+        const uploadFilesList = document.getElementById('uploadFilesList');
+        
+        let selectedFiles = [];
+        
         videoFileInput.addEventListener('change', function () {
-          if (this.files.length > 0) {
-            const file = this.files[0];
-            selectedFileName.textContent = file.name;
-            selectedFileSize.textContent = formatFileSize(file.size);
+          selectedFiles = Array.from(this.files);
+          updateSelectedFilesDisplay();
+        });
+          function updateSelectedFilesDisplay() {
+          if (selectedFiles.length > 0) {
             uploadDropzone.classList.add('hidden');
             selectedFileInfo.classList.remove('hidden');
             uploadButton.disabled = false;
+            
+            const selectedFilesTitle = document.getElementById('selectedFilesTitle');
+            if (selectedFiles.length === 1) {
+              selectedFilesTitle.textContent = 'Selected File';
+            } else {
+              selectedFilesTitle.textContent = 'Selected Files';
+            }
+            
+            selectedFilesList.innerHTML = '';
+            let totalSize = 0;
+            
+            selectedFiles.forEach((file, index) => {
+              totalSize += file.size;
+              const fileItem = document.createElement('div');
+              fileItem.className = 'flex items-center p-2 bg-dark-800 rounded border border-gray-600';              
+              fileItem.innerHTML = `
+                <div class="w-8 h-8 rounded bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
+                  <i class="ti ti-video text-blue-400 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium break-words">${file.name}</p>
+                  <p class="text-xs text-gray-400">${formatFileSize(file.size)}</p>
+                </div>
+                <button type="button" onclick="removeFile(${index})" class="text-gray-400 hover:text-red-400 ml-2 shrink-0">
+                  <i class="ti ti-x text-sm"></i>
+                </button>
+              `;
+              selectedFilesList.appendChild(fileItem);
+            });
+              totalFilesCount.textContent = selectedFiles.length;
+            totalFilesSize.textContent = formatFileSize(totalSize);
+            
+            const fileCountText = selectedFiles.length === 1 ? 'file selected' : 'files selected';
+            const fileCountSummary = document.getElementById('fileCountSummary');
+            fileCountSummary.innerHTML = `
+              <span id="totalFilesCount">${selectedFiles.length}</span> ${fileCountText} • 
+              <span id="totalFilesSize">${formatFileSize(totalSize)}</span> total
+            `;
+          } else {
+            uploadDropzone.classList.remove('hidden');
+            selectedFileInfo.classList.add('hidden');
+            uploadButton.disabled = true;
           }
-        });
+        }
+        
+        function removeFile(index) {
+          selectedFiles.splice(index, 1);
+          updateSelectedFilesDisplay();
+        }
+        
+        window.removeFile = removeFile;        
         uploadButton.addEventListener('click', function () {
-          if (videoFileInput.files.length === 0) {
+          if (selectedFiles.length === 0) {
             return;
           }
-          const file = videoFileInput.files[0];
-          const formData = new FormData();
-          formData.append('video', file);
+          
           uploadDropzone.classList.add('hidden');
           selectedFileInfo.classList.add('hidden');
           uploadProgress.classList.remove('hidden');
-          uploadProgressFilename.textContent = file.name;
           uploadButton.disabled = true;
-          const xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener('progress', (event) => {
-            if (event.lengthComputable) {
-              const percentComplete = Math.round((event.loaded / event.total) * 100);
-              uploadProgressBar.style.width = percentComplete + '%';
-              uploadProgressPercent.textContent = percentComplete + '%';
-            }
-          });
-          xhr.addEventListener('load', function () {
-            if (xhr.status === 200) {
+          
+          uploadMultipleFiles(selectedFiles);
+        });
+        
+        async function uploadMultipleFiles(files) {
+          let completedFiles = 0;
+          let failedFiles = 0;
+          const totalFiles = files.length;
+          const isSingleFile = totalFiles === 1;
+          
+          const uploadProgressHeader = document.getElementById('uploadProgressHeader');
+          const overallProgressSection = document.getElementById('overallProgressSection');
+          
+          if (isSingleFile) {
+            uploadProgressHeader.style.display = 'none';
+            overallProgressSection.style.display = 'none';
+          } else {
+            uploadProgressHeader.style.display = 'flex';
+            overallProgressSection.style.display = 'block';
+          }
+          
+          uploadFilesList.innerHTML = '';
+          overallProgress.textContent = `0 / ${totalFiles}`;
+          overallPercentage.textContent = '0%';
+          overallProgressBar.style.width = '0%';
+          
+          if (isSingleFile) {
+            const file = files[0];
+            const progressItem = document.createElement('div');
+            progressItem.className = 'bg-dark-700/50 p-4 rounded-lg border border-gray-600/50';
+            progressItem.innerHTML = `
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                  <i class="ti ti-upload text-blue-400 text-xl"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-white truncate mb-1">${file.name}</p>
+                  <p id="single-status" class="text-xs text-gray-300">Preparing upload...</p>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <span id="single-progress" class="text-lg font-medium text-blue-400">0%</span>
+                </div>
+              </div>
+              <div class="w-full bg-dark-700 rounded-full h-2 mt-3">
+                <div id="single-progressbar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            `;
+            uploadFilesList.appendChild(progressItem);
+          } else {
+            const progressItems = files.map((file, index) => {
+              const progressItem = document.createElement('div');
+              progressItem.className = 'bg-dark-800 p-3 rounded border border-gray-600';
+              progressItem.innerHTML = `
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium truncate mr-2">${file.name}</span>
+                  <span class="text-xs text-gray-400" id="progress-${index}">0%</span>
+                </div>
+                <div class="w-full bg-dark-700 rounded-full h-1.5">
+                  <div id="progressbar-${index}" class="bg-blue-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div class="mt-1">
+                  <span id="status-${index}" class="text-xs text-gray-500">Waiting...</span>
+                </div>
+              `;
+              uploadFilesList.appendChild(progressItem);
+              return progressItem;
+            });
+          }
+          
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            
+            if (isSingleFile) {
+              const statusElement = document.getElementById('single-status');
+              const progressElement = document.getElementById('single-progress');
+              const progressBarElement = document.getElementById('single-progressbar');
+              
               try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                  showToast('success', 'Video uploaded successfully');
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 1000);
+                statusElement.textContent = 'Uploading...';
+                
+                const result = await uploadSingleFile(file, (progress) => {
+                  progressElement.textContent = `${progress}%`;
+                  progressBarElement.style.width = `${progress}%`;
+                });
+                
+                if (result.success) {
+                  completedFiles++;
+                  statusElement.textContent = 'Upload completed successfully';
+                  progressBarElement.classList.remove('bg-blue-500');
+                  progressBarElement.classList.add('bg-green-500');
                 } else {
-                  showToast('error', response.error || 'Upload failed');
-                  resetUploadForm();
+                  failedFiles++;
+                  statusElement.textContent = `Upload failed: ${result.error}`;
+                  progressBarElement.classList.remove('bg-blue-500');
+                  progressBarElement.classList.add('bg-red-500');
                 }
               } catch (error) {
-                showToast('error', 'Failed to parse server response');
-                resetUploadForm();
+                failedFiles++;
+                statusElement.textContent = `Error: ${error.message}`;
+                progressBarElement.classList.remove('bg-blue-500');
+                progressBarElement.classList.add('bg-red-500');
               }
             } else {
-              showToast('error', 'Upload failed with status: ' + xhr.status);
-              resetUploadForm();
+              const statusElement = document.getElementById(`status-${i}`);
+              const progressElement = document.getElementById(`progress-${i}`);
+              const progressBarElement = document.getElementById(`progressbar-${i}`);
+              
+              try {
+                statusElement.textContent = 'Uploading...';
+                statusElement.classList.add('text-blue-400');
+                
+                const result = await uploadSingleFile(file, (progress) => {
+                  progressElement.textContent = `${progress}%`;
+                  progressBarElement.style.width = `${progress}%`;
+                });
+                
+                if (result.success) {
+                  completedFiles++;
+                  statusElement.textContent = 'Completed';
+                  statusElement.classList.add('text-green-400');
+                  progressBarElement.classList.remove('bg-blue-500');
+                  progressBarElement.classList.add('bg-green-500');
+                } else {
+                  failedFiles++;
+                  statusElement.textContent = `Failed: ${result.error}`;
+                  statusElement.classList.add('text-red-400');
+                  progressBarElement.classList.remove('bg-blue-500');
+                  progressBarElement.classList.add('bg-red-500');
+                }
+              } catch (error) {
+                failedFiles++;
+                statusElement.textContent = `Error: ${error.message}`;
+                statusElement.classList.add('text-red-400');
+                progressBarElement.classList.remove('bg-blue-500');
+                progressBarElement.classList.add('bg-red-500');
+              }
             }
-          });
-          xhr.addEventListener('error', function () {
-            showToast('error', 'An error occurred during upload');
+            
+            if (!isSingleFile) {
+              const processedFiles = completedFiles + failedFiles;
+              const overallPercent = Math.round((processedFiles / totalFiles) * 100);
+              overallProgress.textContent = `${processedFiles} / ${totalFiles}`;
+              overallPercentage.textContent = `${overallPercent}%`;
+              overallProgressBar.style.width = `${overallPercent}%`;
+            }
+          }
+          
+          if (completedFiles > 0) {
+            if (isSingleFile) {
+              if (failedFiles > 0) {
+                showToast('error', 'Video upload failed');
+              } else {
+                showToast('success', 'Video uploaded successfully');
+              }
+            } else {
+              if (failedFiles > 0) {
+                showToast('warning', `${completedFiles} videos uploaded successfully, ${failedFiles} failed`);
+              } else {
+                showToast('success', `All ${completedFiles} videos uploaded successfully`);
+              }
+            }
+            
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          } else {
+            showToast('error', isSingleFile ? 'Video upload failed' : 'All uploads failed');
             resetUploadForm();
+          }
+        }
+        
+        function uploadSingleFile(file, progressCallback) {
+          return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('video', file);
+            
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (event) => {
+              if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                progressCallback(percentComplete);
+              }
+            });
+            
+            xhr.addEventListener('load', function () {
+              if (xhr.status === 200) {
+                try {
+                  const response = JSON.parse(xhr.responseText);
+                  resolve(response);
+                } catch (error) {
+                  resolve({ success: false, error: 'Failed to parse server response' });
+                }
+              } else {
+                resolve({ success: false, error: `Upload failed with status: ${xhr.status}` });
+              }
+            });
+            
+            xhr.addEventListener('error', function () {
+              resolve({ success: false, error: 'Network error occurred' });
+            });
+            
+            xhr.addEventListener('abort', function () {
+              resolve({ success: false, error: 'Upload aborted' });
+            });
+            
+            xhr.open('POST', '/api/videos/upload', true);
+            xhr.send(formData);
           });
-          xhr.addEventListener('abort', function () {
-            showToast('warning', 'Upload aborted');
-            resetUploadForm();
-          });
-          xhr.open('POST', '/api/videos/upload', true);
-          xhr.send(formData);
-        });
+        }
         clearFileButton.addEventListener('click', function () {
           resetUploadForm();
         });
@@ -799,22 +1697,13 @@
             border: 'border-gray-600/50',
             button: 'bg-red-500 hover:bg-red-600',
             buttonIcon: 'ti-trash'
-          },
-          'warning': {
+          },          'warning': {
             icon: options.icon || 'ti-alert-triangle',
             color: 'text-yellow-400',
             bg: 'bg-yellow-500/10',
             border: 'border-yellow-500/50',
             button: 'bg-yellow-500 hover:bg-yellow-600',
             buttonIcon: 'ti-alert-circle'
-          },
-          'success': {
-            icon: options.icon || 'ti-check-circle',
-            color: 'text-green-400',
-            bg: 'bg-green-500/10',
-            border: 'border-green-500/50',
-            button: 'bg-green-500 hover:bg-green-600',
-            buttonIcon: 'ti-check'
           }
         };
         const theme = themes[options.type || 'info'];
@@ -1061,78 +1950,228 @@
             showToast('error', 'Please upload a valid video file (MP4, AVI, MOV)');
           }
         }
-      });
+      });        
       function showImportProgressModal(jobId) {
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm';
-        modal.id = 'import-progress-modal';
+        modal.id = 'import-progress-modal';        
         modal.innerHTML = `
-      <div class="bg-dark-800 rounded-lg p-6 w-full max-w-md">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium">Importing Video</h3>
-          <button id="close-import-progress" class="text-gray-400 hover:text-white">
-            <i class="ti ti-x"></i>
+      <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-sm sm:max-w-md mx-3 sm:mx-4 border border-gray-600/50 transform transition-all">        
+        <div class="flex items-center justify-between p-3 sm:p-4 border-b border-gray-600/50">
+          <h3 class="text-base sm:text-lg font-medium">Importing Video</h3>
+          <button id="close-import-progress" class="rounded-full w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors">
+            <i class="ti ti-x text-sm sm:text-base"></i>
           </button>
         </div>
-        <div class="text-center mb-4">
-          <div class="w-16 h-16 mb-4 rounded-full bg-blue-500/10 mx-auto flex items-center justify-center">
-            <i id="progress-icon" class="ti ti-download text-blue-400 text-2xl"></i>
+        <div class="p-4 sm:p-6">
+          <div class="text-center mb-3 sm:mb-4">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 mb-3 sm:mb-4 rounded-full bg-blue-500/10 mx-auto flex items-center justify-center">
+              <i id="progress-icon" class="ti ti-download text-blue-400 text-xl sm:text-2xl"></i>
+            </div>
+            <p id="progress-filename" class="text-xs sm:text-sm font-medium text-white mb-1" style="display: none;"></p>
+            <p id="progress-status" class="text-xs sm:text-sm text-gray-300 mb-2">Starting...</p>
           </div>
-          <p id="progress-status" class="text-sm text-gray-300 mb-2">Starting download...</p>
+          <div class="w-full bg-dark-700 rounded-full h-1.5 sm:h-2 mb-3 sm:mb-4">
+            <div id="progress-bar" class="bg-blue-500 h-1.5 sm:h-2 rounded-full transition-all" style="width: 0%"></div>
+          </div>          
+          <div class="flex justify-center gap-2 mb-3">            
+            <button id="cancel-import-btn" class="w-auto bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+              <i class="ti ti-x mr-1"></i>
+              Cancel
+            </button>
+          </div>
+          <p class="text-xs text-gray-500 leading-relaxed">
+            <i class="ti ti-info-circle mr-1"></i>
+            You can close this window and import will continue in background
+          </p>
         </div>
-        <div class="w-full bg-dark-700 rounded-full h-2 mb-4">
-          <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
-        </div>
-        <p class="text-xs text-gray-500">
-          <i class="ti ti-info-circle mr-1"></i>
-          You can close this window and the import will continue in the background
-        </p>
       </div>
-    `;
-        document.body.appendChild(modal);
+    `;        
+    document.body.appendChild(modal);
+        
+        localStorage.setItem('importJobId', jobId);
+        
         document.getElementById('close-import-progress').addEventListener('click', function () {
           document.getElementById('import-progress-modal').remove();
+          showMiniImportProgressModal(jobId);
         });
-        monitorImportProgress(jobId);
+        document.getElementById('cancel-import-btn').addEventListener('click', async function () {
+          try {
+            const response = await fetch(`/api/videos/import-cancel/${jobId}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]')?.value
+              }
+            });
+              if (response.ok) {
+              showToast('warning', 'Import cancelled');
+              localStorage.removeItem('importJobId');
+              if (window.importStatusCache) {
+                delete window.importStatusCache[jobId];
+              }
+              document.getElementById('import-progress-modal').remove();
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } else {
+              showToast('error', 'Failed to cancel import');
+            }
+          } catch (error) {
+            showToast('error', 'Failed to cancel import');
+          }
+        });
+          monitorImportProgress(jobId);
       }
-      function monitorImportProgress(jobId) {
+      function showMiniImportProgressModal(jobId) {
+        if (document.getElementById('mini-import-progress')) return;
+          const mini = document.createElement('div');
+        mini.id = 'mini-import-progress';
+        mini.className = 'fixed bottom-20 md:bottom-4 right-4 z-50 bg-dark-800 border border-gray-600/50 rounded-lg p-3 shadow-lg flex items-center space-x-2 min-w-[250px] max-w-[calc(100vw-2rem)]';
+        mini.innerHTML = `
+          <div class="flex-1">
+            <div id="mini-progress-status" class="text-xs text-white">Starting...</div>
+            <div class="w-full bg-gray-700 rounded-full h-1 mt-1">
+              <div id="mini-progress-bar" class="bg-blue-500 h-1 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+          </div>
+          <button id="mini-cancel-btn" class="bg-red-600 hover:bg-red-700 text-white p-1 rounded text-xs">
+            <i class="ti ti-x"></i>
+          </button>
+        `;
+          document.body.appendChild(mini);
+        document.getElementById('mini-cancel-btn').addEventListener('click', async function () {
+          try {
+            const response = await fetch(`/api/videos/import-cancel/${jobId}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]')?.value
+              }
+            });
+              if (response.ok) {
+              showToast('warning', 'Import cancelled');
+              localStorage.removeItem('importJobId');
+              if (window.importStatusCache) {
+                delete window.importStatusCache[jobId];
+              }
+              const intervalId = mini.getAttribute('data-interval-id');
+              if (intervalId) {
+                clearInterval(parseInt(intervalId));
+              }
+              mini.remove();
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } else {
+              showToast('error', 'Failed to cancel import');
+            }
+          } catch (error) {
+            showToast('error', 'Failed to cancel import');
+          }        
+        });
+        
+        const miniInterval = setInterval(async () => {
+          try {
+            const response = await fetch(`/api/videos/import-status/${jobId}`);
+            if (!response.ok) {
+              clearInterval(miniInterval);
+              localStorage.removeItem('importJobId');
+              mini.remove();
+              return;
+            }
+            
+            const data = await response.json();
+            if (!data.success) {
+              clearInterval(miniInterval);
+              localStorage.removeItem('importJobId');
+              mini.remove();
+              return;
+            }
+            
+            const status = data.status;
+            const miniProgressBar = document.getElementById('mini-progress-bar');
+            const miniProgressStatus = document.getElementById('mini-progress-status');
+            
+            if (miniProgressBar && miniProgressStatus) {
+              miniProgressBar.style.width = `${status.progress}%`;
+              miniProgressStatus.textContent = status.message;
+                if (status.status === 'complete') {
+                clearInterval(miniInterval);
+                localStorage.removeItem('importJobId');
+                showToast('success', 'Video imported successfully');
+                setTimeout(() => {
+                  window.location.reload();
+                }, 2000);
+                mini.remove();
+              } else if (status.status === 'failed' || status.status === 'cancelled') {
+                clearInterval(miniInterval);
+                localStorage.removeItem('importJobId');
+                if (status.status === 'failed') {
+                  showToast('error', status.message || 'Import failed');
+                }
+                mini.remove();
+              }
+            }
+          } catch (error) {
+            console.error('Error monitoring mini import progress:', error);
+          }        
+        }, 1000);
+        
+        mini.setAttribute('data-interval-id', miniInterval);
+      }
+        function monitorImportProgress(jobId) {
         const progressInterval = setInterval(async () => {
           try {
             const response = await fetch(`/api/videos/import-status/${jobId}`);
             if (!response.ok) {
               clearInterval(progressInterval);
+              localStorage.removeItem('importJobId');
               return;
             }
             const data = await response.json();
             if (!data.success) {
               clearInterval(progressInterval);
+              localStorage.removeItem('importJobId');
               return;
-            }
+            }            
             const status = data.status;
             const progressBar = document.getElementById('progress-bar');
             const progressStatus = document.getElementById('progress-status');
             const progressIcon = document.getElementById('progress-icon');
+            const progressFilename = document.getElementById('progress-filename');
+            
             if (progressBar && progressStatus) {
               progressBar.style.width = `${status.progress}%`;
               progressStatus.textContent = status.message;
+              
+              if (status.filename && progressFilename) {
+                progressFilename.textContent = status.filename;
+                progressFilename.style.display = 'block';
+              }
+              
               if (status.status === 'downloading') {
                 progressIcon.className = 'ti ti-download text-blue-400 text-2xl';
               } else if (status.status === 'processing') {
-                progressIcon.className = 'ti ti-settings text-blue-400 text-2xl animate-spin';
+                progressIcon.className = 'ti ti-settings text-blue-400 text-2xl';
               } else if (status.status === 'complete') {
                 progressIcon.className = 'ti ti-check text-green-400 text-2xl';
                 progressBar.classList.remove('bg-blue-500');
-                progressBar.classList.add('bg-green-500');
+                progressBar.classList.add('bg-green-500');                
+                localStorage.removeItem('importJobId');
                 showToast('success', 'Video imported successfully');
                 setTimeout(() => {
                   window.location.reload();
                 }, 2000);
                 clearInterval(progressInterval);
-              } else if (status.status === 'failed') {
-                progressIcon.className = 'ti ti-alert-triangle text-red-400 text-2xl';
+              } else if (status.status === 'failed' || status.status === 'cancelled') {
+                progressIcon.className = status.status === 'failed' ? 'ti ti-alert-triangle text-red-400 text-2xl' : 'ti ti-x text-yellow-400 text-2xl';
                 progressBar.classList.remove('bg-blue-500');
-                progressBar.classList.add('bg-red-500');
-                showToast('error', status.message || 'Failed to import video');
+                progressBar.classList.add(status.status === 'failed' ? 'bg-red-500' : 'bg-yellow-500');                
+                localStorage.removeItem('importJobId');
+                if (status.status === 'failed') {
+                  showToast('error', status.message || 'Import failed');
+                }
                 clearInterval(progressInterval);
               }
             }
@@ -1140,43 +2179,76 @@
             console.error('Error monitoring import progress:', error);
           }
         }, 1000);
-      }
+      }      
       document.addEventListener('DOMContentLoaded', function () {
+        const savedJobId = localStorage.getItem('importJobId');        
+        if (savedJobId) {
+          fetch(`/api/videos/import-status/${savedJobId}`)
+            .then(response => {
+              if (response.ok) {
+                return response.json();
+              }
+              throw new Error('Job not found');
+            })            
+            .then(data => {
+              if (data.success && ['downloading', 'processing'].includes(data.status.status)) {
+                showMiniImportProgressModal(savedJobId);
+              } else {
+                localStorage.removeItem('importJobId');
+              }
+            })
+            .catch(() => {
+              localStorage.removeItem('importJobId');
+            });
+        }
+        
         const searchInput = document.querySelector('input[placeholder="Search videos..."]');
-        const sortSelect = document.querySelector('select');
-        const videoGrid = document.querySelector('.grid');
-        const allVideosElements = Array.from(document.querySelectorAll('.grid > div:not(.col-span-full)'));
+        const sortToggleBtn = document.getElementById('sort-toggle-btn');
+        const sortIcon = document.getElementById('sort-icon');
+        const videoGrid = document.querySelector('.hidden.md\\:grid');
+        const mobileContainer = document.querySelector('.md\\:hidden.space-y-3');
+        const allVideosElements = Array.from(document.querySelectorAll('.hidden.md\\:grid > div:not(.col-span-full)'));
         const paginationContainer = document.querySelector('.mt-6.flex.items-center.justify-between');
         const paginationButtons = document.querySelectorAll('.mt-6.flex.items-center.justify-between button');
 
-        const itemsPerPage = 12;
+        const itemsPerPage = 8;
         let currentPage = 1;
         let totalPages = 1;
+        let currentSort = localStorage.getItem('gallery-sort') || 'Newest';
 
         if (allVideosElements.length === 0) return;
-
+        
+        updateSortDisplay(currentSort);
+          function updateSortDisplay(sortOrder) {
+          if (sortOrder === 'Oldest') {
+            sortIcon.className = 'ti ti-sort-ascending text-lg';
+            sortToggleBtn.title = 'Sort: Oldest';
+          } else {
+            sortIcon.className = 'ti ti-sort-descending text-lg';
+            sortToggleBtn.title = 'Sort: Newest';
+          }
+        }        
         window.allVideosData = allVideosElements.map(videoEl => {
           const dateText = videoEl.querySelector('.text-xs.text-gray-400 span:first-child').textContent.trim();
           let dateObj;
           try {
-            const parts = dateText.split(/[\/,\s-]/);
-            if (parts.length === 3) {
-              const day = parseInt(parts[0], 10);
-              const month = parseInt(parts[1], 10);
-              const year = parseInt(parts[2], 10);
-
-              if (!isNaN(day) && !isNaN(month) && !isNaN(year) &&
-                year >= 1000 && year <= 9999 &&
-                month >= 1 && month <= 12 &&
-                day >= 1 && day <= 31) {
-                dateObj = new Date(year, month - 1, day);
-              } else {
-                dateObj = new Date(0);
+            dateObj = new Date(dateText);
+            
+            if (!dateObj || isNaN(dateObj.getTime())) {
+              const match = dateText.match(/(\w{3})\s+(\d{1,2}),\s+(\d{4}),\s+(\d{1,2}):(\d{2})/);
+              if (match) {
+                const [, monthStr, day, year, hour, minute] = match;
+                const monthMap = {
+                  'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+                  'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+                };
+                const monthNum = monthMap[monthStr];
+                if (monthNum !== undefined) {
+                  dateObj = new Date(parseInt(year), monthNum, parseInt(day), parseInt(hour), parseInt(minute));
+                }
               }
-            } else {
-              dateObj = new Date(0);
             }
-
+            
             if (!dateObj || isNaN(dateObj.getTime())) {
               dateObj = new Date(0);
             }
@@ -1184,26 +2256,74 @@
             dateObj = new Date(0);
           }
 
+          const playButton = videoEl.querySelector('.play-button');
+          const id = playButton ? playButton.getAttribute('data-video-id') : '';
+          const title = videoEl.querySelector('h3').textContent;
+          const thumbnail = videoEl.querySelector('img').src;
+          const durationText = videoEl.querySelector('.absolute.bottom-2.right-2').textContent.trim();
+          const fileSizeText = videoEl.querySelector('.text-xs.text-gray-400 span:last-child').textContent.trim();
+          
+          let duration = 0;
+          if (durationText) {
+            const durationParts = durationText.split(':');
+            if (durationParts.length === 2) {
+              duration = parseInt(durationParts[0]) * 60 + parseInt(durationParts[1]);
+            }
+          }
+          
+          let file_size = 0;
+          if (fileSizeText) {
+            if (fileSizeText.includes('GB')) {
+              const sizeMatch = fileSizeText.match(/([\d.]+)\s*GB/);
+              if (sizeMatch) {
+                file_size = parseFloat(sizeMatch[1]) * 1024 * 1024 * 1024;
+              }
+            } else if (fileSizeText.includes('MB')) {
+              const sizeMatch = fileSizeText.match(/([\d.]+)\s*MB/);
+              if (sizeMatch) {
+                file_size = parseFloat(sizeMatch[1]) * 1024 * 1024;
+              }
+            } else if (fileSizeText.includes('KB')) {
+              const sizeMatch = fileSizeText.match(/([\d.]+)\s*KB/);
+              if (sizeMatch) {
+                file_size = parseFloat(sizeMatch[1]) * 1024;
+              }
+            } else if (fileSizeText.includes('B')) {
+              const sizeMatch = fileSizeText.match(/([\d.]+)\s*B/);
+              if (sizeMatch) {
+                file_size = parseFloat(sizeMatch[1]);
+              }
+            }
+          }          
           return {
             element: videoEl,
-            title: videoEl.querySelector('h3').textContent.toLowerCase(),
+            id: id,
+            title: title,
+            titleLower: title.toLowerCase(),
+            thumbnail: thumbnail,
+            duration: duration,
+            upload_date: dateText,
+            file_size: file_size,
             date: dateObj,
-            size: videoEl.querySelector('.text-xs.text-gray-400 span:last-child').textContent
+            size: fileSizeText
           };
         });
 
-        const initialSortOrder = sortSelect.value;
-        filterAndDisplayVideos('', initialSortOrder, 1);
+        filterAndDisplayVideos('', currentSort, 1);
 
         searchInput.addEventListener('input', function () {
           const searchTerm = this.value.toLowerCase().trim();
           currentPage = 1;
-          filterAndDisplayVideos(searchTerm, sortSelect.value, currentPage);
+          filterAndDisplayVideos(searchTerm, currentSort, currentPage);
         });
 
-        sortSelect.addEventListener('change', function () {
+        sortToggleBtn.addEventListener('click', function() {
+          const newSort = currentSort === 'Newest' ? 'Oldest' : 'Newest';
+          currentSort = newSort;
+          localStorage.setItem('gallery-sort', newSort);
+          updateSortDisplay(newSort);
           currentPage = 1;
-          filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), this.value, currentPage);
+          filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), newSort, currentPage);
         });
 
         function setupPaginationControls(filteredVideos) {
@@ -1214,14 +2334,16 @@
 
           paginationButtonsContainer.innerHTML = '';
 
+         
+
           const prevButton = document.createElement('button');
           prevButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${currentPage === 1 ? 'bg-dark-700 text-gray-400 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
           prevButton.innerHTML = '<i class="ti ti-chevron-left"></i>';
-          prevButton.disabled = currentPage === 1;
+          prevButton.disabled = currentPage === 1;          
           prevButton.addEventListener('click', () => {
             if (currentPage > 1) {
               currentPage--;
-              filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
+              filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), currentSort, currentPage);
             }
           });
           paginationButtonsContainer.appendChild(prevButton);
@@ -1238,11 +2360,11 @@
           for (let i = startPage; i <= endPage; i++) {
             const pageButton = document.createElement('button');
             pageButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${i === currentPage ? 'bg-primary text-white' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
-            pageButton.textContent = i;
+            pageButton.textContent = i;            
             pageButton.addEventListener('click', () => {
               if (i !== currentPage) {
                 currentPage = i;
-                filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
+                filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), newSort, currentPage);
               }
             });
             paginationButtonsContainer.appendChild(pageButton);
@@ -1251,19 +2373,102 @@
           const nextButton = document.createElement('button');
           nextButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${currentPage === totalPages ? 'bg-dark-700 text-gray-400 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
           nextButton.innerHTML = '<i class="ti ti-chevron-right"></i>';
-          nextButton.disabled = currentPage === totalPages;
+          nextButton.disabled = currentPage === totalPages;          
           nextButton.addEventListener('click', () => {
             if (currentPage < totalPages) {
               currentPage++;
-              filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
+              filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), currentSort, currentPage);
             }
           });
           paginationButtonsContainer.appendChild(nextButton);
-        }
+        }        
+        function createMobileCard(video) {
+          const card = document.createElement('div');
+          card.className = 'bg-dark-700 rounded-lg p-3 hover:bg-dark-600 transition-colors relative';
+          
+          const formatDuration = (duration) => {
+            if (!duration) return '0:00';
+            const minutes = Math.floor(duration / 60);
+            const seconds = Math.floor(duration % 60);
+            return `${minutes}:${String(seconds).padStart(2, '0')}`;
+          };
+          
+          const formatFileSize = (bytes) => {
+            if (!bytes) return '0 MB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+          };
+          
+          const formatDate = (dateString) => {
+            if (!dateString) return 'Unknown';
+            const date = new Date(dateString);
+            return date.toLocaleDateString();
+          };
 
+          card.innerHTML = `
+            <!-- Action buttons - Top Right Corner -->
+            <div class="absolute top-2 right-2 flex gap-1 z-10">
+              <button class="bg-dark-800/80 hover:bg-dark-600 text-gray-400 hover:text-white p-2 rounded-lg transition-colors backdrop-blur-sm"
+                onclick="showRenameDialog('${video.id}', '${video.title.replace(/'/g, "\\'")}')">
+                <i class="ti ti-pencil text-sm"></i>
+              </button>
+              <button class="bg-dark-800/80 hover:bg-red-600 text-gray-400 hover:text-white p-2 rounded-lg transition-colors backdrop-blur-sm"
+                onclick="showDeleteDialog('${video.id}', '${video.title.replace(/'/g, "\\'")}')">
+                <i class="ti ti-trash text-sm"></i>
+              </button>
+            </div>
+
+            <div class="flex gap-3">
+              <!-- Thumbnail -->
+              <div class="relative flex-shrink-0 w-20 h-14 rounded overflow-hidden">
+                <img src="${video.thumbnail}" alt="${video.title}" class="w-full h-full object-cover">
+                
+                <!-- Play button overlay -->
+                <div class="absolute inset-0 flex items-center justify-center bg-black/30">
+                  <button
+                    class="play-button bg-black/60 hover:bg-primary/80 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                    data-video-id="${video.id}" data-video-title="${video.title}"
+                    onclick="playVideo('${video.id}', '${video.title.replace(/'/g, "\\'")}')">
+                    <i class="ti ti-player-play-filled text-xs text-white"></i>
+                  </button>
+                </div>
+
+                <!-- Duration badge -->
+                <span class="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] px-1 py-0.5 rounded">
+                  ${formatDuration(video.duration)}
+                </span>
+              </div>
+
+              <!-- Content -->
+              <div class="flex-1 min-w-0 pr-16">
+                <!-- Title and details -->
+                <div class="space-y-1">
+                  <h3 class="font-medium text-white text-sm leading-tight line-clamp-2 break-words">
+                    ${video.title}
+                  </h3>
+                  <div class="flex flex-col text-xs text-gray-400 space-y-0.5">
+                    <div class="flex items-center">
+                      <i class="ti ti-calendar text-[10px] mr-1 flex-shrink-0"></i>
+                      <span class="truncate">
+                        ${formatDate(video.upload_date)}
+                      </span>
+                    </div>
+                    <div class="flex items-center">
+                      <i class="ti ti-file text-[10px] mr-1 flex-shrink-0"></i>
+                      <span class="truncate">
+                        ${formatFileSize(video.file_size)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          return card;
+        }        
         function filterAndDisplayVideos(searchTerm, sortOrder, page) {
           let filteredVideos = window.allVideosData.filter(video =>
-            video.title.includes(searchTerm)
+            video.titleLower.includes(searchTerm)
           );
 
           filteredVideos.forEach(video => {
@@ -1276,13 +2481,22 @@
             filteredVideos.sort((a, b) => a.date.getTime() - b.date.getTime());
           } else {
             filteredVideos.sort((a, b) => b.date.getTime() - a.date.getTime());
-          }
-
+          }          
           videoGrid.innerHTML = '';
+          mobileContainer.innerHTML = '';
 
           if (filteredVideos.length === 0) {
             videoGrid.innerHTML = `
               <div class="col-span-full text-center py-12">
+                <div class="text-gray-500 mb-3">
+                  <i class="ti ti-search text-6xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-300 mb-1">No videos found</h3>
+                <p class="text-gray-500 mb-4">Try adjusting your search criteria</p>
+              </div>
+            `;
+            mobileContainer.innerHTML = `
+              <div class="text-center py-12">
                 <div class="text-gray-500 mb-3">
                   <i class="ti ti-search text-6xl"></i>
                 </div>
@@ -1300,6 +2514,8 @@
 
             currentPageVideos.forEach(video => {
               videoGrid.appendChild(video.element.cloneNode(true));
+              const mobileCard = createMobileCard(video);
+              mobileContainer.appendChild(mobileCard);
             });
 
             videoGrid.querySelectorAll('.play-button').forEach(button => {
@@ -1307,6 +2523,33 @@
               const videoTitle = button.getAttribute('data-video-title');
               button.onclick = function () {
                 playVideo(videoId, videoTitle);
+              };
+            });
+            mobileContainer.querySelectorAll('.play-button').forEach(button => {
+              const videoId = button.getAttribute('data-video-id');
+              const videoTitle = button.getAttribute('data-video-title');
+              button.onclick = function () {
+                playVideo(videoId, videoTitle);
+              };
+            });
+
+            mobileContainer.querySelectorAll('button[onclick^="showRenameDialog"]').forEach(button => {
+              const onclick = button.getAttribute('onclick');
+              button.onclick = function () {
+                const match = onclick.match(/showRenameDialog\('([^']+)',\s*'([^']+)'\)/);
+                if (match) {
+                  showRenameDialog(match[1], match[2]);
+                }
+              };
+            });
+
+            mobileContainer.querySelectorAll('button[onclick^="showDeleteDialog"]').forEach(button => {
+              const onclick = button.getAttribute('onclick');
+              button.onclick = function () {
+                const match = onclick.match(/showDeleteDialog\('([^']+)',\s*'([^']+)'\)/);
+                if (match) {
+                  showDeleteDialog(match[1], match[2]);
+                }
               };
             });
 
@@ -1351,7 +2594,46 @@
           }
         }
       });
-    </script>
+      document.getElementById('clear-all-videos').addEventListener('click', async function() {
+        const videoCards = Array.from(document.querySelectorAll('[onclick^="playVideo("]'));
+        if (videoCards.length === 0) {
+          showToast('info', 'No videos to clear');
+          return;
+        }
+        const ids = videoCards.map(btn => btn.getAttribute('data-video-id'));
+        const titles = videoCards.map(btn => btn.getAttribute('data-video-title'));
+        createModalDialog({
+          type: 'danger',
+          icon: 'ti-trash',
+          title: 'Clear All Videos',
+          message: `Are you sure you want to delete all videos? This action cannot be undone.`,
+          confirmText: 'Delete All',
+          cancelText: 'Cancel'
+        }).then(async result => {
+          if (result.confirmed) {
+            const modal = document.getElementById('custom-modal');
+            if (modal) {
+              document.body.classList.remove('overflow-hidden');
+              modal.remove();
+            }            
+            const btn = document.getElementById('clear-all-videos');
+            btn.disabled = true;
+            btn.classList.add('opacity-60', 'pointer-events-none');
+            try {
+              await Promise.all(ids.map(id => fetch(`/api/videos/${id}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } })));
+              showToast('success', 'All videos deleted successfully');
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } catch (e) {
+              showToast('error', 'Failed to delete all videos');
+              btn.disabled = false;
+              btn.classList.remove('opacity-60', 'pointer-events-none');
+            }
+          }
+        });
+      });
+    </script>    
     <style>
       .video-js {
         margin: 0 auto;
@@ -1380,5 +2662,232 @@
         height: 53vh;
         max-height: 600px;
         background-color: black;
+      }
+
+      #video-player-modal {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }      #player-container {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        will-change: transform, opacity;
+      }
+
+      @media (max-width: 767px) {
+        #video-player-modal {
+          padding: 1rem;
+          align-items: center;
+          justify-content: center;
+        }
+
+        #player-container {
+          height: auto;
+          max-height: 90vh;
+          padding: 0;
+          max-width: 95vw;
+          width: 100%;
+          border-radius: 1rem;
+        }
+
+        #player-container > div {
+          border-radius: 1rem;
+          height: auto;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .video-container-mobile {
+          height: 50vh;
+          min-height: 280px;
+          max-height: 400px;
+        }
+
+        #native-player {
+          height: 100%;
+          width: 100%;
+          object-fit: contain;
+        }
+
+        #mobile-controls button {
+          min-width: 44px;
+          min-height: 44px;
+        }
+
+        #mobile-controls {
+          pointer-events: none;
+          transition: opacity 0.3s ease;
+        }
+
+        #mobile-controls > div {
+          pointer-events: auto;
+        }
+
+        #mobile-controls .absolute {
+          bottom: 1rem;
+          left: 1rem;
+          right: 1rem;
+        }
+      }
+      @media (min-width: 768px) {
+        .video-container-desktop {
+          height: 60vh;
+          max-height: 600px;
+        }
+      }
+
+      @media (min-width: 768px) {
+        #player-container {
+          aspect-ratio: auto;
+          max-height: 90vh;
+        }
+
+        #mobile-controls {
+          display: none !important;
+        }
+      }
+
+      #loading-overlay {
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(17, 24, 39, 0.9) 100%);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+
+      @keyframes pulse-glow {
+        0%, 100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.7;
+          transform: scale(1.05);
+        }
+      }
+
+      #loading-overlay .animate-pulse {
+        animation: pulse-glow 2s ease-in-out infinite;
+      }
+
+      #native-player {
+        transition: opacity 0.3s ease;
+      }
+
+      #video-player-modal ::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      #video-player-modal ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      #video-player-modal ::-webkit-scrollbar-thumb {
+        background: rgba(156, 163, 175, 0.3);
+        border-radius: 3px;
+      }
+
+      #video-player-modal ::-webkit-scrollbar-thumb:hover {
+        background: rgba(156, 163, 175, 0.5);
+      }
+
+      #player-container button {
+        transition: all 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      #player-container button:active {
+        transform: scale(0.95);
+      }
+
+      .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      #player-container button:focus {
+        outline: 2px solid #3b82f6;
+        outline-offset: 2px;
+      }
+
+      @media (max-width: 480px) {
+        #player-container h3 {
+          font-size: 0.875rem;
+        }
+
+        #player-container .text-sm {
+          font-size: 0.75rem;
+        }
+
+        #player-container .text-xs {
+          font-size: 0.6875rem;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #player-container,
+        #loading-overlay .animate-pulse,
+        .animate-pulse {
+          animation: none;
+          transition: none;
+        }
+      }
+
+      @media (prefers-contrast: high) {
+        #player-container {
+          border: 2px solid #ffffff;
+        }
+
+        #player-container button {
+          border: 1px solid currentColor;
+        }
+      }
+
+      #video-player-modal:-webkit-full-screen {
+        background: black;
+      }
+
+      #video-player-modal:-moz-full-screen {
+        background: black;
+      }
+
+      #video-player-modal:fullscreen {
+        background: black;
+      }
+
+      #error-overlay {
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.9) 0%, rgba(127, 29, 29, 0.2) 100%);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
+
+      #pip-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 767px) and (orientation: landscape) {
+        #player-container {
+          height: 100vh;
+        }
+
+        #mobile-controls {
+          bottom: env(safe-area-inset-bottom, 1rem);
+        }
+      }
+
+      @media (max-width: 767px) {
+        #player-container {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        #mobile-controls > div {
+          margin-bottom: env(safe-area-inset-bottom, 1rem);
+        }
       }
     </style>

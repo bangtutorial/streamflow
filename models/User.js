@@ -1,10 +1,10 @@
-const { db, checkIfUsersExist } = require('../db/database');
-const bcrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid');
+const { db, checkIfUsersExist } = require("../db/database");
+const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
 class User {
   static findByEmail(email) {
     return new Promise((resolve, reject) => {
-      db.get('SELECT * FROM users WHERE email = ?', [email], (err, row) => {
+      db.get("SELECT * FROM users WHERE email = ?", [email], (err, row) => {
         if (err) {
           return reject(err);
         }
@@ -14,19 +14,23 @@ class User {
   }
   static findByUsername(username) {
     return new Promise((resolve, reject) => {
-      db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
-        if (err) {
-          return reject(err);
+      db.get(
+        "SELECT * FROM users WHERE username = ?",
+        [username],
+        (err, row) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(row);
         }
-        resolve(row);
-      });
+      );
     });
   }
   static findById(id) {
     return new Promise((resolve, reject) => {
-      db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {
+      db.get("SELECT * FROM users WHERE id = ?", [id], (err, row) => {
         if (err) {
-          console.error('Database error in findById:', err);
+          console.error("Database error in findById:", err);
           return reject(err);
         }
         resolve(row);
@@ -39,7 +43,7 @@ class User {
       const userId = uuidv4();
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO users (id, username, password, avatar_path) VALUES (?, ?, ?, ?)',
+          "INSERT INTO users (id, username, password, avatar_path) VALUES (?, ?, ?, ?)",
           [userId, userData.username, hashedPassword, userData.avatar_path],
           function (err) {
             if (err) {
@@ -63,9 +67,9 @@ class User {
       fields.push(`${key} = ?`);
       values.push(value);
     });
-    fields.push('updated_at = CURRENT_TIMESTAMP');
+    fields.push("updated_at = CURRENT_TIMESTAMP");
     values.push(userId);
-    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
+    const query = `UPDATE users SET ${fields.join(", ")} WHERE id = ?`;
     return new Promise((resolve, reject) => {
       db.run(query, values, function (err) {
         if (err) {

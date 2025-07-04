@@ -1,21 +1,22 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
-const bcrypt = require('bcrypt');
+const sqlite3 = require("sqlite3").verbose();
+const path = require("path");
+const fs = require("fs");
+const bcrypt = require("bcrypt");
 const dbDir = path.join(__dirname);
 if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
-const dbPath = path.join(dbDir, 'streamflow.db');
-const db = new sqlite3.Database(dbPath, (err) => {
+const dbPath = path.join(dbDir, "streamflow.db");
+const db = new sqlite3.Database(dbPath, err => {
   if (err) {
-    console.error('Error connecting to database:', err.message);
+    console.error("Error connecting to database:", err.message);
   } else {
     createTables();
   }
 });
 function createTables() {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
+  db.run(
+    `CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
@@ -23,12 +24,15 @@ function createTables() {
     gdrive_api_key TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-  )`, (err) => {
-    if (err) {
-      console.error('Error creating users table:', err.message);
+  )`,
+    err => {
+      if (err) {
+        console.error("Error creating users table:", err.message);
+      }
     }
-  });
-  db.run(`CREATE TABLE IF NOT EXISTS videos (
+  );
+  db.run(
+    `CREATE TABLE IF NOT EXISTS videos (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     filepath TEXT NOT NULL,
@@ -44,12 +48,15 @@ function createTables() {
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
-  )`, (err) => {
-    if (err) {
-      console.error('Error creating videos table:', err.message);
+  )`,
+    err => {
+      if (err) {
+        console.error("Error creating videos table:", err.message);
+      }
     }
-  });
-  db.run(`CREATE TABLE IF NOT EXISTS streams (
+  );
+  db.run(
+    `CREATE TABLE IF NOT EXISTS streams (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     video_id TEXT,
@@ -74,12 +81,15 @@ function createTables() {
     user_id TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (video_id) REFERENCES videos(id)
-  )`, (err) => {
-    if (err) {
-      console.error('Error creating streams table:', err.message);
+  )`,
+    err => {
+      if (err) {
+        console.error("Error creating streams table:", err.message);
+      }
     }
-  });
-  db.run(`CREATE TABLE IF NOT EXISTS stream_history (
+  );
+  db.run(
+    `CREATE TABLE IF NOT EXISTS stream_history (
     id TEXT PRIMARY KEY,
     stream_id TEXT,
     title TEXT NOT NULL,
@@ -99,15 +109,17 @@ function createTables() {
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (stream_id) REFERENCES streams(id),
     FOREIGN KEY (video_id) REFERENCES videos(id)
-  )`, (err) => {
-    if (err) {
-      console.error('Error creating stream_history table:', err.message);
+  )`,
+    err => {
+      if (err) {
+        console.error("Error creating stream_history table:", err.message);
+      }
     }
-  });
+  );
 }
 function checkIfUsersExist() {
   return new Promise((resolve, reject) => {
-    db.get('SELECT COUNT(*) as count FROM users', [], (err, result) => {
+    db.get("SELECT COUNT(*) as count FROM users", [], (err, result) => {
       if (err) {
         reject(err);
         return;
@@ -118,5 +130,5 @@ function checkIfUsersExist() {
 }
 module.exports = {
   db,
-  checkIfUsersExist
+  checkIfUsersExist,
 };

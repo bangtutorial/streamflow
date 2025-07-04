@@ -1,21 +1,21 @@
-const ffmpeg = require('fluent-ffmpeg');
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
-const { getVideoDurationInSeconds } = require('get-video-duration');
-const fs = require('fs');
-const path = require('path');
-const { getUniqueFilename, paths } = require('./storage');
+const ffmpeg = require("fluent-ffmpeg");
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+const { getVideoDurationInSeconds } = require("get-video-duration");
+const fs = require("fs");
+const path = require("path");
+const { getUniqueFilename, paths } = require("./storage");
 ffmpeg.setFfmpegPath(ffmpegPath);
-const getVideoInfo = async (filepath) => {
+const getVideoInfo = async filepath => {
   try {
     const duration = await getVideoDurationInSeconds(filepath);
     const stats = fs.statSync(filepath);
     const fileSizeInBytes = stats.size;
     return {
       duration,
-      fileSize: fileSizeInBytes
+      fileSize: fileSizeInBytes,
     };
   } catch (error) {
-    console.error('Error getting video info:', error);
+    console.error("Error getting video info:", error);
     throw error;
   }
 };
@@ -27,18 +27,18 @@ const generateThumbnail = (videoPath, thumbnailName) => {
         count: 1,
         folder: paths.thumbnails,
         filename: thumbnailName,
-        size: '854x480'
+        size: "854x480",
       })
-      .on('end', () => {
+      .on("end", () => {
         resolve(thumbnailPath);
       })
-      .on('error', (err) => {
-        console.error('Error generating thumbnail:', err);
+      .on("error", err => {
+        console.error("Error generating thumbnail:", err);
         reject(err);
       });
   });
 };
 module.exports = {
   getVideoInfo,
-  generateThumbnail
+  generateThumbnail,
 };

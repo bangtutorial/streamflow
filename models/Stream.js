@@ -1,5 +1,5 @@
-const { v4: uuidv4 } = require('uuid');
-const { db } = require('../db/database');
+const { v4: uuidv4 } = require("uuid");
+const { db } = require("../db/database");
 class Stream {
   static create(streamData) {
     const id = uuidv4();
@@ -13,16 +13,16 @@ class Stream {
       bitrate = 2500,
       resolution,
       fps = 30,
-      orientation = 'horizontal',
+      orientation = "horizontal",
       loop_video = true,
       schedule_time = null,
       duration = null,
       use_advanced_settings = false,
-      user_id
+      user_id,
     } = streamData;
     const loop_video_int = loop_video ? 1 : 0;
     const use_advanced_settings_int = use_advanced_settings ? 1 : 0;
-    const status = schedule_time ? 'scheduled' : 'offline';
+    const status = schedule_time ? "scheduled" : "offline";
     const status_updated_at = new Date().toISOString();
     return new Promise((resolve, reject) => {
       db.run(
@@ -32,13 +32,28 @@ class Stream {
           schedule_time, duration, status, status_updated_at, use_advanced_settings, user_id
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          id, title, video_id, rtmp_url, stream_key, platform, platform_icon,
-          bitrate, resolution, fps, orientation, loop_video_int,
-          schedule_time, duration, status, status_updated_at, use_advanced_settings_int, user_id
+          id,
+          title,
+          video_id,
+          rtmp_url,
+          stream_key,
+          platform,
+          platform_icon,
+          bitrate,
+          resolution,
+          fps,
+          orientation,
+          loop_video_int,
+          schedule_time,
+          duration,
+          status,
+          status_updated_at,
+          use_advanced_settings_int,
+          user_id,
         ],
         function (err) {
           if (err) {
-            console.error('Error creating stream:', err.message);
+            console.error("Error creating stream:", err.message);
             return reject(err);
           }
           resolve({ id, ...streamData, status, status_updated_at });
@@ -48,9 +63,9 @@ class Stream {
   }
   static findById(id) {
     return new Promise((resolve, reject) => {
-      db.get('SELECT * FROM streams WHERE id = ?', [id], (err, row) => {
+      db.get("SELECT * FROM streams WHERE id = ?", [id], (err, row) => {
         if (err) {
-          console.error('Error finding stream:', err.message);
+          console.error("Error finding stream:", err.message);
           return reject(err);
         }
         if (row) {
@@ -77,22 +92,22 @@ class Stream {
       `;
       const params = [];
       if (userId) {
-        query += ' WHERE s.user_id = ?';
+        query += " WHERE s.user_id = ?";
         params.push(userId);
         if (filter) {
-          if (filter === 'live') {
+          if (filter === "live") {
             query += " AND s.status = 'live'";
-          } else if (filter === 'scheduled') {
+          } else if (filter === "scheduled") {
             query += " AND s.status = 'scheduled'";
-          } else if (filter === 'offline') {
+          } else if (filter === "offline") {
             query += " AND s.status = 'offline'";
           }
         }
       }
-      query += ' ORDER BY s.created_at DESC';
+      query += " ORDER BY s.created_at DESC";
       db.all(query, params, (err, rows) => {
         if (err) {
-          console.error('Error finding streams:', err.message);
+          console.error("Error finding streams:", err.message);
           return reject(err);
         }
         if (rows) {
@@ -109,7 +124,7 @@ class Stream {
     const fields = [];
     const values = [];
     Object.entries(streamData).forEach(([key, value]) => {
-      if (key === 'loop_video' && typeof value === 'boolean') {
+      if (key === "loop_video" && typeof value === "boolean") {
         fields.push(`${key} = ?`);
         values.push(value ? 1 : 0);
       } else {
@@ -117,13 +132,13 @@ class Stream {
         values.push(value);
       }
     });
-    fields.push('updated_at = CURRENT_TIMESTAMP');
+    fields.push("updated_at = CURRENT_TIMESTAMP");
     values.push(id);
-    const query = `UPDATE streams SET ${fields.join(', ')} WHERE id = ?`;
+    const query = `UPDATE streams SET ${fields.join(", ")} WHERE id = ?`;
     return new Promise((resolve, reject) => {
       db.run(query, values, function (err) {
         if (err) {
-          console.error('Error updating stream:', err.message);
+          console.error("Error updating stream:", err.message);
           return reject(err);
         }
         resolve({ id, ...streamData });
@@ -133,11 +148,11 @@ class Stream {
   static delete(id, userId) {
     return new Promise((resolve, reject) => {
       db.run(
-        'DELETE FROM streams WHERE id = ? AND user_id = ?',
+        "DELETE FROM streams WHERE id = ? AND user_id = ?",
         [id, userId],
         function (err) {
           if (err) {
-            console.error('Error deleting stream:', err.message);
+            console.error("Error deleting stream:", err.message);
             return reject(err);
           }
           resolve({ success: true, deleted: this.changes > 0 });
@@ -149,9 +164,9 @@ class Stream {
     const status_updated_at = new Date().toISOString();
     let start_time = null;
     let end_time = null;
-    if (status === 'live') {
+    if (status === "live") {
       start_time = new Date().toISOString();
-    } else if (status === 'offline') {
+    } else if (status === "offline") {
       end_time = new Date().toISOString();
     }
     return new Promise((resolve, reject) => {
@@ -166,7 +181,7 @@ class Stream {
         [status, status_updated_at, start_time, end_time, id, userId],
         function (err) {
           if (err) {
-            console.error('Error updating stream status:', err.message);
+            console.error("Error updating stream status:", err.message);
             return reject(err);
           }
           resolve({
@@ -175,7 +190,7 @@ class Stream {
             status_updated_at,
             start_time,
             end_time,
-            updated: this.changes > 0
+            updated: this.changes > 0,
           });
         }
       );
@@ -192,7 +207,7 @@ class Stream {
         [id],
         (err, row) => {
           if (err) {
-            console.error('Error fetching stream with video:', err.message);
+            console.error("Error fetching stream with video:", err.message);
             return reject(err);
           }
           if (row) {
@@ -206,15 +221,16 @@ class Stream {
   }
   static async isStreamKeyInUse(streamKey, userId, excludeId = null) {
     return new Promise((resolve, reject) => {
-      let query = 'SELECT COUNT(*) as count FROM streams WHERE stream_key = ? AND user_id = ?';
+      let query =
+        "SELECT COUNT(*) as count FROM streams WHERE stream_key = ? AND user_id = ?";
       const params = [streamKey, userId];
       if (excludeId) {
-        query += ' AND id != ?';
+        query += " AND id != ?";
         params.push(excludeId);
       }
       db.get(query, params, (err, row) => {
         if (err) {
-          console.error('Error checking stream key:', err.message);
+          console.error("Error checking stream key:", err.message);
           return reject(err);
         }
         resolve(row.count > 0);
@@ -243,7 +259,7 @@ class Stream {
       `;
       db.all(query, [startTimeStr, endTimeStr], (err, rows) => {
         if (err) {
-          console.error('Error finding scheduled streams:', err.message);
+          console.error("Error finding scheduled streams:", err.message);
           return reject(err);
         }
         if (rows) {

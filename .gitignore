@@ -1,0 +1,6 @@
+node_modules
+public/uploads/
+logs/
+
+# ignore real env from repo
+.env

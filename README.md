@@ -81,19 +81,19 @@ Masuk ke direktori project:
 cd streamflow
 ```
 
-Install dependencies:
+Setup environment:
 ```bash
-npm install
-```
-
-Generate session secret:
-```bash
-npm run generate-secret
+./scripts/init.sh
 ```
 
 Konfigurasi port (opsional):
 ```bash
 nano .env
+```
+
+Run application:
+```bash
+npm run dev
 ```
 
 ### 3. Konfigurasi Firewall

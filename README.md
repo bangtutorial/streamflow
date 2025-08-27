@@ -81,9 +81,14 @@ Masuk ke direktori project:
 cd streamflow
 ```
 
-Setup environment:
+Install Paket Node.JS:
 ```bash
-./scripts/init.sh
+npm install
+```
+
+Generate Secret Key:
+```bash
+node generate-secret.js
 ```
 
 Konfigurasi port (opsional):
@@ -91,7 +96,7 @@ Konfigurasi port (opsional):
 nano .env
 ```
 
-Run application:
+Jalankan aplikasi:
 ```bash
 npm run dev
 ```
@@ -264,3 +269,4 @@ pm2 restart streamflow
 
 ---
 © 2025 - [Bang Tutorial](https://youtube.com/bangtutorial)
+

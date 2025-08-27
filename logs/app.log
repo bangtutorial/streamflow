@@ -1,0 +1,42 @@
+2025-08-27T01:13:56.438Z [LOG] Logger initialized. Output will be written to console and logs/app.log
+2025-08-27T01:13:58.037Z [LOG] Using bundled FFmpeg at: /Users/prakasa/Projects/streamflow/node_modules/@ffmpeg-installer/darwin-arm64/ffmpeg
+2025-08-27T01:13:58.039Z [LOG] Stream scheduler initialized
+2025-08-27T01:13:58.041Z [LOG] Checking for scheduled streams (2025-08-27T01:13:58.041Z to 2025-08-27T01:14:58.041Z)
+2025-08-27T01:13:58.070Z [LOG] StreamFlow running at:
+2025-08-27T01:13:58.070Z [LOG]   http://192.168.1.5:7575
+2025-08-27T01:13:58.071Z [LOG]   http://192.168.64.1:7575
+2025-08-27T01:13:58.074Z [LOG] Stream scheduler initialized
+2025-08-27T01:13:58.075Z [LOG] Checking for scheduled streams (2025-08-27T01:13:58.074Z to 2025-08-27T01:14:58.074Z)
+2025-08-27T01:13:58.077Z [LOG] [StreamingService] Syncing stream statuses...
+2025-08-27T01:13:58.079Z [LOG] [StreamingService] Stream status sync completed. Active streams: 0
+2025-08-27T01:14:22.379Z [LOG] User created successfully with ID: 50e0ad21-96a3-4a8d-a8e3-450bdfb9a85d
+2025-08-27T01:14:58.051Z [LOG] Checking for scheduled streams (2025-08-27T01:14:58.046Z to 2025-08-27T01:15:58.046Z)
+2025-08-27T01:14:58.075Z [LOG] Checking for scheduled streams (2025-08-27T01:14:58.074Z to 2025-08-27T01:15:58.074Z)
+2025-08-27T01:15:56.968Z [LOG] Upload request received: {
+  fieldname: 'video',
+  originalname: 'rain_loop.mp4',
+  encoding: '7bit',
+  mimetype: 'video/mp4',
+  destination: '/Users/prakasa/Projects/streamflow/public/uploads/videos',
+  filename: 'video-1756257356831-752913069.mp4',
+  path: '/Users/prakasa/Projects/streamflow/public/uploads/videos/video-1756257356831-752913069.mp4',
+  size: 17806672
+}
+2025-08-27T01:15:56.984Z [ERROR] Error extracting metadata: Error: Cannot find ffprobe
+    at /Users/prakasa/Projects/streamflow/node_modules/fluent-ffmpeg/lib/ffprobe.js:145:31
+    at /Users/prakasa/Projects/streamflow/node_modules/fluent-ffmpeg/lib/capabilities.js:194:9
+    at /Users/prakasa/Projects/streamflow/node_modules/fluent-ffmpeg/lib/capabilities.js:183:15
+    at suppressedCallback (node:fs:267:5)
+    at FSReqCallback.oncomplete (node:fs:192:23)
+2025-08-27T01:15:56.985Z [ERROR] Upload error details: Error: Cannot find ffprobe
+    at /Users/prakasa/Projects/streamflow/node_modules/fluent-ffmpeg/lib/ffprobe.js:145:31
+    at /Users/prakasa/Projects/streamflow/node_modules/fluent-ffmpeg/lib/capabilities.js:194:9
+    at /Users/prakasa/Projects/streamflow/node_modules/fluent-ffmpeg/lib/capabilities.js:183:15
+    at suppressedCallback (node:fs:267:5)
+    at FSReqCallback.oncomplete (node:fs:192:23)
+2025-08-27T01:15:58.046Z [LOG] Checking for scheduled streams (2025-08-27T01:15:58.045Z to 2025-08-27T01:16:58.045Z)
+2025-08-27T01:15:58.074Z [LOG] Checking for scheduled streams (2025-08-27T01:15:58.074Z to 2025-08-27T01:16:58.074Z)
+2025-08-27T01:16:58.051Z [LOG] Checking for scheduled streams (2025-08-27T01:16:58.047Z to 2025-08-27T01:17:58.047Z)
+2025-08-27T01:16:58.073Z [LOG] Checking for scheduled streams (2025-08-27T01:16:58.073Z to 2025-08-27T01:17:58.073Z)
+2025-08-27T01:17:58.047Z [LOG] Checking for scheduled streams (2025-08-27T01:17:58.046Z to 2025-08-27T01:18:58.046Z)
+2025-08-27T01:17:58.073Z [LOG] Checking for scheduled streams (2025-08-27T01:17:58.073Z to 2025-08-27T01:18:58.073Z)

@@ -1,2 +1,5 @@
 node_modules
 public/uploads/
+
+# ignore real env from repo
+.env

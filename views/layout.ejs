@@ -9,9 +9,11 @@
   <link rel="icon" href="/images/logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css"></noscript>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css">
   <link rel="stylesheet" href="/css/styles.css">
   <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
   <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
@@ -56,6 +58,59 @@
     }
   </script>
   <script src="/js/stream-modal.js" defer></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function() {
+          document.querySelectorAll('.ti').forEach(function(icon) {
+            icon.classList.add('font-loaded');
+          });
+        });
+      } else {
+        setTimeout(function() {
+          document.querySelectorAll('.ti').forEach(function(icon) {
+            icon.classList.add('font-loaded');
+          });
+        }, 100);
+      }
+      
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          mutation.addedNodes.forEach(function(node) {
+            if (node.nodeType === 1) {
+              const icons = node.querySelectorAll ? node.querySelectorAll('.ti') : [];
+              icons.forEach(function(icon) {
+                if (document.fonts && document.fonts.check && document.fonts.check('1em tabler-icons')) {
+                  icon.classList.add('font-loaded');
+                } else {
+                  setTimeout(function() {
+                    icon.classList.add('font-loaded');
+                  }, 100);
+                }
+              });
+            }
+          });
+        });
+      });
+      
+      observer.observe(document.body, {
+         childList: true,
+         subtree: true
+       });
+     });
+
+     if ('serviceWorker' in navigator) {
+       window.addEventListener('load', function() {
+         navigator.serviceWorker.register('/sw.js')
+           .then(function(registration) {
+             console.log('Service Worker registered successfully:', registration.scope);
+           })
+           .catch(function(error) {
+             console.log('Service Worker registration failed:', error);
+           });
+       });
+     }
+   </script>
 </head>
 <body class="bg-dark-900 text-white font-inter">
   <div
@@ -92,11 +147,23 @@
           <span class="text-xs mt-1">Gallery</span>
           <span class="sidebar-tooltip group-hover:scale-100">Video Gallery</span>
         </a>
+        <a href="/playlist" class="sidebar-icon group <%= active === 'playlist' ? 'bg-primary' : '' %>">
+          <i class="ti ti-playlist text-xl"></i>
+          <span class="text-xs mt-1">Playlist</span>
+          <span class="sidebar-tooltip group-hover:scale-100">Playlist Manager</span>
+        </a>
         <a href="/history" class="sidebar-icon group <%= active === 'history' ? 'bg-primary' : '' %>">
           <i class="ti ti-history text-xl"></i>
           <span class="text-xs mt-1">History</span>
           <span class="sidebar-tooltip group-hover:scale-100">Stream History</span>
         </a>
+        <% if (req.session && req.session.user_role === 'admin') { %>
+        <a href="/users" class="sidebar-icon group <%= active === 'users' ? 'bg-primary' : '' %>">
+          <i class="ti ti-users text-xl"></i>
+          <span class="text-xs mt-1">Users</span>
+          <span class="sidebar-tooltip group-hover:scale-100">User Management</span>
+        </a>
+        <% } %>
       </div>
       <div class="mt-auto">
         <div class="h-px bg-gray-700 w-full"></div>
@@ -159,7 +226,7 @@
                     </div>
                   </div>
                   <div>
-                    <p class="text-sm font-medium">StreamFlow v2.0 Released!</p>
+                    <p class="text-sm font-medium">StreamFlow v2.1 Released!</p>
                     <p class="text-sm text-gray-300 mt-1">Fitur dan imporvisasi yang ada di StreamFlow v2.</p>
                     <p class="text-xs text-gray-400 mt-2">Just now</p>
                   </div>
@@ -178,7 +245,7 @@
       <div class="hidden lg:flex justify-end pr-6 py-4">
         <div class="flex items-center gap-2">
           <div class="text-xs text-gray-500">
-            StreamFlow <span class="text-xs font-medium bg-gray-700 px-1 rounded">v2.0</span>
+            StreamFlow <span class="text-xs font-medium bg-gray-700 px-1 rounded">v2.1</span>
           </div>
           <div class="h-3 w-px bg-gray-700"></div>
           <a href="https://youtube.com/@bangtutorial" target="_blank" class="text-xs text-gray-500 hover:underline">by
@@ -208,13 +275,13 @@
         <i class="ti ti-video"></i>
         <span>Gallery</span>
       </a>
+      <a href="/playlist" class="bottom-nav-item <%= active === 'playlist' ? 'bottom-nav-active' : '' %>">
+        <i class="ti ti-playlist"></i>
+        <span>Playlist</span>
+      </a>
       <a href="/history" class="bottom-nav-item <%= active === 'history' ? 'bottom-nav-active' : '' %>">
         <i class="ti ti-history"></i>
         <span>History</span>
-      </a>
-      <a href="/settings" class="bottom-nav-item <%= active === 'settings' ? 'bottom-nav-active' : '' %>">
-        <i class="ti ti-settings"></i>
-        <span>Settings</span>
       </a>
       <button id="mobile-profile-btn" class="bottom-nav-item">
         <div class="relative">
@@ -234,6 +301,17 @@
         <div class="text-xs text-gray-400 mb-2">
           <%= req.session.email || '' %>
         </div>
+        <div class="h-px bg-gray-700 my-2"></div>
+        <% if (req.session && req.session.user_role === 'admin') { %>
+        <a href="/users" class="flex items-center py-2 text-gray-300 hover:text-white text-sm">
+          <i class="ti ti-users mr-2"></i>
+          <span>Users</span>
+        </a>
+        <% } %>
+        <a href="/settings" class="flex items-center py-2 text-gray-300 hover:text-white text-sm">
+          <i class="ti ti-settings mr-2"></i>
+          <span>Settings</span>
+        </a>
         <div class="h-px bg-gray-700 my-2"></div>
         <a href="/logout" class="flex items-center py-2 text-red-400 hover:text-red-300 text-sm">
           <i class="ti ti-logout mr-2"></i>

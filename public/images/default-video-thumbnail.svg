@@ -1,0 +1,6 @@
+<svg width="320" height="180" viewBox="0 0 320 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="320" height="180" fill="#1F2937"/>
+  <circle cx="160" cy="90" r="30" fill="#374151"/>
+  <polygon points="150,75 150,105 175,90" fill="#9CA3AF"/>
+  <text x="160" y="130" text-anchor="middle" fill="#6B7280" font-family="Arial, sans-serif" font-size="12">No Preview</text>
+</svg>

@@ -3,7 +3,7 @@
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-sm font-semibold">Active Streams</h3>
         <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-broadcast text-white text-sm"></i>
+          <i class="ti ti-broadcast text-white text-sm font-loaded"></i>
         </div>
       </div>
       <p class="text-xl font-bold">0</p>
@@ -12,7 +12,7 @@
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-sm font-semibold">CPU Usage</h3>
         <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-cpu text-white text-sm"></i>
+          <i class="ti ti-cpu text-white text-sm font-loaded"></i>
         </div>
       </div>
       <p class="text-xl font-bold"><span id="cpu-usage-mobile">0</span>%</p>
@@ -24,7 +24,7 @@
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-sm font-semibold">Memory</h3>
         <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-device-sd-card text-white text-sm"></i>
+          <i class="ti ti-device-sd-card text-white text-sm font-loaded"></i>
         </div>
       </div>      
       <p class="text-lg font-bold">
@@ -38,7 +38,7 @@
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-sm font-semibold" id="network-disk-title-mobile">Internet Speed</h3>
         <div class="w-7 h-7 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('mobile')">
-          <i class="ti ti-wifi text-white text-sm" id="toggle-icon-mobile"></i>
+          <i class="ti ti-wifi text-white text-sm font-loaded" id="toggle-icon-mobile"></i>
         </div>
       </div>
       <div id="network-content-mobile" class="space-y-1">
@@ -66,7 +66,7 @@
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Active Streams</h3>
         <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-broadcast text-xl text-white"></i>
+          <i class="ti ti-broadcast text-xl text-white font-loaded"></i>
         </div>
       </div>      
       <p class="text-3xl font-bold mt-2">0</p>
@@ -75,7 +75,7 @@
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">CPU Usage</h3>
         <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-cpu text-xl text-white"></i>
+          <i class="ti ti-cpu text-xl text-white font-loaded"></i>
         </div>
       </div>
       <p class="text-3xl font-bold mt-2"><span id="cpu-usage">0</span>%</p>
@@ -87,7 +87,7 @@
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Memory</h3>
         <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-device-sd-card text-xl text-white"></i>
+          <i class="ti ti-device-sd-card text-xl text-white font-loaded"></i>
         </div>
       </div>
       <p class="text-3xl font-bold mt-2">
@@ -101,7 +101,7 @@
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold" id="network-disk-title">Internet Speed</h3>
         <div class="w-10 h-10 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('desktop')" title="Click to switch between Internet Speed and Disk Usage">
-          <i class="ti ti-wifi text-xl text-white" id="toggle-icon-desktop"></i>
+          <i class="ti ti-wifi text-xl text-white font-loaded" id="toggle-icon-desktop"></i>
         </div>
       </div>
       <div id="network-content-desktop" class="mt-2 space-y-2">
@@ -180,9 +180,15 @@
       <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
         <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
           <h3 class="text-lg font-semibold">Create New Stream</h3>
-          <button onclick="closeNewStreamModal()" class="text-gray-400 hover:text-white">
-            <i class="ti ti-x text-xl"></i>
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="openTipsStreaming()" class="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors shadow-sm">
+              <i class="ti ti-bulb"></i>
+              <span class="text-sm">Tips</span>
+            </button>
+            <button onclick="closeNewStreamModal()" class="text-gray-400 hover:text-whifte">
+              <i class="ti ti-x text-xl"></i>
+            </button>
+          </div>
         </div>
         <div class="p-4 sm:px-6 pt-1 pb-4 overflow-y-auto flex-grow">
           <form id="newStreamForm" class="space-y-6">
@@ -368,6 +374,15 @@
                   <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
                 </button>
                 <div id="advancedSettingsContent" class="hidden space-y-6 pt-4">
+                  <div class="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-3 mb-4">
+                    <div class="flex items-start">
+                      <i class="ti ti-alert-triangle text-yellow-500 text-sm mt-0.5 mr-2 flex-shrink-0"></i>
+                      <div>
+                        <p class="text-yellow-200 text-xs font-medium">Advanced Settings Warning</p>
+                        <p class="text-yellow-300/80 text-xs mt-1">Using advanced settings will make the streaming process more resource-intensive</p>
+                      </div>
+                    </div>
+                  </div>
                   <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -448,9 +463,15 @@
       <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
         <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
           <h3 class="text-lg font-semibold">Edit Stream</h3>
-          <button onclick="closeEditStreamModal()" class="text-gray-400 hover:text-white">
-            <i class="ti ti-x text-xl"></i>
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="openTipsStreaming()" class="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors shadow-sm">
+              <i class="ti ti-bulb"></i>
+              <span class="text-sm">Tips</span>
+            </button>
+            <button onclick="closeEditStreamModal()" class="text-gray-400 hover:text-white">
+              <i class="ti ti-x text-xl"></i>
+            </button>
+          </div>
         </div>
         <div class="p-4 sm:px-6 pt-1 pb-4 overflow-y-auto flex-grow">
           <form id="editStreamForm" class="space-y-6">
@@ -637,6 +658,15 @@
                   <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
                 </button>
                 <div id="editAdvancedSettingsContent" class="hidden space-y-6 pt-4">
+                  <div class="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-3 mb-4">
+                    <div class="flex items-start">
+                      <i class="ti ti-alert-triangle text-yellow-500 text-sm mt-0.5 mr-2 flex-shrink-0"></i>
+                      <div>
+                        <p class="text-yellow-200 text-xs font-medium">Advanced Settings Warning</p>
+                        <p class="text-yellow-300/80 text-xs mt-1">Using advanced settings will make the streaming process more resource-intensive</p>
+                      </div>
+                    </div>
+                  </div>
                   <div class="space-y-4">
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
@@ -892,10 +922,48 @@
       }
     }
   </style>
-  <script src="/js/stream-modal.js"></script>  
   <script>
     function formatMemory(value) {
       return typeof value === 'string' ? value : '0 MB';
+    }
+
+    function fetchPlaylistInfo(playlistId, streamId) {
+      fetch(`/api/playlists/${playlistId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const playlist = data.playlist;
+            const videoCount = playlist.videos ? playlist.videos.length : 0;
+            const playbackMode = playlist.is_shuffle ? 'Shuffle' : 'Sequential';
+            const playlistMetadata = `Playlist • ${videoCount} videos • ${playbackMode}`;
+            
+            const streamCards = document.querySelectorAll(`[data-stream-id="${streamId}"]`);
+            streamCards.forEach(card => {
+              const metadataElement = card.querySelector('.text-gray-400');
+              if (metadataElement && metadataElement.textContent.includes('Playlist • Loading...')) {
+                metadataElement.textContent = playlistMetadata;
+              }
+            });
+            
+            const tableRows = document.querySelectorAll(`tr[data-stream-id="${streamId}"]`);
+            tableRows.forEach(row => {
+              const metadataCell = row.querySelector('td:nth-child(4)');
+              if (metadataCell && metadataCell.textContent.includes('Playlist • Loading...')) {
+                metadataCell.textContent = playlistMetadata;
+              }
+            });
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching playlist info:', error);
+          const streamCards = document.querySelectorAll(`[data-stream-id="${streamId}"]`);
+          streamCards.forEach(card => {
+            const metadataElement = card.querySelector('.text-gray-400');
+            if (metadataElement && metadataElement.textContent.includes('Playlist • Loading...')) {
+              metadataElement.textContent = 'Playlist • Error loading info';
+            }
+          });
+        });
     }
 
     let showingNetwork = true;
@@ -923,11 +991,11 @@
           if (showingNetwork) {
             networkContent.style.display = 'block';
             diskContent.style.display = 'none';
-            toggleIcon.className = dev === 'mobile' ? 'ti ti-wifi text-white text-sm' : 'ti ti-wifi text-xl text-white';
+            toggleIcon.className = dev === 'mobile' ? 'ti ti-wifi text-white text-sm font-loaded' : 'ti ti-wifi text-xl text-white font-loaded';
           } else {
             networkContent.style.display = 'none';
             diskContent.style.display = 'block';
-            toggleIcon.className = dev === 'mobile' ? 'ti ti-database text-white text-sm' : 'ti ti-database text-xl text-white';
+            toggleIcon.className = dev === 'mobile' ? 'ti ti-database text-white text-sm font-loaded' : 'ti ti-database text-xl text-white font-loaded';
           }
         }
       });
@@ -1127,9 +1195,9 @@
         const card = document.createElement('div');
         card.className = 'bg-gray-800 rounded-lg overflow-hidden shadow-md';
         card.dataset.streamId = stream.id;
-        const thumbnail = stream.video_thumbnail ?
-          stream.video_thumbnail :
-          'https://via.placeholder.com/320x180?text=No+Preview';
+        const thumbnail = stream.video_type === 'playlist' ? 
+          '/images/playlist-thumbnail.svg' : 
+          (stream.video_thumbnail || '/images/default-video-thumbnail.svg');
         let durationDisplay = '';
         if (stream.status === 'live' && stream.start_time) {
           const startTime = new Date(stream.start_time);
@@ -1145,7 +1213,10 @@
         const scheduleDate = stream.schedule_time ? formatDate(new Date(stream.schedule_time)) : '';
         const scheduleTime = stream.schedule_time ? formatTime(new Date(stream.schedule_time)) : '';
         let settingsDisplay = '';
-        if (stream.use_advanced_settings) {
+        if (stream.video_type === 'playlist') {
+          settingsDisplay = 'Playlist • Loading...';
+          fetchPlaylistInfo(stream.video_id, stream.id);
+        } else if (stream.use_advanced_settings) {
           settingsDisplay = `${stream.resolution || '1280x720'} • ${stream.bitrate || '2500'} kbps • ${stream.fps || '30'} FPS`;
         } else {
           const videoRes = stream.video_resolution || stream.resolution || '1280x720';
@@ -1220,13 +1291,16 @@
         const row = document.createElement('tr');
         row.className = 'hover:bg-dark-700/50 transition-colors';
         row.dataset.streamId = stream.id;
-        const thumbnail = stream.video_thumbnail ?
-          stream.video_thumbnail :
-          'https://via.placeholder.com/320x180?text=No+Preview';
+        const thumbnail = stream.video_type === 'playlist' ? 
+          '/images/playlist-thumbnail.svg' : 
+          (stream.video_thumbnail || '/images/default-video-thumbnail.svg');
         const startDate = stream.start_time ? new Date(stream.start_time) : null;
         const scheduleDate = stream.schedule_time ? new Date(stream.schedule_time) : null;
         let settingsDisplay = '';
-        if (stream.use_advanced_settings) {
+        if (stream.video_type === 'playlist') {
+          settingsDisplay = 'Playlist • Loading...';
+          fetchPlaylistInfo(stream.video_id, stream.id);
+        } else if (stream.use_advanced_settings) {
           settingsDisplay = `${stream.resolution || '1280x720'} • ${stream.bitrate || '2500'} kbps • ${stream.fps || '30'} FPS`;
         } else {
           const videoRes = stream.video_resolution || stream.resolution || '1280x720';
@@ -1644,16 +1718,17 @@
       document.getElementById('editStreamKey').value = stream.stream_key || '';
       if (stream.video_id) {
         document.getElementById('editSelectedVideoId').value = stream.video_id;
-        document.getElementById('editSelectedVideo').textContent = stream.video_title || 'Selected Video';
-        if (stream.video_filepath) {
-          const videoData = {
-            id: stream.video_id,
-            name: stream.video_title,
-            url: `/stream/${stream.video_id}`,
-            thumbnail: stream.video_thumbnail
-          };
-          selectEditVideo(videoData);
-        }
+        const displayName = stream.video_type === 'playlist' ? (stream.playlist_name || stream.video_title) : stream.video_title;
+        document.getElementById('editSelectedVideo').textContent = displayName || 'Selected Video';
+        
+        const videoData = {
+          id: stream.video_id,
+          name: displayName,
+          url: `/stream/${stream.video_id}`,
+          thumbnail: stream.video_thumbnail,
+          type: stream.video_type || 'video'
+        };
+        selectEditVideo(videoData);
       }
       document.getElementById('editLoopVideo').checked = stream.loop_video;
       const bitrateSelect = document.getElementById('editBitrate');
@@ -1750,6 +1825,24 @@
       mobilePreview.classList.add('hidden');
       desktopEmptyPreview.classList.remove('hidden');
       mobileEmptyPreview.classList.remove('hidden');
+      
+      const desktopEmptyContent = desktopEmptyPreview.querySelector('div');
+      const mobileEmptyContent = mobileEmptyPreview.querySelector('div');
+      
+      if (desktopEmptyContent) {
+        desktopEmptyContent.innerHTML = `
+          <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
+          <p class="text-sm text-gray-500">Select a video to preview</p>
+        `;
+      }
+      
+      if (mobileEmptyContent) {
+        mobileEmptyContent.innerHTML = `
+          <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
+          <p class="text-sm text-gray-500">Select a video to preview</p>
+        `;
+      }
+      
       const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
       if (advancedSettingsContent && advancedSettingsToggle) {
@@ -1776,11 +1869,12 @@
         console.error("Edit video list container not found");
         return;
       }
-      container.innerHTML = '<div class="text-center py-3"><i class="ti ti-loader animate-spin mr-2"></i>Loading videos...</div>';
+      container.innerHTML = '<div class="text-center py-3"><i class="ti ti-loader animate-spin mr-2"></i>Loading content...</div>';
       try {
-        const response = await fetch('/api/stream/videos');
-        const videos = await response.json();
-        displayEditFilteredVideos(videos);
+        const response = await fetch('/api/stream/content');
+        const content = await response.json();
+        window.allEditStreamContent = content;
+        displayEditFilteredVideos(content);
         const searchInput = document.getElementById('editVideoSearchInput');
         if (searchInput) {
           searchInput.removeEventListener('input', handleEditVideoSearch);
@@ -1788,56 +1882,105 @@
           setTimeout(() => searchInput.focus(), 10);
         }
       } catch (error) {
-        console.error('Error loading gallery videos:', error);
-        container.innerHTML = '<div class="text-center py-5 text-red-400"><i class="ti ti-alert-circle text-2xl mb-2"></i><p>Failed to load videos</p></div>';
+        console.error('Error loading content:', error);
+        container.innerHTML = '<div class="text-center py-5 text-red-400"><i class="ti ti-alert-circle text-2xl mb-2"></i><p>Failed to load content</p></div>';
       }
     }
     function handleEditVideoSearch(e) {
       const searchTerm = e.target.value.toLowerCase();
-      const filteredVideos = window.allStreamVideos.filter(video =>
-        video.name.toLowerCase().includes(searchTerm)
+      const filteredContent = window.allEditStreamContent.filter(item =>
+        item.name.toLowerCase().includes(searchTerm) ||
+        (item.type === 'playlist' && item.description && item.description.toLowerCase().includes(searchTerm))
       );
-      displayEditFilteredVideos(filteredVideos);
+      displayEditFilteredVideos(filteredContent);
     }
     function displayEditFilteredVideos(videos) {
       const container = document.getElementById('editVideoListContainer');
       if (!videos || !videos.length) {
-        container.innerHTML = '<div class="text-center py-5 text-gray-400"><p>No videos found</p></div>';
+        container.innerHTML = '<div class="text-center py-5 text-gray-400"><p>No content found</p></div>';
         return;
       }
       container.innerHTML = '';
-      videos.forEach(video => {
+      videos.forEach(item => {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'w-full flex items-center space-x-3 p-2 rounded hover:bg-dark-600 transition-colors';
-        button.onclick = () => selectEditVideo(video);
-        button.innerHTML = `
-      <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
-        <img src="${video.thumbnail || '/images/default-thumbnail.jpg'}" alt="" 
-          class="w-full h-full object-cover rounded" 
-          onerror="this.src='/images/default-thumbnail.jpg'">
-      </div>
-      <div class="flex-1 min-w-0 ml-3">
-        <p class="text-sm font-medium text-white truncate">${video.name}</p>
-        <p class="text-xs text-gray-400">${video.resolution || 'Unknown'} • ${video.duration || '00:00'}</p>
-      </div>
-    `;
+        button.className = 'w-full flex items-start space-x-3 p-2 rounded hover:bg-dark-600 transition-colors text-left';
+        button.onclick = () => selectEditVideo(item);
+        
+        if (item.type === 'playlist') {
+          button.innerHTML = `
+            <div class="w-16 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex-shrink-0 overflow-hidden relative">
+              <img src="${item.thumbnail}" alt="" 
+                class="w-full h-full object-cover rounded" 
+                onerror="this.src='/images/playlist-thumbnail.svg'">
+              <div class="absolute top-0 right-0 bg-green-500 text-white text-xs px-1 rounded-bl text-[8px] font-bold">PL</div>
+            </div>
+            <div class="flex-1 min-w-0 ml-3 text-left">
+              <p class="text-sm font-medium text-white truncate flex items-center">
+                <i class="ti ti-playlist text-blue-400 mr-1 text-xs"></i>
+                ${item.name}
+              </p>
+              <p class="text-xs text-blue-300">${item.resolution || 'Unknown'} • ${item.duration || '00:00'}</p>
+            </div>
+          `;
+        } else {
+          button.innerHTML = `
+            <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
+              <img src="${item.thumbnail || '/images/default-thumbnail.jpg'}" alt="" 
+                class="w-full h-full object-cover rounded" 
+                onerror="this.src='/images/default-thumbnail.jpg'">
+            </div>
+            <div class="flex-1 min-w-0 ml-3 text-left">
+              <p class="text-sm font-medium text-white truncate">${item.name}</p>
+              <p class="text-xs text-gray-400">${item.resolution || 'Unknown'} • ${item.duration || '00:00'}</p>
+            </div>
+          `;
+        }
         container.appendChild(button);
       });
     }
     function selectEditVideo(video) {
       editSelectedVideoData = video;
-      document.getElementById('editSelectedVideo').textContent = video.name;
+      const displayText = video.type === 'playlist' ? `[Playlist] ${video.name}` : video.name;
+      document.getElementById('editSelectedVideo').textContent = displayText;
       document.getElementById('editSelectedVideoId').value = video.id;
       const desktopPreview = document.getElementById('editVideoPreview');
       const desktopEmptyPreview = document.getElementById('editEmptyPreview');
       const mobilePreview = document.getElementById('editVideoPreviewMobile');
       const mobileEmptyPreview = document.getElementById('editEmptyPreviewMobile');
-      desktopPreview.classList.remove('hidden');
-      mobilePreview.classList.remove('hidden');
-      desktopEmptyPreview.classList.add('hidden');
-      mobileEmptyPreview.classList.add('hidden');
-      createEditVideoPreview(video);
+      
+      if (video.type === 'playlist') {
+        desktopPreview.classList.add('hidden');
+        mobilePreview.classList.add('hidden');
+        desktopEmptyPreview.classList.remove('hidden');
+        mobileEmptyPreview.classList.remove('hidden');
+        
+        const desktopEmptyContent = desktopEmptyPreview.querySelector('div');
+        const mobileEmptyContent = mobileEmptyPreview.querySelector('div');
+        
+        if (desktopEmptyContent) {
+          desktopEmptyContent.innerHTML = `
+            <i class="ti ti-playlist text-4xl text-blue-400 mb-2"></i>
+            <p class="text-sm text-gray-300 font-medium">${video.name}</p>
+            <p class="text-xs text-blue-300 mt-1">Playlist selected • ${video.duration || 'Unknown duration'}</p>
+          `;
+        }
+        
+        if (mobileEmptyContent) {
+          mobileEmptyContent.innerHTML = `
+            <i class="ti ti-playlist text-4xl text-blue-400 mb-2"></i>
+            <p class="text-sm text-gray-300 font-medium">${video.name}</p>
+            <p class="text-xs text-blue-300 mt-1">Playlist selected • ${video.duration || 'Unknown duration'}</p>
+          `;
+        }
+      } else {
+        desktopPreview.classList.remove('hidden');
+        mobilePreview.classList.remove('hidden');
+        desktopEmptyPreview.classList.add('hidden');
+        mobileEmptyPreview.classList.add('hidden');
+        createEditVideoPreview(video);
+      }
+      
       document.getElementById('editVideoSelectorDropdown').classList.add('hidden');
     }
     function createEditVideoPreview(video) {
@@ -2112,4 +2255,84 @@
         });
       }
     });
+  </script>
+  <!-- Tips Streaming Modal -->
+  <div id="tipsStreamingModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
+    <div class="flex min-h-screen items-center justify-center p-4">
+      <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-2xl modal-container">
+        <div class="flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
+          <h3 class="text-lg font-semibold">Tips Streaming</h3>
+          <div class="flex items-center gap-2">
+            <button onclick="backFromTipsStreaming()" class="flex items-center gap-2 px-3 py-1.5 bg-dark-700 hover:bg-dark-600 text-gray-200 rounded-lg transition-colors">
+              <i class="ti ti-arrow-left"></i>
+              <span class="text-sm">Back</span>
+            </button>
+            <button onclick="closeTipsStreaming()" class="text-gray-400 hover:text-white">
+              <i class="ti ti-x text-xl"></i>
+            </button>
+          </div>
+        </div>
+        <div class="p-4">
+          <div class="space-y-3">
+            <p class="text-gray-300 text-sm">
+              Agar streaming tetap lancar, rekomendasi export video di bitrate
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-green-600 text-white text-xs font-semibold">2000–3000</span> Kbps.
+            </p>
+            <div class="rounded-lg border border-gray-700 overflow-hidden">
+              <img src="/images/export-settings.jpg" alt="Contoh pengaturan export video" class="w-full h-auto block">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function openTipsStreaming() {
+      const tipsModal = document.getElementById('tipsStreamingModal');
+      const newModal = document.getElementById('newStreamModal');
+      const editModal = document.getElementById('editStreamModal');
+      window._tipsPrevModal = null;
+      if (newModal && !newModal.classList.contains('hidden')) {
+        window._tipsPrevModal = 'new';
+        newModal.classList.remove('active');
+        newModal.classList.add('hidden');
+      } else if (editModal && !editModal.classList.contains('hidden')) {
+        window._tipsPrevModal = 'edit';
+        editModal.classList.remove('active');
+        editModal.classList.add('hidden');
+      }
+      if (tipsModal) {
+        document.body.style.overflow = 'hidden';
+        tipsModal.classList.remove('hidden');
+        requestAnimationFrame(() => tipsModal.classList.add('active'));
+      }
+    }
+    function closeTipsStreaming() {
+      const tipsModal = document.getElementById('tipsStreamingModal');
+      if (tipsModal) {
+        tipsModal.classList.remove('active');
+        setTimeout(() => tipsModal.classList.add('hidden'), 200);
+      }
+      document.body.style.overflow = 'auto';
+      window._tipsPrevModal = null;
+    }
+    function backFromTipsStreaming() {
+      const tipsModal = document.getElementById('tipsStreamingModal');
+      const newModal = document.getElementById('newStreamModal');
+      const editModal = document.getElementById('editStreamModal');
+      if (tipsModal) {
+        tipsModal.classList.remove('active');
+        tipsModal.classList.add('hidden');
+      }
+      if (window._tipsPrevModal === 'new' && newModal) {
+        newModal.classList.remove('hidden');
+        requestAnimationFrame(() => newModal.classList.add('active'));
+        document.body.style.overflow = 'hidden';
+      } else if (window._tipsPrevModal === 'edit' && editModal) {
+        editModal.classList.remove('hidden');
+        requestAnimationFrame(() => editModal.classList.add('active'));
+        document.body.style.overflow = 'hidden';
+      }
+      window._tipsPrevModal = null;
+    }
   </script>

@@ -71,9 +71,16 @@ class Stream {
                v.duration AS video_duration,
                v.resolution AS video_resolution,  
                v.bitrate AS video_bitrate,        
-               v.fps AS video_fps                 
+               v.fps AS video_fps,
+               p.name AS playlist_name,
+               CASE 
+                 WHEN p.id IS NOT NULL THEN 'playlist'
+                 WHEN v.id IS NOT NULL THEN 'video'
+                 ELSE NULL
+               END AS video_type
         FROM streams s
         LEFT JOIN videos v ON s.video_id = v.id
+        LEFT JOIN playlists p ON s.video_id = p.id
       `;
       const params = [];
       if (userId) {
@@ -184,10 +191,20 @@ class Stream {
   static async getStreamWithVideo(id) {
     return new Promise((resolve, reject) => {
       db.get(
-        `SELECT s.*, v.title AS video_title, v.filepath AS video_filepath, 
-                v.thumbnail_path AS video_thumbnail, v.duration AS video_duration
+        `SELECT s.*, 
+                v.title AS video_title, 
+                v.filepath AS video_filepath, 
+                v.thumbnail_path AS video_thumbnail, 
+                v.duration AS video_duration,
+                p.name AS playlist_name,
+                CASE 
+                  WHEN p.id IS NOT NULL THEN 'playlist'
+                  WHEN v.id IS NOT NULL THEN 'video'
+                  ELSE NULL
+                END AS video_type
          FROM streams s
          LEFT JOIN videos v ON s.video_id = v.id
+         LEFT JOIN playlists p ON s.video_id = p.id
          WHERE s.id = ?`,
         [id],
         (err, row) => {

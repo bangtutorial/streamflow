@@ -18,11 +18,6 @@
         data-tab="security">
         <i class="ti ti-shield-lock mr-2"></i>Security
       </button>
-      <button
-        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-white border-b-2 border-transparent hover:border-gray-700 font-medium"
-        data-tab="integrations">
-        <i class="ti ti-plug mr-2"></i>Integrations
-      </button>
     </div>
   </div>
   
@@ -143,57 +138,7 @@
 
       </div>
     </div>
-    
-    <div id="integrations-tab" class="settings-content hidden">
-      <div class="p-6">
-        <h3 class="text-lg font-semibold mb-6">Integration Settings</h3>
-          <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center flex-shrink-0">
-              <i class="ti ti-brand-google-drive text-xl" style="color: #4285F4;"></i>
-            </div>
-            <div class="min-w-0 flex-1">
-              <h4 class="font-medium">Google Drive</h4>
-              <p class="text-sm text-gray-400 hidden sm:block">Connect to import and manage videos</p>
-              <p class="text-sm text-gray-400 sm:hidden">Connect to import and manage videos</p>
-            </div>
-          </div>
-          <div class="flex-shrink-0 ml-3">
-            <span id="gdrive-status"
-              class="<%= user.gdrive_api_key ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400' %> px-2 py-1 text-xs rounded whitespace-nowrap">
-              <%= user.gdrive_api_key ? 'Connected' : 'Not Connected' %>
-            </span>
-          </div>
-        </div>
-        
-        <form id="gdrive-form" class="space-y-4" action="/settings/integrations/gdrive" method="post">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <input type="hidden" name="activeTab" value="integrations">
-          <div class="space-y-2">
-            <label for="gdrive-api-key" class="block text-sm font-medium text-gray-300">API Key</label>
-            <div class="relative sm:max-w-md">
-              <input type="password" id="gdrive-api-key" name="apiKey"
-                class="bg-dark-900 text-white pl-4 pr-10 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="Enter your Google Drive API key" value="<%= user.gdrive_api_key || '' %>">
-              <button type="button"
-                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white"
-                id="toggle-api-key">
-                <i class="ti ti-eye"></i>
-              </button>
-            </div>
-            <p class="text-xs text-gray-400">You can get your API key from the <a
-                href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google
-                Cloud Console</a></p>
-          </div>
-          <div class="pt-2">
-            <button type="submit"
-              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
-              Save & Connect
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+
   </div>
   
   <div id="toast"
@@ -279,15 +224,7 @@
           return false;
         }
       });
-      const gdriveForm = document.getElementById('gdrive-form');
-      gdriveForm.addEventListener('submit', (e) => {
-        const apiKey = document.getElementById('gdrive-api-key').value;
-        if (!apiKey) {
-          e.preventDefault();
-          showToast('error', 'Please enter your Google Drive API key.');
-          return false;
-        }
-      });
+
       const togglePassword = document.getElementById('toggle-password');
       const newPasswordField = document.getElementById('new-password');
       togglePassword.addEventListener('click', () => {
@@ -299,17 +236,7 @@
           togglePassword.innerHTML = '<i class="ti ti-eye"></i>';
         }
       });
-      const toggleApiKey = document.getElementById('toggle-api-key');
-      const apiKeyField = document.getElementById('gdrive-api-key');
-      toggleApiKey.addEventListener('click', () => {
-        if (apiKeyField.type === 'password') {
-          apiKeyField.type = 'text';
-          toggleApiKey.innerHTML = '<i class="ti ti-eye-off"></i>';
-        } else {
-          apiKeyField.type = 'password';
-          toggleApiKey.innerHTML = '<i class="ti ti-eye"></i>';
-        }
-      });
+
       function showToast(type, message) {
         const toast = document.getElementById('toast');
         const toastIcon = document.getElementById('toast-icon');

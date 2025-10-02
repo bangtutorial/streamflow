@@ -1,0 +1,734 @@
+<% layout('layout') -%>
+
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+  <div>
+    <h2 class="text-2xl font-bold">Playlist Manager</h2>
+    <p class="text-gray-400 text-sm mt-1">Create and manage playlists for streaming</p>
+  </div>
+  <div class="flex flex-wrap gap-3">
+    <button onclick="openCreatePlaylistModal()"
+      class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+      <i class="ti ti-plus"></i>
+      <span>Create Playlist</span>
+    </button>
+  </div>
+</div>
+
+<div class="bg-gray-800 rounded-lg p-4 mb-6">
+  <div class="flex flex-row items-center gap-3">
+    <div class="relative w-full sm:w-80 md:w-96">
+      <input type="text" id="searchPlaylists" placeholder="Search playlists..."
+        class="w-full bg-dark-700 text-white pl-9 pr-4 py-2.5 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+      <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+    </div>
+    <div class="w-32">
+      <select id="sortPlaylists"
+        class="w-full bg-dark-700 border border-gray-600 text-white px-3 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="name">Name</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div id="playlistsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+  <% if (playlists && playlists.length > 0) { %>
+    <% playlists.forEach(function(playlist) { %>
+      <div class="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow playlist-card h-32" 
+           data-playlist-id="<%= playlist.id %>" 
+           data-created-at="<%= playlist.created_at %>" 
+           data-updated-at="<%= playlist.updated_at %>">
+        <div class="p-4 h-full flex flex-col justify-between">
+          <div class="flex flex-col">
+            <div class="flex items-start justify-between mb-2">
+              <h3 class="font-semibold text-lg truncate flex-1 pr-2"><%= playlist.name %></h3>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="viewPlaylist('<%= playlist.id %>')">
+                  <i class="ti ti-eye text-sm"></i>
+                </button>
+                <button class="bg-green-600 hover:bg-green-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="editPlaylist('<%= playlist.id %>')">
+                  <i class="ti ti-pencil text-sm"></i>
+                </button>
+                <button class="bg-red-600 hover:bg-red-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="deletePlaylist('<%= playlist.id %>', '<%= playlist.name %>')">
+                  <i class="ti ti-trash text-sm"></i>
+                </button>
+              </div>
+            </div>
+            <p class="text-gray-400 text-sm line-clamp-2"><%= playlist.description || 'No description' %></p>
+          </div>
+          
+          <div class="flex items-center justify-between text-sm text-gray-400 mt-auto">
+            <span><%= playlist.video_count || 0 %> videos</span>
+            <span class="flex items-center gap-1">
+              <i class="ti ti-<%= (playlist.shuffle || playlist.is_shuffle) ? 'arrows-shuffle' : 'list-numbers' %>"></i>
+              <%= (playlist.shuffle || playlist.is_shuffle) ? 'Shuffle' : 'Sequential' %>
+            </span>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  <% } else { %>
+    <div class="col-span-full text-center py-12">
+      <i class="ti ti-playlist text-6xl text-gray-600 mb-4"></i>
+      <h3 class="text-xl font-semibold mb-2">No playlists yet</h3>
+      <p class="text-gray-400 mb-4">Create your first playlist to get started</p>
+      <button onclick="openCreatePlaylistModal()" 
+        class="bg-primary hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">
+        <i class="ti ti-plus mr-2"></i>
+        Create Playlist
+      </button>
+    </div>
+  <% } %>
+</div>
+
+<div class="mt-6 flex items-center justify-between">
+  <p class="text-sm text-gray-400" id="paginationInfo">Showing 1-<%= Math.min(8, playlists ? playlists.length : 0) %> of <%= playlists ? playlists.length : 0 %> playlists</p>
+  <div class="flex items-center gap-2" id="paginationControls">
+    <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 text-gray-400" id="prevPage" onclick="changePage(-1)">
+      <i class="ti ti-chevron-left"></i>
+    </button>
+    <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white" id="page1" onclick="goToPage(1)">
+      1
+    </button>
+    <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors" id="page2" onclick="goToPage(2)" style="display: none;">
+      2
+    </button>
+    <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors" id="page3" onclick="goToPage(3)" style="display: none;">
+      3
+    </button>
+    <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors" id="nextPage" onclick="changePage(1)">
+      <i class="ti ti-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Create/Edit Playlist Modal -->
+<div id="playlistModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-gray-800 rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-700">
+      <h3 id="modalTitle" class="text-xl font-semibold">Create New Playlist</h3>
+      <button onclick="closePlaylistModal()" class="text-gray-400 hover:text-white">
+        <i class="ti ti-x text-xl"></i>
+      </button>
+    </div>
+    
+    <form id="playlistForm" class="space-y-6">
+      <input type="hidden" id="playlistId" name="playlistId">
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="playlistName" class="block text-sm font-medium mb-2">Playlist Name</label>
+          <input type="text" id="playlistName" name="name" required placeholder="Enter playlist name..."
+            class="w-full bg-dark-700 text-white px-3 py-2 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+        </div>
+        
+        <div>
+            <div class="flex items-center mb-2">
+              <label for="playlistShuffle" class="text-sm font-medium">Playback Mode</label>
+              <div class="relative ml-2 group">
+                <i class="ti ti-help text-gray-400 hover:text-primary cursor-help"></i>
+                <div class="absolute left-full top-1/2 -translate-y-1/2 ml-2 hidden group-hover:block w-64 p-3 bg-dark-600 text-xs text-gray-200 rounded-md shadow-lg z-10">
+                  <div class="space-y-2">
+                    <div><strong>Sequential:</strong> Video berurutan sesuai urutan dalam playlist</div>
+                    <div><strong>Shuffle:</strong> Video diacak secara random</div>
+                  </div>
+                  <div class="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-dark-600"></div>
+                </div>
+              </div>
+            </div>
+          <select id="playlistShuffle" name="shuffle"
+            class="w-full bg-dark-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+            <option value="false">Sequential</option>
+            <option value="true">Shuffle</option>
+          </select>
+        </div>
+      </div>
+      
+      <div>
+        <label for="playlistDescription" class="block text-sm font-medium mb-2">Description (Optional)</label>
+        <textarea id="playlistDescription" name="description" rows="3" placeholder="Enter playlist description (optional)..."
+          class="w-full bg-dark-700 text-white px-3 py-2 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary resize-none"></textarea>
+      </div>
+      
+      <div>
+        <label class="block text-sm font-medium mb-3">Select Videos</label>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Available Videos -->
+          <div>
+            <h4 class="text-sm font-medium mb-3 text-gray-300">Available Videos</h4>
+            <div class="bg-dark-700 rounded-lg border border-gray-600 shadow-lg">
+              <div class="p-2 border-b border-gray-600/50">
+                <div class="relative">
+                  <input type="text" id="searchVideos" placeholder="Search videos..."
+                    class="w-full bg-dark-800 text-white pl-8 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700">
+                  <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+              </div>
+              <div id="availableVideos" class="p-2 space-y-1 max-h-60 overflow-y-auto custom-scrollbar">
+                <% if (videos && videos.length > 0) { %>
+                  <% videos.forEach(function(video) { %>
+                    <button type="button" class="w-full flex items-center space-x-3 p-2 rounded hover:bg-dark-600 transition-colors" 
+                            data-video-id="<%= video.id %>" onclick="addVideoToPlaylist('<%= video.id %>')">
+                      <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
+                        <img src="<%= video.thumbnail_path %>" alt="<%= video.title %>" 
+                             class="w-full h-full object-cover rounded" 
+                             onerror="this.src='/images/default-thumbnail.jpg'">
+                      </div>
+                      <div class="flex-1 min-w-0 ml-3">
+                        <p class="text-sm font-medium text-white truncate"><%= video.title %></p>
+                        <p class="text-xs text-gray-400">
+                          <%= video.duration ? Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0') : '0:00' %>
+                        </p>
+                      </div>
+                    </button>
+                  <% }); %>
+                <% } else { %>
+                  <div class="text-center py-5 text-gray-400"><p>No videos available</p></div>
+                <% } %>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Selected Videos -->
+          <div>
+            <h4 class="text-sm font-medium mb-3 text-gray-300">Playlist Videos</h4>
+            <div class="bg-dark-700 rounded-lg p-3 max-h-80 overflow-y-auto custom-scrollbar">
+              <div id="selectedVideos" class="space-y-2 min-h-[100px]">
+                <p id="noVideosMessage" class="text-gray-400 text-sm text-center py-8">No videos selected</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex justify-end gap-3 pt-4 border-t border-gray-700">
+        <button type="button" onclick="closePlaylistModal()" 
+          class="px-4 py-2 text-gray-400 hover:text-white transition-colors">
+          Cancel
+        </button>
+        <button type="submit" 
+          class="bg-primary hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+          <span id="submitButtonText">Create Playlist</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- View Playlist Modal -->
+<div id="viewPlaylistModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+  <div class="bg-gray-800 rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="flex items-start justify-between mb-6 pb-4 border-b border-gray-700">
+      <div>
+        <h3 id="viewPlaylistTitle" class="text-xl font-semibold">Playlist Details</h3>
+        <p id="viewPlaylistDescription" class="text-gray-400 text-sm mt-1"></p>
+      </div>
+      <button onclick="closeViewPlaylistModal()" class="text-gray-400 hover:text-white">
+        <i class="ti ti-x text-xl"></i>
+      </button>
+    </div>
+    
+    <div class="mb-4 flex items-center justify-between">
+      <div class="flex items-center gap-4 text-sm text-gray-400">
+        <span id="viewVideoCount">0 videos</span>
+        <span id="viewPlaybackMode" class="flex items-center gap-1">
+          <i class="ti ti-list-numbers"></i>
+          Sequential
+        </span>
+      </div>
+      <div class="flex gap-2">
+        <button id="editPlaylistBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors">
+          <i class="ti ti-pencil mr-1"></i>
+          Edit
+        </button>
+      </div>
+    </div>
+    
+    <div id="playlistVideos" class="space-y-2">
+      <!-- Videos will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedVideos = [];
+let currentPlaylistId = null;
+let allVideos = <%- JSON.stringify(videos || []) %>;
+
+function openCreatePlaylistModal() {
+  currentPlaylistId = null;
+  selectedVideos = [];
+  document.getElementById('modalTitle').textContent = 'Create New Playlist';
+  document.getElementById('submitButtonText').textContent = 'Create Playlist';
+  document.getElementById('playlistForm').reset();
+  document.getElementById('playlistId').value = '';
+  updateSelectedVideosDisplay();
+  updateAvailableVideosDisplay();
+  document.getElementById('playlistModal').classList.remove('hidden');
+  document.getElementById('playlistModal').classList.add('flex');
+}
+
+function closePlaylistModal() {
+  document.getElementById('playlistModal').classList.add('hidden');
+  document.getElementById('playlistModal').classList.remove('flex');
+}
+
+function closeViewPlaylistModal() {
+  document.getElementById('viewPlaylistModal').classList.add('hidden');
+  document.getElementById('viewPlaylistModal').classList.remove('flex');
+}
+
+function addVideoToPlaylist(videoId) {
+  const video = allVideos.find(v => v.id == videoId);
+  if (video && !selectedVideos.find(v => v.id == videoId)) {
+    selectedVideos.push(video);
+    updateSelectedVideosDisplay();
+    updateAvailableVideosDisplay();
+  }
+}
+
+function removeVideoFromPlaylist(videoId) {
+  selectedVideos = selectedVideos.filter(v => v.id != videoId);
+  updateSelectedVideosDisplay();
+  updateAvailableVideosDisplay();
+}
+
+function updateSelectedVideosDisplay() {
+  const container = document.getElementById('selectedVideos');
+  if (!container) return;
+  
+  if (selectedVideos.length === 0) {
+    container.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">No videos selected</p>';
+  } else {
+    container.innerHTML = selectedVideos.map((video, index) => `
+      <div class="flex items-center gap-3 p-2 bg-gray-600 rounded" data-video-id="${video.id}">
+        <div class="cursor-move">
+          <i class="ti ti-grip-vertical text-gray-400"></i>
+        </div>
+        <img src="${video.thumbnail_path}" alt="${video.title}" class="w-12 h-8 object-cover rounded">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium truncate">${video.title}</p>
+          <p class="text-xs text-gray-400">
+            ${video.duration ? Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0') : '0:00'}
+          </p>
+        </div>
+        <button onclick="removeVideoFromPlaylist('${video.id}')" class="text-red-400 hover:text-red-300">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+    `).join('');
+    
+    setTimeout(() => {
+      initializeDragAndDrop();
+    }, 100);
+  }
+}
+
+function updateAvailableVideosDisplay() {
+  const container = document.getElementById('availableVideos');
+  const selectedVideoIds = selectedVideos.map(v => v.id);
+  
+  const availableVideos = allVideos.filter(video => !selectedVideoIds.includes(video.id));
+  
+  if (availableVideos.length === 0) {
+    container.innerHTML = '<div class="text-center py-5 text-gray-400"><p>All videos have been added to playlist</p></div>';
+  } else {
+    container.innerHTML = availableVideos.map(video => `
+      <button type="button" class="w-full flex items-center space-x-3 p-2 rounded hover:bg-dark-600 transition-colors" 
+              data-video-id="${video.id}" onclick="addVideoToPlaylist('${video.id}')">
+        <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
+          <img src="${video.thumbnail_path}" alt="${video.title}" 
+               class="w-full h-full object-cover rounded" 
+               onerror="this.src='/images/default-thumbnail.jpg'">
+        </div>
+        <div class="flex-1 min-w-0 ml-3">
+          <p class="text-sm font-medium text-white truncate">${video.title}</p>
+          <p class="text-xs text-gray-400">
+            ${video.duration ? Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0') : '0:00'}
+          </p>
+        </div>
+      </button>
+    `).join('');
+  }
+}
+
+function editPlaylist(playlistId) {
+  fetch(`/api/playlists/${playlistId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const playlist = data.playlist;
+        currentPlaylistId = playlistId;
+        selectedVideos = playlist.videos || [];
+        
+        document.getElementById('modalTitle').textContent = 'Edit Playlist';
+        document.getElementById('submitButtonText').textContent = 'Update Playlist';
+        document.getElementById('playlistId').value = playlistId;
+        document.getElementById('playlistName').value = playlist.name;
+        document.getElementById('playlistDescription').value = playlist.description || '';
+        document.getElementById('playlistShuffle').value = (playlist.shuffle || playlist.is_shuffle) ? "true" : "false";
+        
+        updateSelectedVideosDisplay();
+        updateAvailableVideosDisplay();
+        document.getElementById('playlistModal').classList.remove('hidden');
+        document.getElementById('playlistModal').classList.add('flex');
+      }
+    })
+    .catch(error => {
+      console.error('Error loading playlist:', error);
+      showToast('Error loading playlist', 'error');
+    });
+}
+
+function viewPlaylist(playlistId) {
+  fetch(`/api/playlists/${playlistId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const playlist = data.playlist;
+        
+        document.getElementById('viewPlaylistTitle').textContent = playlist.name;
+        document.getElementById('viewPlaylistDescription').textContent = playlist.description || 'No description';
+        document.getElementById('viewVideoCount').textContent = `${playlist.videos?.length || 0} videos`;
+        
+        const playbackModeEl = document.getElementById('viewPlaybackMode');
+        playbackModeEl.innerHTML = (playlist.shuffle || playlist.is_shuffle)
+          ? '<i class="ti ti-arrows-shuffle"></i> Shuffle'
+          : '<i class="ti ti-list-numbers"></i> Sequential';
+        
+        const videosContainer = document.getElementById('playlistVideos');
+        if (playlist.videos && playlist.videos.length > 0) {
+          videosContainer.innerHTML = playlist.videos.map((video, index) => `
+            <div class="flex items-center gap-3 p-3 bg-gray-700 rounded">
+              <span class="text-gray-400 text-sm w-6">${index + 1}</span>
+              <img src="${video.thumbnail_path}" alt="${video.title}" class="w-16 h-10 object-cover rounded">
+              <div class="flex-1 min-w-0">
+                <p class="font-medium truncate">${video.title}</p>
+                <p class="text-xs text-gray-400">
+                  ${video.duration ? Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0') : '0:00'}
+                </p>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          videosContainer.innerHTML = '<p class="text-gray-400 text-center py-8">No videos in this playlist</p>';
+        }
+        
+        document.getElementById('editPlaylistBtn').onclick = () => {
+          closeViewPlaylistModal();
+          editPlaylist(playlistId);
+        };
+        
+        document.getElementById('viewPlaylistModal').classList.remove('hidden');
+        document.getElementById('viewPlaylistModal').classList.add('flex');
+      }
+    })
+    .catch(error => {
+      console.error('Error loading playlist:', error);
+      showToast('Error loading playlist', 'error');
+    });
+}
+
+function deletePlaylist(playlistId, playlistName) {
+  if (confirm(`Are you sure you want to delete "${playlistName}"?`)) {
+    fetch(`/api/playlists/${playlistId}`, {
+      method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showToast('Playlist deleted successfully', 'success');
+        location.reload();
+      } else {
+        showToast(data.message || 'Error deleting playlist', 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error deleting playlist:', error);
+      showToast('Error deleting playlist', 'error');
+    });
+  }
+}
+
+function streamPlaylist(playlistId) {
+  window.location.href = `/dashboard?playlist=${playlistId}`;
+}
+
+document.getElementById('playlistForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  
+  const formData = new FormData(this);
+  const playlistData = {
+    name: formData.get('name'),
+    description: formData.get('description'),
+    shuffle: formData.get('shuffle') === 'true',
+    videos: selectedVideos.map(video => video.id)
+  };
+  
+  const url = currentPlaylistId ? `/api/playlists/${currentPlaylistId}` : '/api/playlists';
+  const method = currentPlaylistId ? 'PUT' : 'POST';
+  
+  fetch(url, {
+    method: method,
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(playlistData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast(currentPlaylistId ? 'Playlist updated successfully' : 'Playlist created successfully', 'success');
+      closePlaylistModal();
+      location.reload();
+    } else {
+      showToast(data.message || 'Error saving playlist', 'error');
+    }
+  })
+  .catch(error => {
+    console.error('Error saving playlist:', error);
+    showToast('Error saving playlist', 'error');
+  });
+});
+
+document.getElementById('searchVideos').addEventListener('input', function(e) {
+  const searchTerm = e.target.value.toLowerCase();
+  const container = document.getElementById('availableVideos');
+  const selectedVideoIds = selectedVideos.map(v => v.id);
+  
+  const filteredVideos = allVideos.filter(video => 
+    !selectedVideoIds.includes(video.id) && 
+    video.title.toLowerCase().includes(searchTerm)
+  );
+  
+  if (filteredVideos.length === 0) {
+    container.innerHTML = '<div class="text-center py-5 text-gray-400"><p>No videos found</p></div>';
+  } else {
+    container.innerHTML = filteredVideos.map(video => `
+      <button type="button" class="w-full flex items-center space-x-3 p-2 rounded hover:bg-dark-600 transition-colors" 
+              data-video-id="${video.id}" onclick="addVideoToPlaylist('${video.id}')">
+        <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
+          <img src="${video.thumbnail_path}" alt="${video.title}" 
+               class="w-full h-full object-cover rounded" 
+               onerror="this.src='/images/default-thumbnail.jpg'">
+        </div>
+        <div class="flex-1 min-w-0 ml-3">
+          <p class="text-sm font-medium text-white truncate">${video.title}</p>
+          <p class="text-xs text-gray-400">
+            ${video.duration ? Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0') : '0:00'}
+          </p>
+        </div>
+      </button>
+    `).join('');
+  }
+});
+
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+    type === 'success' ? 'bg-green-600' : 
+    type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+  }`;
+  toast.textContent = message;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+function initializeDragAndDrop() {
+  const selectedVideosContainer = document.getElementById('selectedVideos');
+  if (selectedVideosContainer && selectedVideos.length > 0) {
+    new Sortable(selectedVideosContainer, {
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      dragClass: 'sortable-drag',
+      handle: '.cursor-move',
+      onEnd: function(evt) {
+        const oldIndex = evt.oldIndex;
+        const newIndex = evt.newIndex;
+        
+        if (oldIndex !== newIndex) {
+          const movedVideo = selectedVideos.splice(oldIndex, 1)[0];
+          selectedVideos.splice(newIndex, 0, movedVideo);
+          updateSelectedVideosDisplay();
+        }
+      }
+    });
+  }
+}
+
+function filterPlaylists() {
+  const searchTerm = document.getElementById('searchPlaylists').value.toLowerCase();
+  const sortBy = document.getElementById('sortPlaylists').value;
+  const playlistCards = document.querySelectorAll('.playlist-card');
+  
+  let visibleCards = [];
+  
+  playlistCards.forEach(card => {
+    const playlistName = card.querySelector('h3').textContent.toLowerCase();
+    const playlistDescription = card.querySelector('p').textContent.toLowerCase();
+    
+    const matchesSearch = playlistName.includes(searchTerm) || playlistDescription.includes(searchTerm);
+    
+    if (matchesSearch) {
+      visibleCards.push(card);
+    }
+  });
+  
+  if (visibleCards.length > 0) {
+    const container = document.getElementById('playlistsContainer');
+    const sortedCards = [...visibleCards].sort((a, b) => {
+      const aName = a.querySelector('h3').textContent;
+      const bName = b.querySelector('h3').textContent;
+      
+      switch(sortBy) {
+        case 'name':
+          return aName.localeCompare(bName);
+        case 'oldest':
+          const aCreated = new Date(a.dataset.createdAt);
+          const bCreated = new Date(b.dataset.createdAt);
+          return aCreated - bCreated;
+        case 'newest':
+        default:
+          const aUpdated = new Date(a.dataset.updatedAt);
+          const bUpdated = new Date(b.dataset.updatedAt);
+          return bUpdated - aUpdated;
+      }
+    });
+    
+    sortedCards.forEach(card => {
+      container.appendChild(card);
+    });
+    
+    allPlaylistCards = sortedCards;
+  } else {
+    allPlaylistCards = [];
+  }
+  
+  currentPage = 1;
+  updatePagination();
+  
+  const emptyState = document.querySelector('.col-span-full');
+  if (visibleCards.length === 0 && searchTerm) {
+    if (!emptyState) {
+      const container = document.getElementById('playlistsContainer');
+      const emptyDiv = document.createElement('div');
+      emptyDiv.className = 'col-span-full text-center py-12';
+      emptyDiv.innerHTML = `
+        <i class="ti ti-search text-6xl text-gray-600 mb-4"></i>
+        <h3 class="text-xl font-semibold mb-2">No playlists found</h3>
+        <p class="text-gray-400">Try adjusting your search terms</p>
+      `;
+      container.appendChild(emptyDiv);
+    }
+  } else if (emptyState && visibleCards.length > 0) {
+    emptyState.remove();
+  }
+}
+
+document.getElementById('searchPlaylists').addEventListener('input', filterPlaylists);
+document.getElementById('sortPlaylists').addEventListener('change', filterPlaylists);
+
+let currentPage = 1;
+const itemsPerPage = 8;
+let allPlaylistCards = [];
+
+function initializePagination() {
+  allPlaylistCards = Array.from(document.querySelectorAll('.playlist-card'));
+  updatePagination();
+}
+
+function updatePagination() {
+  const totalItems = allPlaylistCards.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  const start = (currentPage - 1) * itemsPerPage + 1;
+  const end = Math.min(currentPage * itemsPerPage, totalItems);
+  document.getElementById('paginationInfo').textContent = `Showing ${start}-${end} of ${totalItems} playlists`;
+  
+  allPlaylistCards.forEach((card, index) => {
+    const shouldShow = index >= (currentPage - 1) * itemsPerPage && index < currentPage * itemsPerPage;
+    card.style.display = shouldShow ? 'block' : 'none';
+  });
+  
+  document.getElementById('prevPage').disabled = currentPage === 1;
+  document.getElementById('nextPage').disabled = currentPage === totalPages;
+  
+  for (let i = 1; i <= 3; i++) {
+    const pageBtn = document.getElementById(`page${i}`);
+    if (i <= totalPages) {
+      pageBtn.style.display = 'flex';
+      pageBtn.textContent = i;
+      pageBtn.className = i === currentPage 
+        ? 'w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white'
+        : 'w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors';
+    } else {
+      pageBtn.style.display = 'none';
+    }
+  }
+}
+
+function changePage(direction) {
+  const totalPages = Math.ceil(allPlaylistCards.length / itemsPerPage);
+  const newPage = currentPage + direction;
+  
+  if (newPage >= 1 && newPage <= totalPages) {
+    currentPage = newPage;
+    updatePagination();
+  }
+}
+
+function goToPage(page) {
+  const totalPages = Math.ceil(allPlaylistCards.length / itemsPerPage);
+  
+  if (page >= 1 && page <= totalPages) {
+    currentPage = page;
+    updatePagination();
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initializePagination();
+});
+
+const dragDropStyles = `
+  .sortable-ghost {
+    opacity: 0.4;
+    background: #374151;
+  }
+  .sortable-chosen {
+    background: #4B5563;
+  }
+  .sortable-drag {
+    background: #6B7280;
+    transform: rotate(5deg);
+  }
+  .cursor-move:hover {
+    color: #60A5FA;
+  }
+  #availableVideos {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  }
+  #availableVideos::-webkit-scrollbar {
+    width: 6px;
+  }
+  #availableVideos::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  #availableVideos::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.3);
+    border-radius: 20px;
+  }
+`;
+
+const styleSheet = document.createElement('style');
+styleSheet.textContent = dragDropStyles;
+document.head.appendChild(styleSheet);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>

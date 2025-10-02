@@ -1,13 +1,3 @@
-/*
- * StreamFlow v2.0 - Live Streaming Lewat VPS
- * 
- * Custom Features & UI Components
- * Created by: Bang Tutorial
- * GitHub: https://github.com/bangtutorial
-
- * © 2025 Bang Tutorial - All rights reserved
- */
-
 let selectedVideoData = null;
 let currentOrientation = 'horizontal';
 let isDropdownOpen = false;
@@ -81,18 +71,17 @@ function toggleVideoSelector() {
 }
 function selectVideo(video) {
   selectedVideoData = video;
-  document.getElementById('selectedVideo').textContent = video.name;
+  const displayText = video.type === 'playlist' ? `[Playlist] ${video.name}` : video.name;
+  document.getElementById('selectedVideo').textContent = displayText;
   const videoSelector = document.querySelector('[onclick="toggleVideoSelector()"]');
   videoSelector.classList.remove('border-red-500');
   videoSelector.classList.add('border-gray-600');
+  
   const desktopPreview = document.getElementById('videoPreview');
   const desktopEmptyPreview = document.getElementById('emptyPreview');
   const mobilePreview = document.getElementById('videoPreviewMobile');
   const mobileEmptyPreview = document.getElementById('emptyPreviewMobile');
-  desktopPreview.classList.remove('hidden');
-  mobilePreview.classList.remove('hidden');
-  desktopEmptyPreview.classList.add('hidden');
-  mobileEmptyPreview.classList.add('hidden');
+  
   if (desktopVideoPlayer) {
     desktopVideoPlayer.pause();
     desktopVideoPlayer.dispose();
@@ -103,32 +92,67 @@ function selectVideo(video) {
     mobileVideoPlayer.dispose();
     mobileVideoPlayer = null;
   }
-  const desktopVideoContainer = document.getElementById('videoPreview');
-  const mobileVideoContainer = document.getElementById('videoPreviewMobile');
-  desktopVideoContainer.innerHTML = `
-    <video id="videojs-preview-desktop" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
-      <source src="${video.url}" type="video/mp4">
-    </video>
-  `;
-  mobileVideoContainer.innerHTML = `
-    <video id="videojs-preview-mobile" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
-      <source src="${video.url}" type="video/mp4">
-    </video>
-  `;
-  setTimeout(() => {
-    desktopVideoPlayer = videojs('videojs-preview-desktop', {
-      controls: true,
-      autoplay: false,
-      preload: 'auto',
-      fluid: true
-    });
-    mobileVideoPlayer = videojs('videojs-preview-mobile', {
-      controls: true,
-      autoplay: false,
-      preload: 'auto',
-      fluid: true
-    });
-  }, 10);
+  
+  if (video.type === 'playlist') {
+    desktopPreview.classList.add('hidden');
+    mobilePreview.classList.add('hidden');
+    desktopEmptyPreview.classList.remove('hidden');
+    mobileEmptyPreview.classList.remove('hidden');
+    
+    const desktopEmptyContent = desktopEmptyPreview.querySelector('div');
+    const mobileEmptyContent = mobileEmptyPreview.querySelector('div');
+    
+    if (desktopEmptyContent) {
+      desktopEmptyContent.innerHTML = `
+        <i class="ti ti-playlist text-4xl text-blue-400 mb-2"></i>
+        <p class="text-sm text-gray-300 font-medium">${video.name}</p>
+        <p class="text-xs text-blue-300 mt-1">Playlist selected • ${video.duration || 'Unknown duration'}</p>
+      `;
+    }
+    
+    if (mobileEmptyContent) {
+      mobileEmptyContent.innerHTML = `
+        <i class="ti ti-playlist text-4xl text-blue-400 mb-2"></i>
+        <p class="text-sm text-gray-300 font-medium">${video.name}</p>
+        <p class="text-xs text-blue-300 mt-1">Playlist selected • ${video.duration || 'Unknown duration'}</p>
+      `;
+    }
+  } else {
+    desktopPreview.classList.remove('hidden');
+    mobilePreview.classList.remove('hidden');
+    desktopEmptyPreview.classList.add('hidden');
+    mobileEmptyPreview.classList.add('hidden');
+    
+    const desktopVideoContainer = document.getElementById('videoPreview');
+    const mobileVideoContainer = document.getElementById('videoPreviewMobile');
+    
+    desktopVideoContainer.innerHTML = `
+      <video id="videojs-preview-desktop" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
+        <source src="${video.url}" type="video/mp4">
+      </video>
+    `;
+    mobileVideoContainer.innerHTML = `
+      <video id="videojs-preview-mobile" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
+        <source src="${video.url}" type="video/mp4">
+      </video>
+    `;
+    
+    setTimeout(() => {
+      desktopVideoPlayer = videojs('videojs-preview-desktop', {
+        controls: true,
+        autoplay: false,
+        preload: 'auto',
+        fluid: true
+      });
+      mobileVideoPlayer = videojs('videojs-preview-mobile', {
+        controls: true,
+        autoplay: false,
+        preload: 'auto',
+        fluid: true
+      });
+    }, 10);
+  }
+  
   document.getElementById('videoSelectorDropdown').classList.add('hidden');
   const hiddenVideoInput = document.getElementById('selectedVideoId');
   if (hiddenVideoInput) {
@@ -142,11 +166,11 @@ async function loadGalleryVideos() {
       console.error("Video list container not found");
       return;
     }
-    container.innerHTML = '<div class="text-center py-3"><i class="ti ti-loader animate-spin mr-2"></i>Loading videos...</div>';
-    const response = await fetch('/api/stream/videos');
-    const videos = await response.json();
-    window.allStreamVideos = videos;
-    displayFilteredVideos(videos);
+    container.innerHTML = '<div class="text-center py-3"><i class="ti ti-loader animate-spin mr-2"></i>Loading content...</div>';
+    const response = await fetch('/api/stream/content');
+    const content = await response.json();
+    window.allStreamVideos = content;
+    displayFilteredVideos(content);
     const searchInput = document.getElementById('videoSearchInput');
     if (searchInput) {
       searchInput.removeEventListener('input', handleVideoSearch);
@@ -156,13 +180,13 @@ async function loadGalleryVideos() {
       console.error("Search input element not found");
     }
   } catch (error) {
-    console.error('Error loading gallery videos:', error);
+    console.error('Error loading gallery content:', error);
     const container = document.getElementById('videoListContainer');
     if (container) {
       container.innerHTML = `
         <div class="text-center py-5 text-red-400">
           <i class="ti ti-alert-circle text-2xl mb-2"></i>
-          <p>Failed to load videos</p>
+          <p>Failed to load content</p>
           <p class="text-xs text-gray-500 mt-1">Please try again</p>
         </div>
       `;
@@ -173,46 +197,66 @@ function handleVideoSearch(e) {
   const searchTerm = e.target.value.toLowerCase().trim();
   console.log("Searching for:", searchTerm);
   if (!window.allStreamVideos) {
-    console.error("No videos available for search");
+    console.error("No content available for search");
     return;
   }
   if (searchTerm === '') {
     displayFilteredVideos(window.allStreamVideos);
     return;
   }
-  const filteredVideos = window.allStreamVideos.filter(video =>
-    video.name.toLowerCase().includes(searchTerm)
+  const filteredContent = window.allStreamVideos.filter(item =>
+    item.name.toLowerCase().includes(searchTerm) ||
+    (item.type === 'playlist' && item.description && item.description.toLowerCase().includes(searchTerm))
   );
-  console.log(`Found ${filteredVideos.length} matching videos`);
-  displayFilteredVideos(filteredVideos);
+  console.log(`Found ${filteredContent.length} matching items`);
+  displayFilteredVideos(filteredContent);
 }
 function displayFilteredVideos(videos) {
   const container = document.getElementById('videoListContainer');
   container.innerHTML = '';
   if (videos && videos.length > 0) {
-    videos.forEach(video => {
+    videos.forEach(item => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'w-full flex items-center space-x-3 p-2 rounded hover:bg-dark-600 transition-colors';
-      button.onclick = () => selectVideo(video);
-      button.innerHTML = `
-        <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
-          <img src="${video.thumbnail || '/images/default-thumbnail.jpg'}" alt="" 
-            class="w-full h-full object-cover rounded" 
-            onerror="this.src='/images/default-thumbnail.jpg'">
-        </div>
-        <div class="flex-1 min-w-0 ml-3">
-          <p class="text-sm font-medium text-white truncate">${video.name}</p>
-          <p class="text-xs text-gray-400">${video.resolution} • ${video.duration}</p>
-        </div>
-      `;
+      button.className = 'w-full flex items-start space-x-3 p-2 rounded hover:bg-dark-600 transition-colors text-left';
+      button.onclick = () => selectVideo(item);
+      
+      if (item.type === 'playlist') {
+        button.innerHTML = `
+          <div class="w-16 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex-shrink-0 overflow-hidden relative">
+            <img src="${item.thumbnail}" alt="" 
+              class="w-full h-full object-cover rounded" 
+              onerror="this.src='/images/playlist-thumbnail.svg'">
+            <div class="absolute top-0 right-0 bg-green-500 text-white text-xs px-1 rounded-bl text-[8px] font-bold">PL</div>
+          </div>
+          <div class="flex-1 min-w-0 ml-3 text-left">
+            <p class="text-sm font-medium text-white truncate flex items-center">
+              <i class="ti ti-playlist text-blue-400 mr-1 text-xs"></i>
+              ${item.name}
+            </p>
+            <p class="text-xs text-blue-300">${item.resolution} • ${item.duration}</p>
+          </div>
+        `;
+      } else {
+        button.innerHTML = `
+          <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
+            <img src="${item.thumbnail || '/images/default-thumbnail.jpg'}" alt="" 
+              class="w-full h-full object-cover rounded" 
+              onerror="this.src='/images/default-thumbnail.jpg'">
+          </div>
+          <div class="flex-1 min-w-0 ml-3 text-left">
+            <p class="text-sm font-medium text-white truncate">${item.name}</p>
+            <p class="text-xs text-gray-400">${item.resolution} • ${item.duration}</p>
+          </div>
+        `;
+      }
       container.appendChild(button);
     });
   } else {
     container.innerHTML = `
       <div class="text-center py-5 text-gray-400">
         <i class="ti ti-search-off text-2xl mb-2"></i>
-        <p>No matching videos found</p>
+        <p>No matching content found</p>
         <p class="text-xs text-gray-500 mt-1">Try different keywords</p>
       </div>
     `;
@@ -231,8 +275,24 @@ function resetModalForm() {
   mobilePreview.classList.add('hidden');
   desktopEmptyPreview.classList.remove('hidden');
   mobileEmptyPreview.classList.remove('hidden');
-  desktopPreview.querySelector('video source').src = '';
-  mobilePreview.querySelector('video source').src = '';
+  
+  const desktopEmptyContent = desktopEmptyPreview.querySelector('div');
+  const mobileEmptyContent = mobileEmptyPreview.querySelector('div');
+  
+  if (desktopEmptyContent) {
+    desktopEmptyContent.innerHTML = `
+      <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
+      <p class="text-sm text-gray-500">Select a video to preview</p>
+    `;
+  }
+  
+  if (mobileEmptyContent) {
+    mobileEmptyContent.innerHTML = `
+      <i class="ti ti-video text-4xl text-gray-600 mb-2"></i>
+      <p class="text-sm text-gray-500">Select a video to preview</p>
+    `;
+  }
+  
   if (isDropdownOpen) {
     toggleVideoSelector();
   }

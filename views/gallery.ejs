@@ -111,8 +111,9 @@
               <% } %>
     </div>
 
+    <% if (videos && videos.length > 0) { %>
     <div class="mt-6 flex items-center justify-between">
-      <p class="text-sm text-gray-400">Showing 1-4 of 12 videos</p>
+      <p class="text-sm text-gray-400">Showing 1-<%= Math.min(videos.length, 4) %> of <%= videos.length %> videos</p>
       <div class="flex items-center gap-2">
         <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 text-gray-400">
           <i class="ti ti-chevron-left"></i>
@@ -134,6 +135,7 @@
         </button>
       </div>
     </div>
+    <% } %>
 
 
     <div id="uploadModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity">
@@ -156,50 +158,65 @@
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
               <div id="uploadDropzone"
-                class="border-2 border-dashed border-gray-600 hover:border-primary/70 rounded-lg p-8 text-center transition-all cursor-pointer"
+                class="border-2 border-dashed border-gray-600 hover:border-primary/70 rounded-lg py-8 px-6 text-center transition-all cursor-pointer min-h-[200px]"
                 data-state="idle">
-                <div class="flex flex-col items-center justify-center">
-
-                  <div class="mb-3 transition-all" id="dropzoneIconContainer">
-                    <i class="ti ti-upload text-4xl text-gray-500"></i>
+                <div class="flex flex-col items-center justify-center h-full space-y-3">
+                  <div class="transition-all hidden" id="dropzoneIconContainer">
+                    <i class="ti ti-upload text-3xl text-gray-500"></i>
                   </div>
-                  <p class="text-gray-300 mb-2">Drag and drop video files here</p>
-                  <p class="text-gray-500 text-sm mb-4">Or click to browse</p>
+                  <div class="space-y-1">
+                    <p class="text-gray-300">Drag and drop video files here</p>
+                    <p class="text-gray-500 text-sm">Or click to browse</p>
+                  </div>
                   <label
                     class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors inline-block cursor-pointer">
                     <span>Select files</span>
-                    <input type="file" name="video" accept="video/mp4,video/avi,video/quicktime" class="hidden"
+                    <input type="file" name="video" accept="video/mp4,video/avi,video/quicktime" multiple class="hidden"
                       id="videoFileInput">
                   </label>
-                  <p class="text-gray-500 text-xs mt-4">Supported formats: MP4, AVI, MOV</p>
+                  <p class="text-gray-500 text-xs">Supported formats: MP4, AVI, MOV</p>
                 </div>
               </div>
 
-              <div id="selectedFileInfo" class="mt-4 hidden">
+              <div id="selectedFileInfo" class="hidden">
                 <div class="bg-dark-700/50 p-4 rounded-lg border border-gray-600/50">
-                  <div class="flex items-start">
-                    <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
-                      <i class="ti ti-file-video text-blue-400"></i>
+                  <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center">
+                      <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
+                        <i class="ti ti-file-video text-blue-400 font-loaded"></i>
+                      </div>
+                      <div>
+                        <p class="font-medium">Selected Files</p>
+                        <p id="selectedFileCount" class="text-xs text-gray-400"></p>
+                      </div>
                     </div>
-                    <div class="flex-1 min-w-0">
-                      <p id="selectedFileName" class="font-medium break-words"></p>
-                      <p id="selectedFileSize" class="text-xs text-gray-400 mt-1"></p>
+                    <div class="flex items-center space-x-2">
+                      <button type="button" id="addMoreFilesButton" 
+                        class="text-blue-400 hover:text-blue-300 shrink-0 flex items-center text-sm"
+                        onclick="document.getElementById('videoFileInput').click()">
+                        <i class="ti ti-plus mr-1"></i>
+                        <span>Add More</span>
+                      </button>
+                      <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white shrink-0">
+                        <i class="ti ti-x"></i>
+                      </button>
                     </div>
-                    <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white ml-2 shrink-0">
-                      <i class="ti ti-x"></i>
-                    </button>
+                  </div>
+                  <div id="selectedFilesList" class="p-2 space-y-1 max-h-60 overflow-y-auto">
                   </div>
                 </div>
               </div>
 
               <div class="mt-6 hidden" id="uploadProgress">
                 <div class="flex justify-between items-start text-sm mb-1.5">
-                  <span id="uploadProgressFilename" class="break-words mr-2 flex-1 min-w-0">Uploading...</span>
+                  <span id="uploadProgressStatus" class="break-words mr-2 flex-1 min-w-0">Uploading files...</span>
                   <span id="uploadProgressPercent" class="text-blue-400 ml-2 shrink-0">0%</span>
                 </div>
-                <div class="w-full bg-dark-700 rounded-full h-2.5 overflow-hidden">
+                <div class="w-full bg-dark-700 rounded-full h-2.5 overflow-hidden mb-3">
                   <div id="uploadProgressBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
                     style="width: 0%"></div>
+                </div>
+                <div id="uploadFilesList" class="p-2 space-y-1 max-h-60 overflow-y-auto">
                 </div>
               </div>
             </form>
@@ -387,13 +404,9 @@
           document.body.classList.remove('overflow-hidden');
         }, 200);
       }
-      async function checkGDriveAPIKey() {
-        try {
-          const response = await fetch('/api/settings/gdrive-status');
-          const data = await response.json();
-          const modalContent = document.getElementById('gdriveModalBody');
-          if (data.hasApiKey) {
-            modalContent.innerHTML = `
+      function checkGDriveAPIKey() {
+        const modalContent = document.getElementById('gdriveModalBody');
+        modalContent.innerHTML = `
         <div class="p-6">
           
           <div class="text-center mb-5">
@@ -421,147 +434,44 @@
           </button>
         </div>
       `;
-            document.getElementById('import-drive-button').addEventListener('click', async function () {
-              const link = document.getElementById('gdrive-link').value;
-              if (!link) {
-                showToast('error', 'Please enter a Google Drive link');
-                return;
-              }
-              this.disabled = true;
-              this.innerHTML = `
+        document.getElementById('import-drive-button').addEventListener('click', async function () {
+          const link = document.getElementById('gdrive-link').value;
+          if (!link) {
+            showToast('error', 'Please enter a Google Drive link');
+            return;
+          }
+          this.disabled = true;
+          this.innerHTML = `
           <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           Processing...
         `;
-              try {
-                const response = await fetch('/api/videos/import-drive', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
-                  },
-                  body: JSON.stringify({ driveUrl: link })
-                });
-                const result = await response.json();
-                if (result.success) {
-                  showImportProgressModal(result.jobId);
-                  closeGDriveModal();
-                } else {
-                  showToast('error', result.error || 'Failed to import video');
-                  this.disabled = false;
-                  this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
-                }
-              } catch (error) {
-                showToast('error', 'An error occurred while importing the video');
-                this.disabled = false;
-                this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
-              }
+          try {
+            const response = await fetch('/api/videos/import-drive', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
+              },
+              body: JSON.stringify({ driveUrl: link })
             });
-          } else {
-            modalContent.innerHTML = `
-        <div class="p-6">
-          
-          <div class="text-center mb-5">
-            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-              <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
-            </div>
-            <h4 class="text-lg font-medium mb-1">Connect Google Drive</h4>
-            <p class="text-gray-400 text-sm">API key needed to access Drive videos</p>
-          </div>
-          
-          <div class="relative mb-2">
-            <input 
-              type="password" 
-              id="gdrive-api-key-setup" 
-              class="bg-dark-700 text-white pl-10 pr-10 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
-              placeholder="Enter your Google Drive API key"
-            >
-            <i class="ti ti-key absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-            <button type="button" id="toggle-api-key-visibility" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white">
-              <i class="ti ti-eye"></i>
-            </button>
-          </div>
-          <p class="text-xs text-gray-500 mb-4 flex items-center justify-between">
-            <span>Get your API key from the <a href="https://console.cloud.google.com/" class="text-primary hover:underline" target="_blank">Google Cloud Console</a>.</span> 
-            <a href="https://youtu.be/SS-uOm-ysFE" target="_blank" class="inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium px-1.5 py-0.5 rounded-md">
-              <i class="ti ti-brand-youtube"></i>
-              <span>Tutorial</span>
-            </a>
-          </p>
-          
-          <button id="save-api-key-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
-            <i class="ti ti-device-floppy mr-2"></i>
-            <span>Save API Key</span>
-          </button>
-        </div>
-      `;
-            document.getElementById('toggle-api-key-visibility').addEventListener('click', function () {
-              const apiKeyField = document.getElementById('gdrive-api-key-setup');
-              const toggleBtn = this.querySelector('i');
-              if (apiKeyField.type === 'password') {
-                apiKeyField.type = 'text';
-                toggleBtn.classList.remove('ti-eye');
-                toggleBtn.classList.add('ti-eye-off');
-              } else {
-                apiKeyField.type = 'password';
-                toggleBtn.classList.remove('ti-eye-off');
-                toggleBtn.classList.add('ti-eye');
-              }
-            });
-            document.getElementById('save-api-key-button').addEventListener('click', async function () {
-              const apiKey = document.getElementById('gdrive-api-key-setup').value;
-              if (!apiKey) {
-                showToast('error', 'Please enter a Google Drive API key');
-                return;
-              }
-              this.disabled = true;
-              this.innerHTML = `
-    <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-    </svg>
-    Saving...
-  `;
-              try {
-                const response = await fetch('/api/settings/gdrive-api-key', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
-                  },
-                  body: JSON.stringify({ apiKey })
-                });
-                const result = await response.json();
-                if (result.success) {
-                  showToast('success', 'API key saved successfully');
-                  this.innerHTML = `
-        <i class="ti ti-check mr-2"></i>
-        <span>API Key Saved!</span>
-      `;
-                  this.classList.remove('bg-primary', 'hover:bg-primary/90');
-                  this.classList.add('bg-green-500', 'hover:bg-green-600');
-                  
-                  setTimeout(() => {
-                    closeGDriveModal();
-                  }, 1500);
-                } else {
-                  showToast('error', result.error || 'Failed to save API key');
-                  this.disabled = false;
-                  this.innerHTML = `<i class="ti ti-device-floppy mr-2"></i><span>Save API Key</span>`;
-                }
-              } catch (error) {
-                showToast('error', 'An error occurred while saving the API key');
-                this.disabled = false;
-                this.innerHTML = `<i class="ti ti-device-floppy mr-2"></i><span>Save API Key</span>`;
-              }
-            });
+            const result = await response.json();
+            if (result.success) {
+              showImportProgressModal(result.jobId);
+              closeGDriveModal();
+            } else {
+              showToast('error', result.error || 'Failed to import video');
+              this.disabled = false;
+              this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
+            }
+          } catch (error) {
+            showToast('error', 'An error occurred while importing the video');
+            this.disabled = false;
+            this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
           }
-        } catch (error) {
-          console.error('Error checking Google Drive API key status:', error);
-          showToast('error', 'Failed to check API key status');
-        }
+        });
       }
       function openVideoPreviewModal(title, videoSrc, details) {
         document.querySelector('#videoPreviewModal .video-title').textContent = title;
@@ -696,77 +606,257 @@
         }
         const videoFileInput = document.getElementById('videoFileInput');
         const selectedFileInfo = document.getElementById('selectedFileInfo');
-        const selectedFileName = document.getElementById('selectedFileName');
-        const selectedFileSize = document.getElementById('selectedFileSize');
+        const selectedFileCount = document.getElementById('selectedFileCount');
+        const selectedFilesList = document.getElementById('selectedFilesList');
         const clearFileButton = document.getElementById('clearFileButton');
         const uploadDropzone = document.getElementById('uploadDropzone');
         const uploadButton = document.getElementById('uploadButton');
         const uploadProgress = document.getElementById('uploadProgress');
         const uploadProgressBar = document.getElementById('uploadProgressBar');
         const uploadProgressPercent = document.getElementById('uploadProgressPercent');
-        const uploadProgressFilename = document.getElementById('uploadProgressFilename');
-        videoFileInput.addEventListener('change', function () {
-          if (this.files.length > 0) {
-            const file = this.files[0];
-            selectedFileName.textContent = file.name;
-            selectedFileSize.textContent = formatFileSize(file.size);
+        const uploadProgressStatus = document.getElementById('uploadProgressStatus');
+        const uploadFilesList = document.getElementById('uploadFilesList');
+        
+        let selectedFiles = [];
+        
+        function removeFile(index) {
+          selectedFiles.splice(index, 1);
+          if (selectedFiles.length > 0) {
+            updateFilesList();
+          } else {
+            resetUploadForm();
+          }
+        }
+        
+        videoFileInput.addEventListener('change', function() {
+          const newFiles = Array.from(this.files);
+          if (newFiles.length > 0) {
+            const maxFileSize = 10 * 1024 * 1024 * 1024;
+            const largeFiles = newFiles.filter(file => file.size > maxFileSize);
+            
+            if (largeFiles.length > 0) {
+              const fileNames = largeFiles.map(f => f.name).join(', ');
+              showToast('error', `File(s) too large: ${fileNames}. Maximum size is 10GB per file.`);
+              this.value = '';
+              return;
+            }
+            
+            const veryLargeFiles = newFiles.filter(file => file.size > 1024 * 1024 * 1024);
+            if (veryLargeFiles.length > 0) {
+              const fileNames = veryLargeFiles.map(f => f.name).join(', ');
+              showToast('warning', `Large file(s) detected: ${fileNames}. Upload may take longer time.`);
+            }
+            
+            if (selectedFiles.length === 0) {
+              selectedFiles = newFiles;
+            } else {
+              newFiles.forEach(newFile => {
+                const isDuplicate = selectedFiles.some(existingFile => 
+                  existingFile.name === newFile.name && existingFile.size === newFile.size
+                );
+                if (!isDuplicate) {
+                  selectedFiles.push(newFile);
+                }
+              });
+            }
+            
+            updateFilesList();
             uploadDropzone.classList.add('hidden');
             selectedFileInfo.classList.remove('hidden');
             uploadButton.disabled = false;
           }
+          
+          this.value = '';
         });
+        
+        function updateFilesList() {
+          selectedFileCount.textContent = selectedFiles.length;
+          selectedFilesList.innerHTML = '';
+          
+          selectedFiles.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'flex justify-between items-center p-2 rounded hover:bg-dark-600 transition-colors text-sm';
+            
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'flex-1 min-w-0';
+            fileInfo.innerHTML = `
+              <div class="truncate">${file.name}</div>
+              <div class="text-gray-400 text-xs">${formatFileSize(file.size)}</div>
+            `;
+            
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.className = 'ml-2 text-red-400 hover:text-red-300';
+            removeButton.innerHTML = `
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            `;
+            
+            removeButton.addEventListener('click', function() {
+              removeFile(index);
+            });
+            
+            fileItem.appendChild(fileInfo);
+            fileItem.appendChild(removeButton);
+            selectedFilesList.appendChild(fileItem);
+          });
+        }
         uploadButton.addEventListener('click', function () {
-          if (videoFileInput.files.length === 0) {
+          if (selectedFiles.length === 0) {
             return;
           }
-          const file = videoFileInput.files[0];
-          const formData = new FormData();
-          formData.append('video', file);
+          
           uploadDropzone.classList.add('hidden');
           selectedFileInfo.classList.add('hidden');
           uploadProgress.classList.remove('hidden');
-          uploadProgressFilename.textContent = file.name;
           uploadButton.disabled = true;
-          const xhr = new XMLHttpRequest();
-          xhr.upload.addEventListener('progress', (event) => {
-            if (event.lengthComputable) {
-              const percentComplete = Math.round((event.loaded / event.total) * 100);
-              uploadProgressBar.style.width = percentComplete + '%';
-              uploadProgressPercent.textContent = percentComplete + '%';
-            }
-          });
-          xhr.addEventListener('load', function () {
-            if (xhr.status === 200) {
-              try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                  showToast('success', 'Video uploaded successfully');
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 1000);
-                } else {
-                  showToast('error', response.error || 'Upload failed');
-                  resetUploadForm();
-                }
-              } catch (error) {
-                showToast('error', 'Failed to parse server response');
-                resetUploadForm();
+          
+          let currentFileIndex = 0;
+          let successCount = 0;
+          let failedFiles = [];
+          
+          function uploadNextFile() {
+            if (currentFileIndex >= selectedFiles.length) {
+              if (failedFiles.length === 0) {
+                showToast('success', `All ${successCount} videos uploaded successfully`);
+              } else {
+                showToast('warning', `${successCount} videos uploaded, ${failedFiles.length} failed`);
               }
-            } else {
-              showToast('error', 'Upload failed with status: ' + xhr.status);
-              resetUploadForm();
+              setTimeout(() => {
+                window.location.reload();
+              }, 2000);
+              return;
             }
+            
+            const file = selectedFiles[currentFileIndex];
+            const formData = new FormData();
+            formData.append('video', file);
+            
+            const isLargeFile = file.size > 1024 * 1024 * 1024;
+            const fileSizeText = formatFileSize(file.size);
+            
+            uploadProgressStatus.textContent = `Uploading ${currentFileIndex + 1} of ${selectedFiles.length}: ${file.name} (${fileSizeText})`;
+            
+            updateFileProgress(currentFileIndex, 'uploading', 0);
+            
+            const xhr = new XMLHttpRequest();
+            xhr.timeout = 30 * 60 * 1000;
+            
+            let startTime = Date.now();
+            let lastLoaded = 0;
+            let lastTime = startTime;
+            
+            xhr.upload.addEventListener('progress', (event) => {
+              if (event.lengthComputable) {
+                const filePercent = Math.round((event.loaded / event.total) * 100);
+                const overallPercent = Math.round(((currentFileIndex + (event.loaded / event.total)) / selectedFiles.length) * 100);
+                uploadProgressBar.style.width = overallPercent + '%';
+                uploadProgressPercent.textContent = overallPercent + '%';
+                
+                if (isLargeFile && event.loaded > 0) {
+                  const currentTime = Date.now();
+                  const timeDiff = currentTime - lastTime;
+                  const loadedDiff = event.loaded - lastLoaded;
+                  
+                  if (timeDiff > 1000) {
+                    const speed = loadedDiff / (timeDiff / 1000);
+                    const remaining = event.total - event.loaded;
+                    const eta = remaining / speed;
+                    
+                    const etaMinutes = Math.floor(eta / 60);
+                    const etaSeconds = Math.floor(eta % 60);
+                    const etaText = etaMinutes > 0 ? `${etaMinutes}m ${etaSeconds}s` : `${etaSeconds}s`;
+                    
+                    uploadProgressStatus.textContent = `Uploading ${currentFileIndex + 1} of ${selectedFiles.length}: ${file.name} (${fileSizeText}) - ETA: ${etaText}`;
+                    
+                    lastTime = currentTime;
+                    lastLoaded = event.loaded;
+                  }
+                }
+                
+                updateFileProgress(currentFileIndex, 'uploading', filePercent);
+              }
+            });
+            
+            xhr.addEventListener('load', function () {
+              if (xhr.status === 200) {
+                try {
+                  const response = JSON.parse(xhr.responseText);
+                  if (response.success) {
+                    successCount++;
+                    updateFileProgress(currentFileIndex, 'success', 100);
+                  } else {
+                    failedFiles.push(file.name);
+                    updateFileProgress(currentFileIndex, 'error', 0);
+                  }
+                } catch (error) {
+                  failedFiles.push(file.name);
+                  updateFileProgress(currentFileIndex, 'error', 0);
+                }
+              } else if (xhr.status === 413) {
+                failedFiles.push(file.name + ' (File too large)');
+                updateFileProgress(currentFileIndex, 'error', 0);
+              } else {
+                failedFiles.push(file.name);
+                updateFileProgress(currentFileIndex, 'error', 0);
+              }
+              currentFileIndex++;
+              setTimeout(uploadNextFile, 500);
+            });
+            
+            xhr.addEventListener('error', function () {
+              failedFiles.push(file.name + ' (Network error)');
+              updateFileProgress(currentFileIndex, 'error', 0);
+              currentFileIndex++;
+              setTimeout(uploadNextFile, 500);
+            });
+            
+            xhr.addEventListener('timeout', function () {
+              failedFiles.push(file.name + ' (Upload timeout)');
+              updateFileProgress(currentFileIndex, 'error', 0);
+              currentFileIndex++;
+              setTimeout(uploadNextFile, 500);
+            });
+            
+            xhr.open('POST', '/api/videos/upload', true);
+            xhr.send(formData);
+          }
+          
+          function updateFileProgress(index, status, percent) {
+            const fileItems = uploadFilesList.children;
+            if (fileItems[index]) {
+              const statusElement = fileItems[index].querySelector('.file-status');
+              if (statusElement) {
+                if (status === 'uploading') {
+                  statusElement.textContent = `${percent}%`;
+                  statusElement.className = 'file-status text-blue-400';
+                } else if (status === 'success') {
+                  statusElement.textContent = '✓';
+                  statusElement.className = 'file-status text-green-400';
+                } else if (status === 'error') {
+                  statusElement.textContent = '✗';
+                  statusElement.className = 'file-status text-red-400';
+                }
+              }
+            }
+          }
+          
+          uploadFilesList.innerHTML = '';
+          selectedFiles.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'flex justify-between items-center p-2 rounded hover:bg-dark-600 transition-colors text-sm';
+            fileItem.innerHTML = `
+              <div class="flex-1 min-w-0">
+                <div class="truncate">${file.name}</div>
+                <div class="text-gray-400 text-xs">${formatFileSize(file.size)}</div>
+              </div>
+              <span class="file-status text-gray-400 ml-2">Waiting...</span>
+            `;
+            uploadFilesList.appendChild(fileItem);
           });
-          xhr.addEventListener('error', function () {
-            showToast('error', 'An error occurred during upload');
-            resetUploadForm();
-          });
-          xhr.addEventListener('abort', function () {
-            showToast('warning', 'Upload aborted');
-            resetUploadForm();
-          });
-          xhr.open('POST', '/api/videos/upload', true);
-          xhr.send(formData);
+          
+          uploadNextFile();
         });
         clearFileButton.addEventListener('click', function () {
           resetUploadForm();
@@ -1380,5 +1470,33 @@
         height: 53vh;
         max-height: 600px;
         background-color: black;
+      }
+
+      /* Custom Scrollbar Styling */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+      }
+      ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: rgba(156, 163, 175, 0.3);
+        border-radius: 20px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(156, 163, 175, 0.5);
+      }
+      .overflow-y-auto::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+      }
+      #selectedFilesList::-webkit-scrollbar-thumb,
+      #uploadFilesList::-webkit-scrollbar-thumb {
+        background-color: rgba(156, 163, 175, 0.2);
       }
     </style>

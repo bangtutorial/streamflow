@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Account Setup - StreamFlow Lite</title>
+  <title>Sign Up - StreamFlow Lite</title>
   <link rel="icon" href="/images/logo_mobile.svg" type="image/svg+xml">
   <link rel="preload" href="/images/logo_mobile.svg" as="image" type="image/svg+xml">
   <link rel="alternate icon" href="/images/favicon.ico" type="image/x-icon">
@@ -44,10 +44,12 @@
   <div class="min-h-screen flex flex-col">
     <div class="flex-1 flex items-center justify-center px-6 py-10">
       <div class="w-full max-w-lg bg-dark-800 rounded-xl shadow-xl p-6 sm:p-8">
+      
         <div class="text-center mb-8">
-          <h1 class="text-2xl font-bold">Complete Your Account</h1>
-          <p class="text-gray-400 mt-1">Set up your profile to get started with StreamFlow</p>
+          <h1 class="text-2xl font-bold">Create Account</h1>
+          <p class="text-gray-400 mt-1">Join streaming membership</p>
         </div>
+
         <% if (typeof error !=='undefined' && error) { %>
           <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded mb-6">
             <p><i class="ti ti-alert-circle mr-2"></i>
@@ -55,9 +57,20 @@
             </p>
           </div>
           <% } %>
-            <form id="setupForm" action="/setup-account" method="post" enctype="multipart/form-data" class="space-y-6">
-              <input type="hidden" name="user_role" value="admin">
-              <input type="hidden" name="status" value="active">
+
+      <% if (success) { %>
+        <div id="success-message" class="bg-green-500/10 border border-green-500/20 text-green-400 px-4 py-3 rounded-lg mb-6">
+          <div class="flex items-center">
+            <i class="ti ti-check-circle mr-2"></i>
+            <span><%= success %></span>
+          </div>
+        </div>
+      <% } %>
+
+            <form id="signupForm" action="/signup" method="post" enctype="multipart/form-data" class="space-y-6">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="user_role" value="member">
+              <input type="hidden" name="status" value="inactive">
               
               <div class="flex flex-col items-center justify-center">
                 <div class="relative group">
@@ -85,7 +98,6 @@
                     placeholder="Choose a username" required>
                   <i class="ti ti-user absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                 </div>
-                <p id="username-error" class="hidden text-red-400 text-xs mt-1"></p>
               </div>
               
               <div>
@@ -93,50 +105,57 @@
                 <div class="relative">
                   <input type="password" id="password" name="password"
                     class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
-                    placeholder="Create a strong password" required>
+                    placeholder="Create a password" required minlength="6" onkeyup="checkPasswordStrength()">
                   <i class="ti ti-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                   <button type="button" onclick="togglePasswordVisibility('password', 'passwordToggle')"
                     class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                     <i class="ti ti-eye text-base" id="passwordToggle"></i>
                   </button>
                 </div>
-                <div class="mt-1">
-                  <div class="w-full bg-gray-600 rounded-full h-1.5 mt-2">
-                    <div id="password-strength" class="bg-red-500 h-1.5 rounded-full" style="width: 0%"></div>
+                <div id="passwordStrength" class="mt-2 text-xs hidden">
+                  <div class="flex space-x-1 mb-1">
+                    <div class="h-1 flex-1 bg-gray-600 rounded" id="strength1"></div>
+                    <div class="h-1 flex-1 bg-gray-600 rounded" id="strength2"></div>
+                    <div class="h-1 flex-1 bg-gray-600 rounded" id="strength3"></div>
+                    <div class="h-1 flex-1 bg-gray-600 rounded" id="strength4"></div>
                   </div>
-                  <p id="password-feedback" class="text-xs text-gray-400 mt-1">Use 8+ characters with letters, numbers &
-                    symbols</p>
+                  <span id="strengthText" class="text-gray-400">Password strength</span>
                 </div>
               </div>
-              
+
               <div class="pb-3">
-                <label for="confirm-password" class="text-sm font-medium block mb-2">Confirm Password</label>
+                <label for="confirmPassword" class="text-sm font-medium block mb-2">Confirm Password</label>
                 <div class="relative">
-                  <input type="password" id="confirm-password" name="confirmPassword"
+                  <input type="password" id="confirmPassword" name="confirmPassword"
                     class="w-full pl-10 pr-12 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
-                    placeholder="Confirm your password" required>
+                    placeholder="Confirm your password" required onkeyup="checkPasswordMatch()">
                   <i class="ti ti-lock-check absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                  <button type="button" onclick="togglePasswordVisibility('confirm-password', 'confirmPasswordToggle')"
+                  <button type="button" onclick="togglePasswordVisibility('confirmPassword', 'confirmPasswordToggle')"
                     class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
                     <i class="ti ti-eye text-base" id="confirmPasswordToggle"></i>
                   </button>
                 </div>
-                <p id="password-match" class="hidden text-green-400 text-xs mt-1">
-                  <i class="ti ti-check mr-1"></i> Passwords match
-                </p>
-                <p id="password-mismatch" class="hidden text-red-400 text-xs mt-1">
-                  <i class="ti ti-x mr-1"></i> Passwords don't match
-                </p>
+                <div id="passwordMatch" class="mt-1 text-xs hidden">
+                  <span id="matchText"></span>
+                </div>
               </div>
               
-              <button type="submit"
-                class="w-full bg-primary hover:bg-blue-600 text-white py-2.5 rounded-lg font-medium transition-colors">
-                Complete Setup
+              <button type="submit" id="submitBtn"
+                class="w-full bg-primary hover:bg-blue-600 text-white py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                Create Account
               </button>
             </form>
+
+            <div class="text-center mt-6">
+              <p class="text-gray-400 text-sm">
+                Already have an account? 
+                <a href="/login" class="text-primary hover:text-blue-400 transition-colors">Sign in</a>
+              </p>
+            </div>
       </div>
     </div>
   </div>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const icons = document.querySelectorAll('.ti');
@@ -149,13 +168,14 @@
       const input = event.target;
       if (input.files && input.files[0]) {
         const reader = new FileReader();
-        reader.onload = function (e) {
+        reader.onload = function(e) {
           const preview = document.getElementById('avatar-preview');
           preview.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
-        }
+        };
         reader.readAsDataURL(input.files[0]);
       }
     }
+
     function togglePasswordVisibility(inputId, toggleId) {
       const input = document.getElementById(inputId);
       const toggle = document.getElementById(toggleId);
@@ -169,68 +189,75 @@
         toggle.classList.add('ti-eye');
       }
     }
-    document.getElementById('password').addEventListener('input', function (e) {
-      const password = e.target.value;
-      const strength = calculatePasswordStrength(password);
-      const strengthBar = document.getElementById('password-strength');
-      const feedback = document.getElementById('password-feedback');
-      strengthBar.style.width = strength.score * 25 + '%';
-      if (strength.score === 0) {
-        strengthBar.className = 'bg-gray-500 h-1.5 rounded-full';
-        feedback.textContent = 'Use 8+ characters with letters, numbers & symbols';
-        feedback.className = 'text-xs text-gray-400 mt-1';
-      } else if (strength.score === 1) {
-        strengthBar.className = 'bg-red-500 h-1.5 rounded-full';
-        feedback.textContent = 'Too weak - password needs improvement';
-        feedback.className = 'text-xs text-red-400 mt-1';
-      } else if (strength.score === 2) {
-        strengthBar.className = 'bg-yellow-500 h-1.5 rounded-full';
-        feedback.textContent = 'Could be stronger - add more variety';
-        feedback.className = 'text-xs text-yellow-500 mt-1';
-      } else if (strength.score === 3) {
-        strengthBar.className = 'bg-green-500 h-1.5 rounded-full';
-        feedback.textContent = 'Good password';
-        feedback.className = 'text-xs text-green-500 mt-1';
-      } else {
-        strengthBar.className = 'bg-green-500 h-1.5 rounded-full';
-        feedback.textContent = 'Strong password - excellent!';
-        feedback.className = 'text-xs text-green-500 mt-1';
-      }
-    });
-    document.getElementById('confirm-password').addEventListener('input', function (e) {
+
+    function checkPasswordStrength() {
       const password = document.getElementById('password').value;
-      const confirmPassword = e.target.value;
-      if (confirmPassword === '') {
-        document.getElementById('password-match').classList.add('hidden');
-        document.getElementById('password-mismatch').classList.add('hidden');
-      } else if (password === confirmPassword) {
-        document.getElementById('password-match').classList.remove('hidden');
-        document.getElementById('password-mismatch').classList.add('hidden');
-      } else {
-        document.getElementById('password-match').classList.add('hidden');
-        document.getElementById('password-mismatch').classList.remove('hidden');
+      const strengthDiv = document.getElementById('passwordStrength');
+      const strengthText = document.getElementById('strengthText');
+      const bars = ['strength1', 'strength2', 'strength3', 'strength4'];
+      
+      if (password.length === 0) {
+        strengthDiv.classList.add('hidden');
+        return;
       }
-    });
-    function calculatePasswordStrength(password) {
-      let score = 0;
-      if (password.length >= 8) score += 1;
-      if (password.length >= 12) score += 1;
-      if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
-      if (/[0-9]/.test(password)) score += 0.5;
-      if (/[^a-zA-Z0-9]/.test(password)) score += 0.5;
-      return {
-        score: Math.min(4, Math.floor(score))
-      };
+      
+      strengthDiv.classList.remove('hidden');
+      
+      let strength = 0;
+      if (password.length >= 6) strength++;
+      if (password.match(/[a-z]/)) strength++;
+      if (password.match(/[A-Z]/)) strength++;
+      if (password.match(/[0-9]/) || password.match(/[^a-zA-Z0-9]/)) strength++;
+      
+      bars.forEach((bar, index) => {
+        const element = document.getElementById(bar);
+        if (index < strength) {
+          if (strength <= 1) {
+            element.className = 'h-1 flex-1 bg-red-500 rounded';
+          } else if (strength <= 2) {
+            element.className = 'h-1 flex-1 bg-yellow-500 rounded';
+          } else if (strength <= 3) {
+            element.className = 'h-1 flex-1 bg-blue-500 rounded';
+          } else {
+            element.className = 'h-1 flex-1 bg-green-500 rounded';
+          }
+        } else {
+          element.className = 'h-1 flex-1 bg-gray-600 rounded';
+        }
+      });
+      
+      const strengthLabels = ['Weak', 'Fair', 'Good', 'Strong'];
+      const strengthColors = ['text-red-400', 'text-yellow-400', 'text-blue-400', 'text-green-400'];
+      
+      strengthText.textContent = strengthLabels[strength - 1] || 'Very Weak';
+      strengthText.className = strengthColors[strength - 1] || 'text-red-400';
     }
-    document.getElementById('setupForm').addEventListener('submit', function (e) {
+
+    function checkPasswordMatch() {
       const password = document.getElementById('password').value;
-      const confirmPassword = document.getElementById('confirm-password').value;
-      if (password !== confirmPassword) {
-        e.preventDefault();
-        document.getElementById('password-mismatch').classList.remove('hidden');
-        document.getElementById('password-match').classList.add('hidden');
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const matchDiv = document.getElementById('passwordMatch');
+      const matchText = document.getElementById('matchText');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      if (confirmPassword.length === 0) {
+        matchDiv.classList.add('hidden');
+        submitBtn.disabled = false;
+        return;
       }
-    });
+      
+      matchDiv.classList.remove('hidden');
+      
+      if (password === confirmPassword) {
+        matchText.textContent = 'Passwords match';
+        matchText.className = 'text-green-400';
+        submitBtn.disabled = false;
+      } else {
+        matchText.textContent = 'Passwords do not match';
+        matchText.className = 'text-red-400';
+        submitBtn.disabled = true;
+      }
+    }
   </script>
 </body>
 </html>

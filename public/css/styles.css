@@ -1,5 +1,5 @@
 /*
- * StreamFlow v2.0 - Live Streaming Lewat VPS
+ * StreamFlow v2.1 - Live Streaming Lewat VPS
  * 
  * Custom Features & UI Components
  * Created by: Bang Tutorial
@@ -7,6 +7,28 @@
 
  * © 2025 Bang Tutorial - All rights reserved
  */
+
+@font-face {
+  font-family: 'tabler-icons';
+  font-display: swap;
+}
+
+.ti {
+  font-family: 'tabler-icons', sans-serif;
+  font-display: swap;
+}
+
+.ti:before {
+  font-display: swap;
+}
+
+.ti {
+  visibility: hidden;
+}
+
+.ti.font-loaded {
+  visibility: visible;
+}
 
 .sidebar-icon {
   position: relative;
@@ -112,6 +134,31 @@ body {
 
 [onclick^="setVideoOrientation"]:active i {
   transform: scale(0.9);
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #374151;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #6b7280 #374151;
 }
 
 @media (max-width: 768px) {

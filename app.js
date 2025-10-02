@@ -16,10 +16,11 @@ const rateLimit = require('express-rate-limit');
 const User = require('./models/User');
 const { db, checkIfUsersExist } = require('./db/database');
 const systemMonitor = require('./services/systemMonitor');
-const { uploadVideo } = require('./middleware/uploadMiddleware');
+const { uploadVideo, upload } = require('./middleware/uploadMiddleware');
 const { ensureDirectories } = require('./utils/storage');
 const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
 const Video = require('./models/Video');
+const Playlist = require('./models/Playlist');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const streamingService = require('./services/streamingService');
@@ -114,6 +115,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  rolling: true,
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -153,65 +155,22 @@ app.engine('ejs', engine);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.setHeader('Service-Worker-Allowed', '/');
+  res.sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
+
 app.use('/uploads', function (req, res, next) {
   res.header('Cache-Control', 'no-cache');
   res.header('Pragma', 'no-cache');
   res.header('Expires', '0');
   next();
 });
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const dir = './public/uploads/avatars';
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = file.originalname.split('.').pop();
-    cb(null, 'avatar-' + uniqueSuffix + '.' + ext);
-  }
-});
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: function (req, file, cb) {
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-      return cb(new Error('Only image files are allowed!'), false);
-    }
-    cb(null, true);
-  }
-});
-const videoStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, 'public', 'uploads', 'videos'));
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = path.extname(file.originalname);
-    let fileName = `video-${uniqueSuffix}${ext}`;
-    let fullPath = path.join(__dirname, 'public', 'uploads', 'videos', fileName);
-    let counter = 1;
-    while (fs.existsSync(fullPath)) {
-      fileName = `video-${uniqueSuffix}-${counter}${ext}`;
-      fullPath = path.join(__dirname, 'public', 'uploads', 'videos', fileName);
-      counter++;
-    }
-    cb(null, fileName);
-  }
-});
-const videoUpload = multer({
-  storage: videoStorage,
-  fileFilter: function (req, file, cb) {
-    if (!file.mimetype.match(/^video\/(mp4|avi|quicktime)$/)) {
-      return cb(new Error('Only MP4, AVI, and MOV video files are allowed!'), false);
-    }
-    cb(null, true);
-  }
-});
+app.use(express.urlencoded({ extended: true, limit: '10gb' }));
+app.use(express.json({ limit: '10gb' }));
+
 const csrfProtection = function (req, res, next) {
   if ((req.path === '/login' && req.method === 'POST') ||
     (req.path === '/setup-account' && req.method === 'POST')) {
@@ -231,6 +190,25 @@ const isAuthenticated = (req, res, next) => {
     return next();
   }
   res.redirect('/login');
+};
+
+const isAdmin = async (req, res, next) => {
+  try {
+    if (!req.session.userId) {
+      return res.redirect('/login');
+    }
+    
+    const user = await User.findById(req.session.userId);
+    if (!user || user.user_role !== 'admin') {
+      return res.redirect('/dashboard');
+    }
+    
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Admin middleware error:', error);
+    res.redirect('/dashboard');
+  }
 };
 app.use('/uploads', function (req, res, next) {
   res.header('Cache-Control', 'no-cache');
@@ -310,8 +288,18 @@ app.post('/login', loginDelayMiddleware, loginLimiter, async (req, res) => {
         error: 'Invalid username or password'
       });
     }
+    
+    if (user.status !== 'active') {
+      return res.render('login', {
+        title: 'Login',
+        error: 'Your account is not active. Please contact administrator for activation.'
+      });
+    }
+    
     req.session.userId = user.id;
     req.session.username = user.username;
+    req.session.avatar_path = user.avatar_path;
+    req.session.user_role = user.user_role;
     res.redirect('/dashboard');
   } catch (error) {
     console.error('Login error:', error);
@@ -325,6 +313,104 @@ app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect('/login');
 });
+
+app.get('/signup', async (req, res) => {
+  if (req.session.userId) {
+    return res.redirect('/dashboard');
+  }
+  try {
+    const usersExist = await checkIfUsersExist();
+    if (!usersExist) {
+      return res.redirect('/setup-account');
+    }
+    res.render('signup', {
+      title: 'Sign Up',
+      error: null,
+      success: null
+    });
+  } catch (error) {
+    console.error('Error loading signup page:', error);
+    res.render('signup', {
+      title: 'Sign Up',
+      error: 'System error. Please try again.',
+      success: null
+    });
+  }
+});
+
+app.post('/signup', upload.single('avatar'), async (req, res) => {
+  const { username, password, confirmPassword, user_role, status } = req.body;
+  
+  try {
+    if (!username || !password) {
+      return res.render('signup', {
+        title: 'Sign Up',
+        error: 'Username and password are required',
+        success: null
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.render('signup', {
+        title: 'Sign Up',
+        error: 'Passwords do not match',
+        success: null
+      });
+    }
+
+    if (password.length < 6) {
+      return res.render('signup', {
+        title: 'Sign Up',
+        error: 'Password must be at least 6 characters long',
+        success: null
+      });
+    }
+
+    const existingUser = await User.findByUsername(username);
+    if (existingUser) {
+      return res.render('signup', {
+        title: 'Sign Up',
+        error: 'Username already exists',
+        success: null
+      });
+    }
+
+    let avatarPath = null;
+    if (req.file) {
+      avatarPath = `/uploads/avatars/${req.file.filename}`;
+    }
+
+    const newUser = await User.create({
+      username,
+      password,
+      avatar_path: avatarPath,
+      user_role: user_role || 'member',
+      status: status || 'inactive'
+    });
+
+    if (newUser) {
+      return res.render('signup', {
+        title: 'Sign Up',
+        error: null,
+        success: 'Account created successfully! Please wait for admin approval to activate your account.'
+      });
+    } else {
+      return res.render('signup', {
+        title: 'Sign Up',
+        error: 'Failed to create account. Please try again.',
+        success: null
+      });
+    }
+  } catch (error) {
+    console.error('Signup error:', error);
+    return res.render('signup', {
+      title: 'Sign Up',
+      error: 'An error occurred during registration. Please try again.',
+      success: null
+    });
+  }
+});
+
 app.get('/setup-account', async (req, res) => {
   try {
     const usersExist = await checkIfUsersExist();
@@ -386,18 +472,21 @@ app.post('/setup-account', upload.single('avatar'), [
     const usersExist = await checkIfUsersExist();
     if (!usersExist) {
       try {
-        const userId = uuidv4();
-        await User.create({
-          id: userId,
+        const user = await User.create({
           username: req.body.username,
           password: req.body.password,
           avatar_path: avatarPath,
+          user_role: 'admin',
+          status: 'active'
         });
-        req.session.userId = userId;
+        req.session.userId = user.id;
         req.session.username = req.body.username;
+        req.session.user_role = user.user_role;
         if (avatarPath) {
           req.session.avatar_path = avatarPath;
         }
+        console.log('Setup account - Using user ID from database:', user.id);
+        console.log('Setup account - Session userId set to:', req.session.userId);
         return res.redirect('/dashboard');
       } catch (error) {
         console.error('User creation error:', error);
@@ -546,6 +635,323 @@ app.delete('/api/history/:id', isAuthenticated, async (req, res) => {
     });
   }
 });
+
+app.get('/users', isAdmin, async (req, res) => {
+  try {
+    const users = await User.findAll();
+    
+    const usersWithStats = await Promise.all(users.map(async (user) => {
+      const videoStats = await new Promise((resolve, reject) => {
+        db.get(
+          `SELECT COUNT(*) as count, COALESCE(SUM(file_size), 0) as totalSize 
+           FROM videos WHERE user_id = ?`,
+          [user.id],
+          (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          }
+        );
+      });
+      
+      const streamStats = await new Promise((resolve, reject) => {
+         db.get(
+           `SELECT COUNT(*) as count FROM streams WHERE user_id = ?`,
+           [user.id],
+           (err, row) => {
+             if (err) reject(err);
+             else resolve(row);
+           }
+         );
+       });
+       
+       const activeStreamStats = await new Promise((resolve, reject) => {
+         db.get(
+           `SELECT COUNT(*) as count FROM streams WHERE user_id = ? AND status = 'live'`,
+           [user.id],
+           (err, row) => {
+             if (err) reject(err);
+             else resolve(row);
+           }
+         );
+       });
+      
+      const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      };
+      
+      return {
+         ...user,
+         videoCount: videoStats.count,
+         totalVideoSize: videoStats.totalSize > 0 ? formatFileSize(videoStats.totalSize) : null,
+         streamCount: streamStats.count,
+         activeStreamCount: activeStreamStats.count
+       };
+    }));
+    
+    res.render('users', {
+      title: 'User Management',
+      active: 'users',
+      users: usersWithStats,
+      user: req.user
+    });
+  } catch (error) {
+    console.error('Users page error:', error);
+    res.status(500).render('error', {
+      title: 'Error',
+      message: 'Failed to load users page',
+      user: req.user
+    });
+  }
+});
+
+app.post('/api/users/status', isAdmin, async (req, res) => {
+  try {
+    const { userId, status } = req.body;
+    
+    if (!userId || !status || !['active', 'inactive'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID or status'
+      });
+    }
+
+    if (userId == req.session.userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot change your own status'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    await User.updateStatus(userId, status);
+    
+    res.json({
+      success: true,
+      message: `User ${status === 'active' ? 'activated' : 'deactivated'} successfully`
+    });
+  } catch (error) {
+    console.error('Error updating user status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user status'
+    });
+  }
+});
+
+app.post('/api/users/role', isAdmin, async (req, res) => {
+  try {
+    const { userId, role } = req.body;
+    
+    if (!userId || !role || !['admin', 'member'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID or role'
+      });
+    }
+
+    if (userId == req.session.userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot change your own role'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    await User.updateRole(userId, role);
+    
+    res.json({
+      success: true,
+      message: `User role updated to ${role} successfully`
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user role'
+    });
+  }
+});
+
+app.post('/api/users/delete', isAdmin, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID'
+      });
+    }
+
+    if (userId == req.session.userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot delete your own account'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    await User.delete(userId);
+    
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete user'
+    });
+  }
+});
+
+app.post('/api/users/update', isAdmin, upload.single('avatar'), async (req, res) => {
+  try {
+    const { userId, username, role, status, password } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user ID'
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    let avatarPath = user.avatar_path;
+    if (req.file) {
+      avatarPath = `/uploads/avatars/${req.file.filename}`;
+    }
+
+    const updateData = {
+      username: username || user.username,
+      user_role: role || user.user_role,
+      status: status || user.status,
+      avatar_path: avatarPath
+    };
+
+    if (password && password.trim() !== '') {
+      const bcrypt = require('bcrypt');
+      updateData.password = await bcrypt.hash(password, 10);
+    }
+
+    await User.updateProfile(userId, updateData);
+    
+    res.json({
+      success: true,
+      message: 'User updated successfully'
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update user'
+    });
+  }
+});
+
+app.post('/api/users/create', isAdmin, upload.single('avatar'), async (req, res) => {
+  try {
+    const { username, role, status, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username and password are required'
+      });
+    }
+
+    const existingUser = await User.findByUsername(username);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username already exists'
+      });
+    }
+
+    let avatarPath = '/uploads/avatars/default-avatar.png';
+    if (req.file) {
+      avatarPath = `/uploads/avatars/${req.file.filename}`;
+    }
+
+    const userData = {
+      username: username,
+      password: password,
+      user_role: role || 'user',
+      status: status || 'active',
+      avatar_path: avatarPath
+    };
+
+    const result = await User.create(userData);
+    
+    res.json({
+      success: true,
+      message: 'User created successfully',
+      userId: result.id
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create user'
+    });
+  }
+});
+
+app.get('/api/users/:id/videos', isAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const videos = await Video.findAll(userId);
+    res.json({ success: true, videos });
+  } catch (error) {
+    console.error('Get user videos error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get user videos' });
+  }
+});
+
+app.get('/api/users/:id/streams', isAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const streams = await Stream.findAll(userId);
+    res.json({ success: true, streams });
+  } catch (error) {
+    console.error('Get user streams error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get user streams' });
+  }
+});
+
 app.get('/api/system-stats', isAuthenticated, async (req, res) => {
   try {
     const stats = await systemMonitor.getSystemStats();
@@ -736,6 +1142,7 @@ app.post('/settings/integrations/gdrive', isAuthenticated, [
 app.post('/upload/video', isAuthenticated, uploadVideo.single('video'), async (req, res) => {
   try {
     console.log('Upload request received:', req.file);
+    console.log('Session userId for upload:', req.session.userId);
     
     if (!req.file) {
       return res.status(400).json({ error: 'No video file provided' });
@@ -781,12 +1188,35 @@ app.post('/upload/video', isAuthenticated, uploadVideo.single('video'), async (r
     });
   }
 });
-app.post('/api/videos/upload', isAuthenticated, videoUpload.single('video'), async (req, res) => {
+app.post('/api/videos/upload', isAuthenticated, (req, res, next) => {
+  uploadVideo.single('video')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ 
+          success: false, 
+          error: 'File too large. Maximum size is 10GB.' 
+        });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Unexpected file field.' 
+        });
+      }
+      return res.status(400).json({ 
+        success: false, 
+        error: err.message 
+      });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
-    console.log('Upload request received:', req.file);
-    
     if (!req.file) {
-      return res.status(400).json({ error: 'No video file provided' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No video file provided' 
+      });
     }
     let title = path.parse(req.file.originalname).name;
     const filePath = `/uploads/videos/${req.file.filename}`;
@@ -1011,18 +1441,11 @@ app.post('/api/videos/import-drive', isAuthenticated, [
       return res.status(400).json({ success: false, error: errors.array()[0].msg });
     }
     const { driveUrl } = req.body;
-    const user = await User.findById(req.session.userId);
-    if (!user.gdrive_api_key) {
-      return res.status(400).json({
-        success: false,
-        error: 'Google Drive API key is not configured'
-      });
-    }
     const { extractFileId, downloadFile } = require('./utils/googleDriveService');
     try {
       const fileId = extractFileId(driveUrl);
       const jobId = uuidv4();
-      processGoogleDriveImport(jobId, user.gdrive_api_key, fileId, req.session.userId)
+      processGoogleDriveImport(jobId, fileId, req.session.userId)
         .catch(err => console.error('Drive import failed:', err));
       return res.json({
         success: true,
@@ -1052,7 +1475,7 @@ app.get('/api/videos/import-status/:jobId', isAuthenticated, async (req, res) =>
   });
 });
 const importJobs = {};
-async function processGoogleDriveImport(jobId, apiKey, fileId, userId) {
+async function processGoogleDriveImport(jobId, fileId, userId) {
   const { downloadFile } = require('./utils/googleDriveService');
   const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
   const ffmpeg = require('fluent-ffmpeg');
@@ -1064,7 +1487,7 @@ async function processGoogleDriveImport(jobId, apiKey, fileId, userId) {
   };
   
   try {
-    const result = await downloadFile(apiKey, fileId, (progress) => {
+    const result = await downloadFile(fileId, (progress) => {
       importJobs[jobId] = {
         status: 'downloading',
         progress: progress.progress,
@@ -1156,13 +1579,57 @@ app.get('/api/stream/videos', isAuthenticated, async (req, res) => {
         thumbnail: video.thumbnail_path,
         resolution: video.resolution || '1280x720',
         duration: formattedDuration,
-        url: `/stream/${video.id}`
+        url: `/stream/${video.id}`,
+        type: 'video'
       };
     });
     res.json(formattedVideos);
   } catch (error) {
     console.error('Error fetching videos for stream:', error);
     res.status(500).json({ error: 'Failed to load videos' });
+  }
+});
+
+app.get('/api/stream/content', isAuthenticated, async (req, res) => {
+  try {
+    const videos = await Video.findAll(req.session.userId);
+    const formattedVideos = videos.map(video => {
+      const duration = video.duration ? Math.floor(video.duration) : 0;
+      const minutes = Math.floor(duration / 60);
+      const seconds = Math.floor(duration % 60);
+      const formattedDuration = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      return {
+        id: video.id,
+        name: video.title,
+        thumbnail: video.thumbnail_path,
+        resolution: video.resolution || '1280x720',
+        duration: formattedDuration,
+        url: `/stream/${video.id}`,
+        type: 'video'
+      };
+    });
+
+    const playlists = await Playlist.findAll(req.session.userId);
+    const formattedPlaylists = playlists.map(playlist => {
+      return {
+        id: playlist.id,
+        name: playlist.name,
+        thumbnail: '/images/playlist-thumbnail.svg',
+        resolution: 'Playlist',
+        duration: `${playlist.video_count || 0} videos`,
+        url: `/playlist/${playlist.id}`,
+        type: 'playlist',
+        description: playlist.description,
+        is_shuffle: playlist.is_shuffle
+      };
+    });
+
+    const allContent = [...formattedPlaylists, ...formattedVideos];
+    
+    res.json(allContent);
+  } catch (error) {
+    console.error('Error fetching content for stream:', error);
+    res.status(500).json({ error: 'Failed to load content' });
   }
 });
 const Stream = require('./models/Stream');
@@ -1183,6 +1650,7 @@ app.post('/api/streams', isAuthenticated, [
   body('streamKey').trim().isLength({ min: 1 }).withMessage('Stream key is required')
 ], async (req, res) => {
   try {
+    console.log('Session userId for stream creation:', req.session.userId);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, error: errors.array()[0].msg });
@@ -1466,6 +1934,226 @@ app.get('/api/streams/:id/logs', isAuthenticated, async (req, res) => {
     res.status(500).json({ success: false, error: 'Failed to fetch stream logs' });
   }
 });
+app.get('/playlist', isAuthenticated, async (req, res) => {
+  try {
+    const playlists = await Playlist.findAll(req.session.userId);
+    const videos = await Video.findAll(req.session.userId);
+    res.render('playlist', {
+      title: 'Playlist',
+      active: 'playlist',
+      user: await User.findById(req.session.userId),
+      playlists: playlists,
+      videos: videos
+    });
+  } catch (error) {
+    console.error('Playlist error:', error);
+    res.redirect('/dashboard');
+  }
+});
+
+app.get('/api/playlists', isAuthenticated, async (req, res) => {
+  try {
+    const playlists = await Playlist.findAll(req.session.userId);
+    
+    playlists.forEach(playlist => {
+      playlist.shuffle = playlist.is_shuffle;
+    });
+    
+    res.json({ success: true, playlists });
+  } catch (error) {
+    console.error('Error fetching playlists:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch playlists' });
+  }
+});
+
+app.post('/api/playlists', isAuthenticated, [
+  body('name').trim().isLength({ min: 1 }).withMessage('Playlist name is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const playlistData = {
+      name: req.body.name,
+      description: req.body.description || null,
+      is_shuffle: req.body.shuffle === 'true' || req.body.shuffle === true,
+      user_id: req.session.userId
+    };
+
+    const playlist = await Playlist.create(playlistData);
+    
+    if (req.body.videos && Array.isArray(req.body.videos) && req.body.videos.length > 0) {
+      for (let i = 0; i < req.body.videos.length; i++) {
+        await Playlist.addVideo(playlist.id, req.body.videos[i], i + 1);
+      }
+    }
+    
+    res.json({ success: true, playlist });
+  } catch (error) {
+    console.error('Error creating playlist:', error);
+    res.status(500).json({ success: false, error: 'Failed to create playlist' });
+  }
+});
+
+app.get('/api/playlists/:id', isAuthenticated, async (req, res) => {
+  try {
+    const playlist = await Playlist.findByIdWithVideos(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ success: false, error: 'Playlist not found' });
+    }
+    if (playlist.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    
+    playlist.shuffle = playlist.is_shuffle;
+    
+    res.json({ success: true, playlist });
+  } catch (error) {
+    console.error('Error fetching playlist:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch playlist' });
+  }
+});
+
+app.put('/api/playlists/:id', isAuthenticated, [
+  body('name').trim().isLength({ min: 1 }).withMessage('Playlist name is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const playlist = await Playlist.findById(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ success: false, error: 'Playlist not found' });
+    }
+    if (playlist.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    const updateData = {
+      name: req.body.name,
+      description: req.body.description || null,
+      is_shuffle: req.body.shuffle === 'true' || req.body.shuffle === true
+    };
+
+    const updatedPlaylist = await Playlist.update(req.params.id, updateData);
+    
+    if (req.body.videos && Array.isArray(req.body.videos)) {
+      const existingVideos = await Playlist.findByIdWithVideos(req.params.id);
+      if (existingVideos && existingVideos.videos) {
+        for (const video of existingVideos.videos) {
+          await Playlist.removeVideo(req.params.id, video.id);
+        }
+      }
+      
+      for (let i = 0; i < req.body.videos.length; i++) {
+        await Playlist.addVideo(req.params.id, req.body.videos[i], i + 1);
+      }
+    }
+    
+    res.json({ success: true, playlist: updatedPlaylist });
+  } catch (error) {
+    console.error('Error updating playlist:', error);
+    res.status(500).json({ success: false, error: 'Failed to update playlist' });
+  }
+});
+
+app.delete('/api/playlists/:id', isAuthenticated, async (req, res) => {
+  try {
+    const playlist = await Playlist.findById(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ success: false, error: 'Playlist not found' });
+    }
+    if (playlist.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    await Playlist.delete(req.params.id);
+    res.json({ success: true, message: 'Playlist deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting playlist:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete playlist' });
+  }
+});
+
+app.post('/api/playlists/:id/videos', isAuthenticated, [
+  body('videoId').notEmpty().withMessage('Video ID is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const playlist = await Playlist.findById(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ success: false, error: 'Playlist not found' });
+    }
+    if (playlist.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    const video = await Video.findById(req.body.videoId);
+    if (!video || video.user_id !== req.session.userId) {
+      return res.status(404).json({ success: false, error: 'Video not found' });
+    }
+
+    const position = await Playlist.getNextPosition(req.params.id);
+    await Playlist.addVideo(req.params.id, req.body.videoId, position);
+    
+    res.json({ success: true, message: 'Video added to playlist' });
+  } catch (error) {
+    console.error('Error adding video to playlist:', error);
+    res.status(500).json({ success: false, error: 'Failed to add video to playlist' });
+  }
+});
+
+app.delete('/api/playlists/:id/videos/:videoId', isAuthenticated, async (req, res) => {
+  try {
+    const playlist = await Playlist.findById(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ success: false, error: 'Playlist not found' });
+    }
+    if (playlist.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    await Playlist.removeVideo(req.params.id, req.params.videoId);
+    res.json({ success: true, message: 'Video removed from playlist' });
+  } catch (error) {
+    console.error('Error removing video from playlist:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove video from playlist' });
+  }
+});
+
+app.put('/api/playlists/:id/videos/reorder', isAuthenticated, [
+  body('videoPositions').isArray().withMessage('Video positions must be an array')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const playlist = await Playlist.findById(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ success: false, error: 'Playlist not found' });
+    }
+    if (playlist.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+
+    await Playlist.updateVideoPositions(req.params.id, req.body.videoPositions);
+    res.json({ success: true, message: 'Video order updated' });
+  } catch (error) {
+    console.error('Error reordering videos:', error);
+    res.status(500).json({ success: false, error: 'Failed to reorder videos' });
+  }
+});
+
 app.get('/api/server-time', (req, res) => {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, '0');
@@ -1481,7 +2169,7 @@ app.get('/api/server-time', (req, res) => {
     formattedTime: formattedTime
   });
 });
-app.listen(port, '0.0.0.0', async () => {
+const server = app.listen(port, '0.0.0.0', async () => {
   const ipAddresses = getLocalIpAddresses();
   console.log(`StreamFlow running at:`);
   if (ipAddresses && ipAddresses.length > 0) {
@@ -1509,3 +2197,7 @@ app.listen(port, '0.0.0.0', async () => {
     console.error('Failed to sync stream statuses:', error);
   }
 });
+
+server.timeout = 30 * 60 * 1000;
+server.keepAliveTimeout = 30 * 60 * 1000;
+server.headersTimeout = 30 * 60 * 1000;

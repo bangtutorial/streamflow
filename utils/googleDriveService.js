@@ -1,17 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const { google } = require('googleapis');
+const { spawn } = require('child_process');
 const { paths, getUniqueFilename } = require('./storage');
 
-function createDriveService(apiKey) {
-  return google.drive({
-    version: 'v3',
-    auth: apiKey
-  });
-}
-
 function extractFileId(driveUrl) {
-
   let match = driveUrl.match(/\/file\/d\/([^\/]+)/);
   if (match) return match[1];
 
@@ -28,64 +20,94 @@ function extractFileId(driveUrl) {
   throw new Error('Invalid Google Drive URL format');
 }
 
-async function downloadFile(apiKey, fileId, progressCallback = null) {
-  const drive = createDriveService(apiKey);
-
+async function downloadFile(fileId, progressCallback = null) {
   try {
-
-    const fileMetadata = await drive.files.get({
-      fileId: fileId,
-      fields: 'name,mimeType,size'
-    });
-
-    if (!fileMetadata.data.mimeType.includes('video')) {
-      throw new Error('The selected file is not a video');
-    }
-
-    const originalFilename = fileMetadata.data.name;
-    const ext = path.extname(originalFilename) || '.mp4';
-    const uniqueFilename = getUniqueFilename(originalFilename);
-    const localFilePath = path.join(paths.videos, uniqueFilename);
-    const dest = fs.createWriteStream(localFilePath);
-    const response = await drive.files.get(
-      {
-        fileId: fileId,
-        alt: 'media'
-      },
-      { responseType: 'stream' }
-    );
-
-    const fileSize = parseInt(fileMetadata.data.size, 10);
-    let downloaded = 0;
-
+    const driveUrl = `https://drive.google.com/uc?id=${fileId}`;
+    
+    const tempFilename = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const tempPath = path.join(paths.videos, tempFilename);
+    
     return new Promise((resolve, reject) => {
-      response.data
-        .on('data', chunk => {
-          downloaded += chunk.length;
-          if (progressCallback) {
-            const progress = Math.round((downloaded / fileSize) * 100);
+      const gdownProcess = spawn('python', ['-m', 'gdown', driveUrl, '-O', tempPath, '--fuzzy'], {
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      let stdout = '';
+      let stderr = '';
+      let lastProgress = 0;
+
+      gdownProcess.stdout.on('data', (data) => {
+        stdout += data.toString();
+        const output = data.toString();
+        
+        const progressMatch = output.match(/(\d+)%/);
+        if (progressMatch && progressCallback) {
+          const progress = parseInt(progressMatch[1]);
+          if (progress > lastProgress) {
+            lastProgress = progress;
             progressCallback({
               id: fileId,
-              filename: originalFilename,
+              filename: 'Google Drive File',
               progress: progress
             });
           }
-        })
-        .on('end', () => {
-          console.log(`Downloaded file ${originalFilename} from Google Drive`);
-          resolve({
-            filename: uniqueFilename,
-            originalFilename: originalFilename,
-            localFilePath: localFilePath,
-            mimeType: fileMetadata.data.mimeType,
-            fileSize: fileSize
-          });
-        })
-        .on('error', err => {
-          fs.unlinkSync(localFilePath);
-          reject(err);
-        })
-        .pipe(dest);
+        }
+      });
+
+      gdownProcess.stderr.on('data', (data) => {
+        stderr += data.toString();
+      });
+
+      gdownProcess.on('close', (code) => {
+        if (code === 0 && fs.existsSync(tempPath)) {
+          try {
+            const stats = fs.statSync(tempPath);
+            const fileSize = stats.size;
+            
+            const originalFilename = `gdrive_${fileId}.mp4`;
+            const uniqueFilename = getUniqueFilename(originalFilename);
+            const finalPath = path.join(paths.videos, uniqueFilename);
+            
+            fs.renameSync(tempPath, finalPath);
+            
+            console.log(`Downloaded file from Google Drive: ${uniqueFilename}`);
+            resolve({
+              filename: uniqueFilename,
+              originalFilename: originalFilename,
+              localFilePath: finalPath,
+              mimeType: 'video/mp4',
+              fileSize: fileSize
+            });
+          } catch (error) {
+            if (fs.existsSync(tempPath)) {
+              fs.unlinkSync(tempPath);
+            }
+            reject(new Error(`Error processing downloaded file: ${error.message}`));
+          }
+        } else {
+          if (fs.existsSync(tempPath)) {
+            fs.unlinkSync(tempPath);
+          }
+          
+          let errorMessage = 'Failed to download file from Google Drive';
+          if (stderr.includes('Permission denied') || stderr.includes('Forbidden')) {
+            errorMessage = 'File is private or sharing is disabled. Please make sure the file is publicly accessible.';
+          } else if (stderr.includes('Not found')) {
+            errorMessage = 'File not found. Please check the Google Drive URL.';
+          } else if (stderr) {
+            errorMessage = `Download failed: ${stderr}`;
+          }
+          
+          reject(new Error(errorMessage));
+        }
+      });
+
+      gdownProcess.on('error', (error) => {
+        if (fs.existsSync(tempPath)) {
+          fs.unlinkSync(tempPath);
+        }
+        reject(new Error(`Failed to start download process: ${error.message}`));
+      });
     });
   } catch (error) {
     console.error('Error downloading file from Google Drive:', error);
@@ -94,7 +116,6 @@ async function downloadFile(apiKey, fileId, progressCallback = null) {
 }
 
 module.exports = {
-  createDriveService,
   extractFileId,
   downloadFile
 };

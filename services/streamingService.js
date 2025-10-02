@@ -5,6 +5,8 @@ const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const schedulerService = require('./schedulerService');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../db/database');
+const Stream = require('../models/Stream');
+const Playlist = require('../models/Playlist');
 let ffmpegPath;
 if (fs.existsSync('/usr/bin/ffmpeg')) {
   ffmpegPath = '/usr/bin/ffmpeg';
@@ -13,7 +15,6 @@ if (fs.existsSync('/usr/bin/ffmpeg')) {
   ffmpegPath = ffmpegInstaller.path;
   console.log('Using bundled FFmpeg at:', ffmpegPath);
 }
-const Stream = require('../models/Stream');
 const Video = require('../models/Video');
 const activeStreams = new Map();
 const streamLogs = new Map();
@@ -34,14 +35,131 @@ function addStreamLog(streamId, message) {
     logs.shift();
   }
 }
+async function buildFFmpegArgsForPlaylist(stream, playlist) {
+  if (!playlist.videos || playlist.videos.length === 0) {
+    throw new Error(`Playlist is empty for playlist_id: ${stream.video_id}`);
+  }
+  
+  const projectRoot = path.resolve(__dirname, '..');
+  const rtmpUrl = `${stream.rtmp_url.replace(/\/$/, '')}/${stream.stream_key}`;
+  
+  let videoPaths = [];
+  
+  if (playlist.is_shuffle || playlist.shuffle) {
+    const shuffledVideos = [...playlist.videos].sort(() => Math.random() - 0.5);
+    videoPaths = shuffledVideos.map(video => {
+      const relativeVideoPath = video.filepath.startsWith('/') ? video.filepath.substring(1) : video.filepath;
+      return path.join(projectRoot, 'public', relativeVideoPath);
+    });
+  } else {
+    videoPaths = playlist.videos.map(video => {
+      const relativeVideoPath = video.filepath.startsWith('/') ? video.filepath.substring(1) : video.filepath;
+      return path.join(projectRoot, 'public', relativeVideoPath);
+    });
+  }
+  
+  for (const videoPath of videoPaths) {
+    if (!fs.existsSync(videoPath)) {
+      throw new Error(`Video file not found: ${videoPath}`);
+    }
+  }
+  
+  const concatFile = path.join(projectRoot, 'temp', `playlist_${stream.id}.txt`);
+  
+  const tempDir = path.dirname(concatFile);
+  if (!fs.existsSync(tempDir)) {
+    fs.mkdirSync(tempDir, { recursive: true });
+  }
+  
+  let concatContent = '';
+  if (stream.loop_video) {
+    for (let i = 0; i < 1000; i++) {
+      videoPaths.forEach(videoPath => {
+        concatContent += `file '${videoPath.replace(/\\/g, '/')}'\n`;
+      });
+    }
+  } else {
+    videoPaths.forEach(videoPath => {
+      concatContent += `file '${videoPath.replace(/\\/g, '/')}'\n`;
+    });
+  }
+  
+  fs.writeFileSync(concatFile, concatContent);
+  
+  if (!stream.use_advanced_settings) {
+    return [
+      '-hwaccel', 'auto',
+      '-loglevel', 'error',
+      '-re',
+      '-fflags', '+genpts+igndts',
+      '-avoid_negative_ts', 'make_zero',
+      '-f', 'concat',
+      '-safe', '0',
+      '-i', concatFile,
+      '-c:v', 'copy',
+      '-c:a', 'copy',
+      '-flags', '+global_header',
+      '-bufsize', '4M',
+      '-max_muxing_queue_size', '7000',
+      '-f', 'flv',
+      rtmpUrl
+    ];
+  }
+  
+  const resolution = stream.resolution || '1280x720';
+  const bitrate = stream.bitrate || 2500;
+  const fps = stream.fps || 30;
+  
+  return [
+    '-hwaccel', 'auto',
+    '-loglevel', 'error',
+    '-re',
+    '-fflags', '+genpts',
+    '-avoid_negative_ts', 'make_zero',
+    '-f', 'concat',
+    '-safe', '0',
+    '-i', concatFile,
+    '-c:v', 'libx264',
+    '-preset', 'veryfast',
+    '-tune', 'zerolatency',
+    '-b:v', `${bitrate}k`,
+    '-maxrate', `${bitrate * 1.5}k`,
+    '-bufsize', `${bitrate * 2}k`,
+    '-pix_fmt', 'yuv420p',
+    '-g', `${fps * 2}`,
+    '-s', resolution,
+    '-r', fps.toString(),
+    '-c:a', 'aac',
+    '-b:a', '128k',
+    '-ar', '44100',
+    '-f', 'flv',
+    rtmpUrl
+  ];
+}
+
 async function buildFFmpegArgs(stream) {
+  const streamWithVideo = await Stream.getStreamWithVideo(stream.id);
+  
+  if (streamWithVideo && streamWithVideo.video_type === 'playlist') {
+    const Playlist = require('../models/Playlist');
+    const playlist = await Playlist.findByIdWithVideos(stream.video_id);
+    
+    if (!playlist) {
+      throw new Error(`Playlist not found for playlist_id: ${stream.video_id}`);
+    }
+    
+    return await buildFFmpegArgsForPlaylist(stream, playlist);
+  }
+  
   const video = await Video.findById(stream.video_id);
   if (!video) {
     throw new Error(`Video record not found in database for video_id: ${stream.video_id}`);
   }
+  
   const relativeVideoPath = video.filepath.startsWith('/') ? video.filepath.substring(1) : video.filepath;
   const projectRoot = path.resolve(__dirname, '..');
   const videoPath = path.join(projectRoot, 'public', relativeVideoPath);
+  
   if (!fs.existsSync(videoPath)) {
     console.error(`[StreamingService] CRITICAL: Video file not found on disk.`);
     console.error(`[StreamingService] Checked path: ${videoPath}`);
@@ -51,19 +169,24 @@ async function buildFFmpegArgs(stream) {
     console.error(`[StreamingService] process.cwd(): ${process.cwd()}`);
     throw new Error('Video file not found on disk. Please check paths and file existence.');
   }
+  
   const rtmpUrl = `${stream.rtmp_url.replace(/\/$/, '')}/${stream.stream_key}`;
   const loopOption = stream.loop_video ? '-stream_loop' : '-stream_loop 0';
   const loopValue = stream.loop_video ? '-1' : '0';
   if (!stream.use_advanced_settings) {
     return [
-      '-hwaccel', 'none',
+      '-hwaccel', 'auto',
       '-loglevel', 'error',
       '-re',
       '-fflags', '+genpts+igndts',
+      '-avoid_negative_ts', 'make_zero',
       loopOption, loopValue,
       '-i', videoPath,
       '-c:v', 'copy',
       '-c:a', 'copy',
+      '-flags', '+global_header',
+      '-bufsize', '4M',
+      '-max_muxing_queue_size', '7000',
       '-f', 'flv',
       rtmpUrl
     ];
@@ -72,18 +195,21 @@ async function buildFFmpegArgs(stream) {
   const bitrate = stream.bitrate || 2500;
   const fps = stream.fps || 30;
   return [
-    '-hwaccel', 'none',
+    '-hwaccel', 'auto',
     '-loglevel', 'error',
     '-re',
+    '-fflags', '+genpts',
+    '-avoid_negative_ts', 'make_zero',
     loopOption, loopValue,
     '-i', videoPath,
     '-c:v', 'libx264',
     '-preset', 'veryfast',
+    '-tune', 'zerolatency',
     '-b:v', `${bitrate}k`,
     '-maxrate', `${bitrate * 1.5}k`,
     '-bufsize', `${bitrate * 2}k`,
     '-pix_fmt', 'yuv420p',
-    '-g', '60',
+    '-g', `${fps * 2}`,
     '-s', resolution,
     '-r', fps.toString(),
     '-c:a', 'aac',
@@ -276,6 +402,17 @@ async function stopStream(streamId) {
     }
     const stream = await Stream.findById(streamId);
     activeStreams.delete(streamId);
+    
+    const tempConcatFile = path.join(__dirname, '..', 'temp', `playlist_${streamId}.txt`);
+    try {
+      if (fs.existsSync(tempConcatFile)) {
+        fs.unlinkSync(tempConcatFile);
+        console.log(`[StreamingService] Cleaned up temporary playlist file: ${tempConcatFile}`);
+      }
+    } catch (cleanupError) {
+      console.error(`[StreamingService] Error cleaning up temporary file: ${cleanupError.message}`);
+    }
+    
     if (stream) {
       await Stream.updateStatus(streamId, 'offline', stream.user_id);
       const updatedStream = await Stream.findById(streamId);

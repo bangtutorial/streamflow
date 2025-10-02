@@ -21,6 +21,8 @@ function createTables() {
     password TEXT NOT NULL,
     avatar_path TEXT,
     gdrive_api_key TEXT,
+    user_role TEXT DEFAULT 'admin',
+    status TEXT DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   )`, (err) => {
@@ -102,6 +104,47 @@ function createTables() {
   )`, (err) => {
     if (err) {
       console.error('Error creating stream_history table:', err.message);
+    }
+  });
+
+  db.run(`CREATE TABLE IF NOT EXISTS playlists (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    description TEXT,
+    is_shuffle BOOLEAN DEFAULT 0,
+    user_id TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )`, (err) => {
+    if (err) {
+      console.error('Error creating playlists table:', err.message);
+    }
+  });
+
+  db.run(`CREATE TABLE IF NOT EXISTS playlist_videos (
+    id TEXT PRIMARY KEY,
+    playlist_id TEXT NOT NULL,
+    video_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+    FOREIGN KEY (video_id) REFERENCES videos(id) ON DELETE CASCADE
+  )`, (err) => {
+    if (err) {
+      console.error('Error creating playlist_videos table:', err.message);
+    }
+  });
+  
+  db.run(`ALTER TABLE users ADD COLUMN user_role TEXT DEFAULT 'admin'`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding user_role column:', err.message);
+    }
+  });
+  
+  db.run(`ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'`, (err) => {
+    if (err && !err.message.includes('duplicate column name')) {
+      console.error('Error adding status column:', err.message);
     }
   });
 }

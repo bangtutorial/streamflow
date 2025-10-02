@@ -91,9 +91,23 @@
               Log In
             </button>
           </form>
+
+          <div class="text-center mt-6">
+            <p class="text-gray-400 text-sm">
+              Don't have an account? 
+              <a href="/signup" class="text-primary hover:text-blue-400 transition-colors">Sign up</a>
+            </p>
+          </div>
     </div>
   </div>
   <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const icons = document.querySelectorAll('.ti');
+      icons.forEach(icon => {
+        icon.classList.add('font-loaded');
+      });
+    });
+
     function togglePasswordVisibility() {
       const password = document.getElementById('password');
       const passwordToggle = document.getElementById('passwordToggle');

@@ -146,6 +146,39 @@ Jalankan aplikasi dengan PM2:
 pm2 start app.js --name streamflow
 ```
 
+**Setup Auto-Restart saat Server Reboot:**
+```bash
+# Simpan konfigurasi PM2 saat ini
+pm2 save
+
+# Setup PM2 untuk auto-start saat server restart
+pm2 startup
+
+# Ikuti instruksi yang muncul, biasanya berupa command yang harus dijalankan dengan sudo
+# Contoh output: sudo env PATH=$PATH:/usr/bin /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u username --hp /home/username
+
+# Setelah menjalankan command startup, save kembali
+pm2 save
+```
+
+**Perintah PM2 Berguna:**
+```bash
+# Lihat status aplikasi
+pm2 status
+
+# Restart aplikasi
+pm2 restart streamflow
+
+# Stop aplikasi
+pm2 stop streamflow
+
+# Lihat logs aplikasi
+pm2 logs streamflow
+
+# Monitor resource usage
+pm2 monit
+```
+
 Akses aplikasi melalui browser:
 ```
 http://IP_SERVER:PORT
@@ -153,8 +186,6 @@ http://IP_SERVER:PORT
 
 Contoh: `http://88.12.34.56:7575`
 
-> [!Important]
-> Setelah membuat akun pertama kali, lakukan **Sign Out** kemudian login kembali untuk sinkronisasi database.
 
 ## 🔐 Reset Password
 

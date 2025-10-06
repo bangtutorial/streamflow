@@ -212,30 +212,12 @@
             <span class="hidden absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
           <div id="notification-dropdown"
-            class="hidden absolute right-0 mt-1 w-80 bg-dark-800 border border-gray-700 rounded-lg shadow-xl z-50">
+            class="hidden absolute right-0 mt-1 w-80 bg-dark-800 border border-gray-700 rounded-lg shadow-xl z-[60]">
             <div class="p-3 border-b border-gray-700 flex items-center justify-between">
               <h3 class="font-medium">Notifications</h3>
-              <button class="text-xs text-primary hover:underline">Mark all as read</button>
             </div>
             <div class="max-h-80 overflow-y-auto" id="notification-list">
-              <div class="px-4 py-3 border-b border-gray-700 hover:bg-dark-700 transition-colors cursor-pointer" onclick="openStreamflowUpdateModal()">
-                <div class="flex items-start">
-                  <div class="shrink-0 mr-3">
-                    <div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-                      <i class="ti ti-info-circle text-primary"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <p class="text-sm font-medium">StreamFlow v2.1 Released!</p>
-                    <p class="text-sm text-gray-300 mt-1">Fitur dan imporvisasi yang ada di StreamFlow v2.</p>
-                    <p class="text-xs text-gray-400 mt-2">Just now</p>
-                  </div>
-                </div>
-              </div>
             </div>
-            <a href="#" class="block text-center p-2 text-sm text-primary hover:underline">
-              View all notifications
-            </a>
           </div>
         </div>
       </div>
@@ -321,26 +303,11 @@
     </div>
   </div>
   <div id="mobile-notification-popup"
-    class="fixed bottom-16 right-2 bg-dark-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden hidden transform transition-all duration-200 ease-out opacity-0 translate-y-4 w-72">
+    class="fixed bottom-16 right-2 bg-dark-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden hidden transform transition-all duration-200 ease-out opacity-0 translate-y-4 w-72 z-[60]">
     <div class="p-3 border-b border-gray-700 flex items-center justify-between">
       <h3 class="font-medium">Notifications</h3>
-      <button class="text-xs text-primary hover:underline">Mark all as read</button>
     </div>
     <div class="max-h-80 overflow-y-auto" id="mobile-notification-list">
-      <div class="px-4 py-3 border-b border-gray-700 hover:bg-dark-700 transition-colors cursor-pointer" onclick="openStreamflowUpdateModal()">
-        <div class="flex items-start">
-          <div class="shrink-0 mr-3">
-            <div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
-              <i class="ti ti-info-circle text-primary"></i>
-            </div>
-          </div>
-          <div>
-            <p class="text-sm font-medium">StreamFlow v2 Released!</p>
-            <p class="text-sm text-gray-300 mt-1">Fitur dan imporvisasi yang ada di StreamFlow v2.</p>
-            <p class="text-xs text-gray-400 mt-2">Baru saja</p>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
   <div id="streamflowUpdateModal" class="fixed inset-0 bg-black/60 z-[60] hidden items-center justify-center p-4 overflow-y-auto">
@@ -599,32 +566,15 @@
         }
       });
     }
-    const notificationBtn = document.getElementById('notification-btn');
-    const notificationDropdown = document.getElementById('notification-dropdown');
-    if (notificationBtn && notificationDropdown) {
-      notificationBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        notificationDropdown.classList.toggle('hidden');
-      });
-      document.addEventListener('click', (e) => {
-        const isClickInsideDropdown = notificationDropdown.contains(e.target);
-        const isClickOnButton = notificationBtn.contains(e.target);
-        if (!isClickInsideDropdown && !isClickOnButton && !notificationDropdown.classList.contains('hidden')) {
-          notificationDropdown.classList.add('hidden');
-        }
-      });
-      notificationDropdown.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
-    }
-    function loadNotifications() {
-    }
     const mobileNotificationBtn = document.getElementById('mobile-notification-btn');
     const mobileNotificationPopup = document.getElementById('mobile-notification-popup');
     if (mobileNotificationBtn && mobileNotificationPopup) {
       mobileNotificationBtn.addEventListener('click', function (e) {
         e.preventDefault();
         e.stopPropagation();
+        
+        hideNotificationBadge();
+        
         const btnRect = mobileNotificationBtn.getBoundingClientRect();
         mobileNotificationPopup.style.top = '64px';
         mobileNotificationPopup.style.right = '10px';
@@ -653,6 +603,171 @@
         }
       });
     }
+
+    const notificationBtn = document.getElementById('notification-btn');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+    if (notificationBtn && notificationDropdown) {
+      notificationBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        hideNotificationBadge();
+        
+        if (notificationDropdown.classList.contains('hidden')) {
+          notificationDropdown.classList.remove('hidden');
+        } else {
+          notificationDropdown.classList.add('hidden');
+        }
+      });
+      
+      document.addEventListener('click', function (e) {
+        if (!notificationDropdown.classList.contains('hidden') &&
+          !notificationBtn.contains(e.target) &&
+          !notificationDropdown.contains(e.target)) {
+          notificationDropdown.classList.add('hidden');
+        }
+      });
+    }
+  });
+
+  function loadNotifications() {
+    checkGitHubUpdates();
+  }
+
+  function hideNotificationBadge() {
+    const badge = document.querySelector('#notification-btn .bg-red-500');
+    const mobileBadge = document.querySelector('#mobile-notification-btn .bg-red-500');
+    
+    if (badge) badge.classList.add('hidden');
+    if (mobileBadge) mobileBadge.classList.add('hidden');
+    
+    const latestCommitSha = localStorage.getItem('latestCommitSha');
+    if (latestCommitSha) {
+      localStorage.setItem('savedCommitSha', latestCommitSha);
+    }
+  }
+
+  async function checkGitHubUpdates() {
+    try {
+      const response = await fetch('https://api.github.com/repos/bangtutorial/streamflow/commits?per_page=3');
+      if (!response.ok) {
+        return;
+      }
+      
+      const commits = await response.json();
+      
+      if (commits && commits.length > 0) {
+        const latestCommitSha = commits[0].sha;
+        const savedCommitSha = localStorage.getItem('savedCommitSha');
+        
+        localStorage.setItem('latestCommitSha', latestCommitSha);
+        
+        showGitHubUpdateNotifications(commits);
+        
+        if (!savedCommitSha) {
+          localStorage.setItem('savedCommitSha', latestCommitSha);
+        } else if (savedCommitSha !== latestCommitSha) {
+          showNotificationBadge();
+        } else {
+          const badge = document.querySelector('#notification-btn .bg-red-500');
+          const mobileBadge = document.querySelector('#mobile-notification-btn .bg-red-500');
+          if (badge) badge.classList.add('hidden');
+          if (mobileBadge) mobileBadge.classList.add('hidden');
+        }
+      }
+    } catch (error) {
+    }
+  }
+
+  function showNotificationBadge() {
+    const badge = document.querySelector('#notification-btn .bg-red-500');
+    const mobileBadge = document.querySelector('#mobile-notification-btn .bg-red-500');
+    
+    if (badge) badge.classList.remove('hidden');
+    if (mobileBadge) mobileBadge.classList.remove('hidden');
+  }
+
+  function showGitHubUpdateNotifications(commits) {
+    const notificationList = document.getElementById('notification-list');
+    const mobileNotificationList = document.getElementById('mobile-notification-list');
+    
+    if (notificationList) {
+      const existingNotifications = notificationList.querySelectorAll('[data-github-notification]');
+      existingNotifications.forEach(notification => notification.remove());
+    }
+    if (mobileNotificationList) {
+      const existingNotifications = mobileNotificationList.querySelectorAll('[data-github-notification]');
+      existingNotifications.forEach(notification => notification.remove());
+    }
+    
+    commits.forEach(commit => {
+      const timeAgo = getTimeAgo(commit.commit.author.date);
+      const commitMessage = commit.commit.message.split('\n')[0];
+      const shortSha = commit.sha.substring(0, 7);
+      const authorName = commit.commit.author.name;
+      
+      const notificationHTML = `
+        <div class="p-3 hover:bg-gray-700/50 transition-colors cursor-pointer" data-github-notification onclick="window.open('${commit.html_url}', '_blank')">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 flex-shrink-0">
+              <img src="${commit.author.avatar_url}" alt="${authorName}" class="w-8 h-8 rounded-full object-cover">
+            </div>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-medium text-white mb-1">Commit Baru di GitHub</h4>
+              <p class="text-xs text-gray-300 mb-1">${commitMessage}</p>
+              <p class="text-xs text-gray-400">oleh ${authorName} • ${timeAgo}</p>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      if (notificationList) {
+        notificationList.insertAdjacentHTML('beforeend', notificationHTML);
+      }
+      if (mobileNotificationList) {
+        mobileNotificationList.insertAdjacentHTML('beforeend', notificationHTML);
+      }
+    });
+    
+    updateNotificationBadge();
+  }
+
+  function getTimeAgo(dateString) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return 'Baru saja';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} menit yang lalu`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} jam yang lalu`;
+    } else {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} hari yang lalu`;
+    }
+  }
+
+  function updateNotificationBadge() {
+    const badge = document.querySelector('#notification-btn .bg-red-500');
+    const mobileBadge = document.querySelector('#mobile-notification-btn .bg-red-500');
+    const latestCommitSha = localStorage.getItem('latestCommitSha');
+    const savedCommitSha = localStorage.getItem('savedCommitSha');
+
+    if (savedCommitSha && latestCommitSha && savedCommitSha !== latestCommitSha) {
+      if (badge) badge.classList.remove('hidden');
+      if (mobileBadge) mobileBadge.classList.remove('hidden');
+    } else {
+      if (badge) badge.classList.add('hidden');
+      if (mobileBadge) mobileBadge.classList.add('hidden');
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadNotifications();
   });
 
   function openStreamflowUpdateModal() {

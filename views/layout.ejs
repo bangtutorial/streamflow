@@ -713,9 +713,9 @@
               <img src="${commit.author.avatar_url}" alt="${authorName}" class="w-8 h-8 rounded-full object-cover">
             </div>
             <div class="flex-1 min-w-0">
-              <h4 class="text-sm font-medium text-white mb-1">Commit Baru di GitHub</h4>
+              <h4 class="text-sm font-medium text-white mb-1">New GitHub Commit</h4>
               <p class="text-xs text-gray-300 mb-1">${commitMessage}</p>
-              <p class="text-xs text-gray-400">oleh ${authorName} • ${timeAgo}</p>
+              <p class="text-xs text-gray-400">by ${authorName} • ${timeAgo}</p>
             </div>
           </div>
         </div>
@@ -738,16 +738,16 @@
     const diffInSeconds = Math.floor((now - date) / 1000);
     
     if (diffInSeconds < 60) {
-      return 'Baru saja';
+      return 'Just now';
     } else if (diffInSeconds < 3600) {
       const minutes = Math.floor(diffInSeconds / 60);
-      return `${minutes} menit yang lalu`;
+      return `${minutes} minutes ago`;
     } else if (diffInSeconds < 86400) {
       const hours = Math.floor(diffInSeconds / 3600);
-      return `${hours} jam yang lalu`;
+      return `${hours} hours ago`;
     } else {
       const days = Math.floor(diffInSeconds / 86400);
-      return `${days} hari yang lalu`;
+      return `${days} days ago`;
     }
   }
 

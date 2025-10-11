@@ -2,11 +2,19 @@ const Stream = require('../models/Stream');
 const scheduledTerminations = new Map();
 const SCHEDULE_LOOKAHEAD_SECONDS = 60;
 let streamingService = null;
+let initialized = false;
+let scheduleIntervalId = null;
+let durationIntervalId = null;
 function init(streamingServiceInstance) {
+  if (initialized) {
+    console.log('Stream scheduler already initialized');
+    return;
+  }
   streamingService = streamingServiceInstance;
+  initialized = true;
   console.log('Stream scheduler initialized');
-  setInterval(checkScheduledStreams, 60 * 1000);
-  setInterval(checkStreamDurations, 60 * 1000);
+  scheduleIntervalId = setInterval(checkScheduledStreams, 60 * 1000);
+  durationIntervalId = setInterval(checkStreamDurations, 60 * 1000);
   checkScheduledStreams();
   checkStreamDurations();
 }
@@ -27,9 +35,6 @@ async function checkScheduledStreams() {
         const result = await streamingService.startStream(stream.id);
         if (result.success) {
           console.log(`Successfully started scheduled stream: ${stream.id}`);
-          if (stream.duration) {
-            scheduleStreamTermination(stream.id, stream.duration);
-          }
         } else {
           console.error(`Failed to start scheduled stream ${stream.id}: ${result.error}`);
         }
@@ -66,14 +71,23 @@ async function checkStreamDurations() {
   }
 }
 function scheduleStreamTermination(streamId, durationMinutes) {
+  if (!streamingService) {
+    console.error('StreamingService not initialized in scheduler');
+    return;
+  }
+  if (typeof durationMinutes !== 'number' || Number.isNaN(durationMinutes)) {
+    console.error(`Invalid duration provided for stream ${streamId}: ${durationMinutes}`);
+    return;
+  }
   if (scheduledTerminations.has(streamId)) {
     clearTimeout(scheduledTerminations.get(streamId));
   }
-  const durationMs = durationMinutes * 60 * 1000;
-  console.log(`Scheduling termination for stream ${streamId} after ${durationMinutes} minutes`);
+  const clampedMinutes = Math.max(0, durationMinutes);
+  const durationMs = clampedMinutes * 60 * 1000;
+  console.log(`Scheduling termination for stream ${streamId} after ${clampedMinutes} minutes`);
   const timeoutId = setTimeout(async () => {
     try {
-      console.log(`Terminating stream ${streamId} after ${durationMinutes} minute duration`);
+      console.log(`Terminating stream ${streamId} after ${clampedMinutes} minute duration`);
       await streamingService.stopStream(streamId);
       scheduledTerminations.delete(streamId);
     } catch (error) {

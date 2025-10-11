@@ -152,25 +152,35 @@ class Stream {
       );
     });
   }
-  static updateStatus(id, status, userId) {
+  static updateStatus(id, status, userId, options = {}) {
     const status_updated_at = new Date().toISOString();
+    const { startTimeOverride = null, endTimeOverride = null } = options;
     let start_time = null;
     let end_time = null;
     if (status === 'live') {
-      start_time = new Date().toISOString();
+      start_time = startTimeOverride || new Date().toISOString();
     } else if (status === 'offline') {
-      end_time = new Date().toISOString();
+      end_time = endTimeOverride || new Date().toISOString();
     }
     return new Promise((resolve, reject) => {
       db.run(
         `UPDATE streams SET 
           status = ?, 
           status_updated_at = ?, 
-          start_time = COALESCE(?, start_time), 
-          end_time = COALESCE(?, end_time),
+          start_time = CASE WHEN ? IS NOT NULL THEN CASE WHEN start_time IS NULL THEN ? ELSE start_time END ELSE start_time END, 
+          end_time = CASE WHEN ? IS NOT NULL THEN ? ELSE end_time END,
           updated_at = CURRENT_TIMESTAMP
          WHERE id = ? AND user_id = ?`,
-        [status, status_updated_at, start_time, end_time, id, userId],
+        [
+          status,
+          status_updated_at,
+          start_time,
+          start_time,
+          end_time,
+          end_time,
+          id,
+          userId
+        ],
         function (err) {
           if (err) {
             console.error('Error updating stream status:', err.message);

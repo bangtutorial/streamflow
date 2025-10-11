@@ -229,6 +229,8 @@ async function startStream(streamId) {
     if (!stream) {
       return { success: false, error: 'Stream not found' };
     }
+    const startTimeIso = stream.start_time || new Date().toISOString();
+    const streamStartTime = new Date(startTimeIso);
     const ffmpegArgs = await buildFFmpegArgs(stream);
     const fullCommand = `${ffmpegPath} ${ffmpegArgs.join(' ')}`;
     addStreamLog(streamId, `Starting stream with command: ${fullCommand}`);
@@ -238,7 +240,7 @@ async function startStream(streamId) {
       stdio: ['ignore', 'pipe', 'pipe']
     });
     activeStreams.set(streamId, ffmpegProcess);
-    await Stream.updateStatus(streamId, 'live', stream.user_id);
+    await Stream.updateStatus(streamId, 'live', stream.user_id, { startTimeOverride: startTimeIso });
     ffmpegProcess.stdout.on('data', (data) => {
       const message = data.toString().trim();
       if (message) {
@@ -360,8 +362,15 @@ async function startStream(streamId) {
       }
     });
     ffmpegProcess.unref();
-    if (stream.duration && typeof schedulerService !== 'undefined') {
-      schedulerService.scheduleStreamTermination(streamId, stream.duration);
+    if (typeof schedulerService !== 'undefined') {
+      const durationMinutes = Number(stream.duration);
+      if (Number.isFinite(durationMinutes) && durationMinutes > 0) {
+        const totalDurationMs = durationMinutes * 60 * 1000;
+        const elapsedMs = Math.max(0, Date.now() - streamStartTime.getTime());
+        const remainingMs = Math.max(0, totalDurationMs - elapsedMs);
+        const remainingMinutes = remainingMs / 60000;
+        schedulerService.scheduleStreamTermination(streamId, remainingMinutes);
+      }
     }
     return {
       success: true,
@@ -545,4 +554,3 @@ module.exports = {
   syncStreamStatuses,
   saveStreamHistory
 };
-schedulerService.init(module.exports);

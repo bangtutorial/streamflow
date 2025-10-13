@@ -26,7 +26,6 @@ async function checkScheduledStreams() {
     }
     const now = new Date();
     const lookAheadTime = new Date(now.getTime() + SCHEDULE_LOOKAHEAD_SECONDS * 1000);
-    console.log(`Checking for scheduled streams (${now.toISOString()} to ${lookAheadTime.toISOString()})`);
     const streams = await Stream.findScheduledInRange(now, lookAheadTime);
     if (streams.length > 0) {
       console.log(`Found ${streams.length} streams to schedule start`);

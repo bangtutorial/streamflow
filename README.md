@@ -38,9 +38,9 @@ curl -o install.sh https://raw.githubusercontent.com/bangtutorial/streamflow/mai
 ### 1. Persiapan Server
 
 Update sistem operasi:
-```bash
+``sudo apt update && sudo apt upgrade -y`bash
 sudo apt update && sudo apt upgrade -y
-```
+```sudo apt update && sudo apt upgrade -y
 
 Install Node.js:
 ```bash
@@ -53,6 +53,10 @@ Verifikasi instalasi Node.js:
 node --version
 npm --version
 ```
+Install Node.js:
+```bash
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs
 
 Install FFmpeg:
 ```bash
@@ -62,7 +66,7 @@ sudo apt install ffmpeg -y
 Verifikasi instalasi FFmpeg:
 ```bash
 ffmpeg -version
-```
+```ffmpeg -version
 
 Install Git:
 ```bash
@@ -74,7 +78,7 @@ sudo apt install git -y
 Clone repository:
 ```bash
 git clone https://github.com/bangtutorial/streamflow
-```
+```git clone https://github.com/bangtutorial/streamflow
 
 Masuk ke direktori project:
 ```bash
@@ -84,7 +88,7 @@ cd streamflow
 Install Paket Node.JS:
 ```bash
 npm install
-```
+```npm install
 
 Generate Secret Key:
 ```bash
@@ -94,12 +98,12 @@ node generate-secret.js
 Konfigurasi port (opsional):
 ```bash
 nano .env
-```
+```nano .env
 
 Jalankan aplikasi:
 ```bash
 npm run dev
-```
+```npm run dev
 
 ### 3. Konfigurasi Firewall
 
@@ -116,11 +120,11 @@ Buka port aplikasi (default: 7575):
 ```bash
 sudo ufw allow 7575
 ```
-
+sudo ufw allow 7575
 Verifikasi aturan firewall sebelum mengaktifkan:
 ```bash
 sudo ufw status verbose
-```
+```sudo ufw status verbose
 
 Aktifkan firewall:
 ```bash
@@ -130,7 +134,7 @@ sudo ufw enable
 Verifikasi status firewall setelah aktif:
 ```bash
 sudo ufw status
-```
+```sudo ufw status
 
 ### 4. Install Process Manager
 
@@ -144,7 +148,7 @@ sudo npm install -g pm2
 Jalankan aplikasi dengan PM2:
 ```bash
 pm2 start app.js --name streamflow
-```
+```pm2 start app.js --name streamflow
 
 **Setup Auto-Restart saat Server Reboot:**
 ```bash
@@ -177,12 +181,34 @@ pm2 logs streamflow
 
 # Monitor resource usage
 pm2 monit
-```
+```# Lihat status aplikasi
+pm2 status
+
+# Restart aplikasi
+pm2 restart streamflow
+
+# Stop aplikasi
+pm2 stop streamflow
+
+# Lihat logs aplikasi
+pm2 logs streamflow
+
+# Monitor resource usage
+pm2 monit
 
 Akses aplikasi melalui browser:
 ```
 http://IP_SERVER:PORT
 ```
+Contoh: `http://88.12.34.56:7575`
+
+
+## 🔐 Reset Password
+
+Jika lupa password atau perlu reset akun:
+
+```bash
+cd streamflow && node reset-password.js
 
 Contoh: `http://88.12.34.56:7575`
 
@@ -202,7 +228,7 @@ Untuk memastikan scheduled streaming berjalan dengan waktu yang akurat:
 ### Cek timezone saat ini:
 ```bash
 timedatectl status
-```
+```timedatectl status
 
 ### Lihat daftar timezone tersedia:
 ```bash
@@ -212,7 +238,7 @@ timedatectl list-timezones | grep Asia
 ### Set timezone ke WIB (Jakarta):
 ```bash
 sudo timedatectl set-timezone Asia/Jakarta
-```
+```sudo timedatectl set-timezone Asia/Jakarta
 
 ### Restart aplikasi setelah mengubah timezone:
 ```bash
@@ -228,7 +254,9 @@ Buat file `.env` di root project:
 PORT=7575
 SESSION_SECRET=your_random_secret_here
 NODE_ENV=development
-```
+```PORT=7575
+SESSION_SECRET=your_random_secret_here
+NODE_ENV=development
 
 ### 2. Build dan Jalankan
 
@@ -249,7 +277,7 @@ Data akan tersimpan secara otomatis di:
 
 ```bash
 docker-compose exec app node reset-password.js
-```
+```docker-compose exec app node reset-password.js
 
 ## 🔫 Troubleshooting
 
@@ -265,7 +293,11 @@ sudo lsof -i :7575
 
 # Kill proses jika diperlukan
 sudo kill -9 <PID>
-```
+```# Cek proses yang menggunakan port
+sudo lsof -i :7575
+
+# Kill proses jika diperlukan
+sudo kill -9 <PID>
 
 ### Database Error
 ```bash
@@ -283,7 +315,7 @@ pm2 restart streamflow
 - Periksa permission folder:
   ```bash
   sudo chmod -R 777 db/ logs/ public/uploads/
-  ```
+  ```sudo chmod -R 777 db/ logs/ public/uploads/
 - Pastikan `SESSION_SECRET` tidak berubah
 
 **Production (HTTPS):**
@@ -300,4 +332,5 @@ pm2 restart streamflow
 
 ---
 © 2025 - [Bang Tutorial](https://youtube.com/bangtutorial)
+
 

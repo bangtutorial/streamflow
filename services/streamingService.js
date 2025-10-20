@@ -229,7 +229,7 @@ async function startStream(streamId) {
     if (!stream) {
       return { success: false, error: 'Stream not found' };
     }
-    const startTimeIso = stream.start_time || new Date().toISOString();
+    const startTimeIso = new Date().toISOString();
     const streamStartTime = new Date(startTimeIso);
     const ffmpegArgs = await buildFFmpegArgs(stream);
     const fullCommand = `${ffmpegPath} ${ffmpegArgs.join(' ')}`;

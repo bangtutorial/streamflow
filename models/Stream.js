@@ -167,7 +167,7 @@ class Stream {
         `UPDATE streams SET 
           status = ?, 
           status_updated_at = ?, 
-          start_time = CASE WHEN ? IS NOT NULL THEN CASE WHEN start_time IS NULL THEN ? ELSE start_time END ELSE start_time END, 
+          start_time = CASE WHEN ? IS NOT NULL THEN ? ELSE start_time END, 
           end_time = CASE WHEN ? IS NOT NULL THEN ? ELSE end_time END,
           updated_at = CURRENT_TIMESTAMP
          WHERE id = ? AND user_id = ?`,

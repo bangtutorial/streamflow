@@ -231,23 +231,6 @@ class Stream {
       );
     });
   }
-  static async isStreamKeyInUse(streamKey, userId, excludeId = null) {
-    return new Promise((resolve, reject) => {
-      let query = 'SELECT COUNT(*) as count FROM streams WHERE stream_key = ? AND user_id = ?';
-      const params = [streamKey, userId];
-      if (excludeId) {
-        query += ' AND id != ?';
-        params.push(excludeId);
-      }
-      db.get(query, params, (err, row) => {
-        if (err) {
-          console.error('Error checking stream key:', err.message);
-          return reject(err);
-        }
-        resolve(row.count > 0);
-      });
-    });
-  }
   static findScheduledInRange(startTime, endTime) {
     return new Promise((resolve, reject) => {
       const startTimeStr = startTime.toISOString();

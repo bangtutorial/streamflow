@@ -22,6 +22,74 @@ const streamRetryCount = new Map();
 const MAX_RETRY_ATTEMPTS = 3;
 const manuallyStoppingStreams = new Set();
 const MAX_LOG_LINES = 100;
+
+// Input validation functions to prevent command injection
+function validateRtmpUrl(url) {
+  if (!url || typeof url !== 'string') {
+    throw new Error('Invalid RTMP URL');
+  }
+  // Only allow rtmp:// or rtmps:// protocols
+  const rtmpPattern = /^rtmps?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+$/;
+  if (!rtmpPattern.test(url)) {
+    throw new Error('Invalid RTMP URL format');
+  }
+  // Prevent command injection characters
+  if (url.includes('`') || url.includes('$') || url.includes('|') || url.includes(';') || url.includes('&')) {
+    throw new Error('RTMP URL contains invalid characters');
+  }
+  return url;
+}
+
+function validateStreamKey(key) {
+  if (!key || typeof key !== 'string') {
+    throw new Error('Invalid stream key');
+  }
+  // Stream keys should only contain alphanumeric, dash, underscore, and common safe chars
+  const streamKeyPattern = /^[a-zA-Z0-9_\-?=.]+$/;
+  if (!streamKeyPattern.test(key)) {
+    throw new Error('Stream key contains invalid characters');
+  }
+  // Prevent command injection
+  if (key.includes('`') || key.includes('$') || key.includes('|') || key.includes(';') || key.includes('&') || key.includes(' ')) {
+    throw new Error('Stream key contains invalid characters');
+  }
+  if (key.length > 256) {
+    throw new Error('Stream key too long');
+  }
+  return key;
+}
+
+function validateBitrate(bitrate) {
+  const bitrateNum = parseInt(bitrate, 10);
+  if (isNaN(bitrateNum) || bitrateNum < 100 || bitrateNum > 50000) {
+    throw new Error('Bitrate must be between 100 and 50000 kbps');
+  }
+  return bitrateNum;
+}
+
+function validateResolution(resolution) {
+  if (!resolution || typeof resolution !== 'string') {
+    throw new Error('Invalid resolution');
+  }
+  // Only allow specific resolution formats like 1920x1080
+  const resolutionPattern = /^[0-9]{2,5}x[0-9]{2,5}$/;
+  if (!resolutionPattern.test(resolution)) {
+    throw new Error('Resolution must be in format WIDTHxHEIGHT (e.g., 1920x1080)');
+  }
+  const [width, height] = resolution.split('x').map(Number);
+  if (width < 128 || width > 7680 || height < 128 || height > 4320) {
+    throw new Error('Resolution dimensions out of acceptable range');
+  }
+  return resolution;
+}
+
+function validateFps(fps) {
+  const fpsNum = parseInt(fps, 10);
+  if (isNaN(fpsNum) || fpsNum < 1 || fpsNum > 120) {
+    throw new Error('FPS must be between 1 and 120');
+  }
+  return fpsNum;
+}
 function addStreamLog(streamId, message) {
   if (!streamLogs.has(streamId)) {
     streamLogs.set(streamId, []);
@@ -39,10 +107,14 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
   if (!playlist.videos || playlist.videos.length === 0) {
     throw new Error(`Playlist is empty for playlist_id: ${stream.video_id}`);
   }
-  
+
+  // Validate user inputs to prevent command injection
+  const validatedRtmpUrl = validateRtmpUrl(stream.rtmp_url);
+  const validatedStreamKey = validateStreamKey(stream.stream_key);
+
   const projectRoot = path.resolve(__dirname, '..');
-  const rtmpUrl = `${stream.rtmp_url.replace(/\/$/, '')}/${stream.stream_key}`;
-  
+  const rtmpUrl = `${validatedRtmpUrl.replace(/\/$/, '')}/${validatedStreamKey}`;
+
   let videoPaths = [];
   
   if (playlist.is_shuffle || playlist.shuffle) {
@@ -105,11 +177,12 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
       rtmpUrl
     ];
   }
-  
-  const resolution = stream.resolution || '1280x720';
-  const bitrate = stream.bitrate || 2500;
-  const fps = stream.fps || 30;
-  
+
+  // Validate advanced settings to prevent command injection
+  const resolution = validateResolution(stream.resolution || '1280x720');
+  const bitrate = validateBitrate(stream.bitrate || 2500);
+  const fps = validateFps(stream.fps || 30);
+
   return [
     '-hwaccel', 'auto',
     '-loglevel', 'error',
@@ -156,10 +229,14 @@ async function buildFFmpegArgs(stream) {
     throw new Error(`Video record not found in database for video_id: ${stream.video_id}`);
   }
   
+  // Validate user inputs to prevent command injection
+  const validatedRtmpUrl = validateRtmpUrl(stream.rtmp_url);
+  const validatedStreamKey = validateStreamKey(stream.stream_key);
+
   const relativeVideoPath = video.filepath.startsWith('/') ? video.filepath.substring(1) : video.filepath;
   const projectRoot = path.resolve(__dirname, '..');
   const videoPath = path.join(projectRoot, 'public', relativeVideoPath);
-  
+
   if (!fs.existsSync(videoPath)) {
     console.error(`[StreamingService] CRITICAL: Video file not found on disk.`);
     console.error(`[StreamingService] Checked path: ${videoPath}`);
@@ -169,8 +246,8 @@ async function buildFFmpegArgs(stream) {
     console.error(`[StreamingService] process.cwd(): ${process.cwd()}`);
     throw new Error('Video file not found on disk. Please check paths and file existence.');
   }
-  
-  const rtmpUrl = `${stream.rtmp_url.replace(/\/$/, '')}/${stream.stream_key}`;
+
+  const rtmpUrl = `${validatedRtmpUrl.replace(/\/$/, '')}/${validatedStreamKey}`;
   const loopOption = stream.loop_video ? '-stream_loop' : '-stream_loop 0';
   const loopValue = stream.loop_video ? '-1' : '0';
   if (!stream.use_advanced_settings) {
@@ -191,9 +268,10 @@ async function buildFFmpegArgs(stream) {
       rtmpUrl
     ];
   }
-  const resolution = stream.resolution || '1280x720';
-  const bitrate = stream.bitrate || 2500;
-  const fps = stream.fps || 30;
+  // Validate advanced settings to prevent command injection
+  const resolution = validateResolution(stream.resolution || '1280x720');
+  const bitrate = validateBitrate(stream.bitrate || 2500);
+  const fps = validateFps(stream.fps || 30);
   return [
     '-hwaccel', 'auto',
     '-loglevel', 'error',

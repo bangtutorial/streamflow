@@ -82,21 +82,27 @@ class Playlist {
   }
 
   static update(id, playlistData) {
+    // Whitelist of allowed fields to prevent SQL injection
+    const allowedFields = ['name', 'description', 'is_shuffle'];
     const fields = [];
     const values = [];
-    
+
     Object.entries(playlistData).forEach(([key, value]) => {
-      if (key !== 'id' && key !== 'user_id') {
+      if (allowedFields.includes(key)) {
         fields.push(`${key} = ?`);
         values.push(value);
       }
     });
-    
+
+    if (fields.length === 0) {
+      return Promise.reject(new Error('No valid fields to update'));
+    }
+
     fields.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
 
     const query = `UPDATE playlists SET ${fields.join(', ')} WHERE id = ?`;
-    
+
     return new Promise((resolve, reject) => {
       db.run(query, values, function (err) {
         if (err) {

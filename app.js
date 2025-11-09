@@ -54,7 +54,19 @@ app.locals.helpers = {
     if (req.session && req.session.userId) {
       const avatarPath = req.session.avatar_path;
       if (avatarPath) {
-        return `<img src="${avatarPath}" alt="${req.session.username || 'User'}'s Profile" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/images/default-avatar.jpg';">`;
+        // Escape HTML to prevent XSS
+        const escapeHtml = (str) => {
+          if (!str) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        };
+        const safePath = escapeHtml(avatarPath);
+        const safeUsername = escapeHtml(req.session.username || 'User');
+        return `<img src="${safePath}" alt="${safeUsername}'s Profile" class="w-full h-full object-cover" onerror="this.onerror=null; this.src='/images/default-avatar.jpg';">`;
       }
     }
     return '<img src="/images/default-avatar.jpg" alt="Default Profile" class="w-full h-full object-cover">';
@@ -119,6 +131,7 @@ app.use(session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',  // Prevent CSRF attacks via session cookies
     maxAge: 24 * 60 * 60 * 1000
   }
 }));
@@ -168,8 +181,10 @@ app.use('/uploads', function (req, res, next) {
   res.header('Expires', '0');
   next();
 });
+// Large limit only for form data (for file uploads via multipart/form-data handled by multer)
+// JSON should have reasonable limits to prevent DoS
 app.use(express.urlencoded({ extended: true, limit: '10gb' }));
-app.use(express.json({ limit: '10gb' }));
+app.use(express.json({ limit: '10mb' }));  // Reduced from 10gb to prevent JSON DoS attacks
 
 const csrfProtection = function (req, res, next) {
   if ((req.path === '/login' && req.method === 'POST') ||
@@ -217,13 +232,32 @@ app.use('/uploads', function (req, res, next) {
   next();
 });
 app.use('/uploads/avatars', (req, res, next) => {
-  const file = path.join(__dirname, 'public', 'uploads', 'avatars', path.basename(req.path));
+  const avatarsDir = path.join(__dirname, 'public', 'uploads', 'avatars');
+  const filename = path.basename(req.path);
+
+  // Additional security: validate filename contains only safe characters
+  if (!/^[a-zA-Z0-9_\-\.]+$/.test(filename)) {
+    return res.status(400).send('Invalid filename');
+  }
+
+  const file = path.resolve(avatarsDir, filename);
+
+  // Security check: ensure resolved path is within avatars directory
+  if (!file.startsWith(avatarsDir)) {
+    console.error('Path traversal attempt detected:', file);
+    return res.status(403).send('Access denied');
+  }
+
   if (fs.existsSync(file)) {
     const ext = path.extname(file).toLowerCase();
     let contentType = 'application/octet-stream';
     if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
     else if (ext === '.png') contentType = 'image/png';
     else if (ext === '.gif') contentType = 'image/gif';
+    else {
+      // Only serve image files
+      return res.status(403).send('Invalid file type');
+    }
     res.header('Content-Type', contentType);
     res.header('Cache-Control', 'max-age=60, must-revalidate');
     fs.createReadStream(file).pipe(res);
@@ -380,12 +414,14 @@ app.post('/signup', upload.single('avatar'), async (req, res) => {
       avatarPath = `/uploads/avatars/${req.file.filename}`;
     }
 
+    // Force new users to always be 'member' role and 'inactive' status
+    // Only admins can change these through the admin panel
     const newUser = await User.create({
       username,
       password,
       avatar_path: avatarPath,
-      user_role: user_role || 'member',
-      status: status || 'inactive'
+      user_role: 'member',  // Never trust client input for role
+      status: 'inactive'    // Always require admin approval
     });
 
     if (newUser) {
@@ -1475,17 +1511,32 @@ app.get('/api/videos/import-status/:jobId', isAuthenticated, async (req, res) =>
   });
 });
 const importJobs = {};
+
+// Cleanup function for abandoned import jobs (prevents memory leaks)
+function cleanupImportJob(jobId, delayMs = 30 * 60 * 1000) {
+  setTimeout(() => {
+    if (importJobs[jobId]) {
+      console.log(`Cleaning up abandoned import job: ${jobId}`);
+      delete importJobs[jobId];
+    }
+  }, delayMs);
+}
+
 async function processGoogleDriveImport(jobId, fileId, userId) {
   const { downloadFile } = require('./utils/googleDriveService');
   const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
   const ffmpeg = require('fluent-ffmpeg');
-  
+
   importJobs[jobId] = {
     status: 'downloading',
     progress: 0,
-    message: 'Starting download...'
+    message: 'Starting download...',
+    createdAt: Date.now()
   };
-  
+
+  // Safety cleanup after 30 minutes in case the job hangs
+  cleanupImportJob(jobId, 30 * 60 * 1000);
+
   try {
     const result = await downloadFile(fileId, (progress) => {
       importJobs[jobId] = {
@@ -1646,14 +1697,28 @@ app.get('/api/streams', isAuthenticated, async (req, res) => {
 });
 app.post('/api/streams', isAuthenticated, [
   body('streamTitle').trim().isLength({ min: 1 }).withMessage('Title is required'),
-  body('rtmpUrl').trim().isLength({ min: 1 }).withMessage('RTMP URL is required'),
-  body('streamKey').trim().isLength({ min: 1 }).withMessage('Stream key is required')
+  body('rtmpUrl').trim().isLength({ min: 1 }).withMessage('RTMP URL is required')
+    .matches(/^rtmps?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+$/).withMessage('Invalid RTMP URL format'),
+  body('streamKey').trim().isLength({ min: 1, max: 256 }).withMessage('Stream key is required')
+    .matches(/^[a-zA-Z0-9_\-?=.]+$/).withMessage('Stream key contains invalid characters'),
+  body('bitrate').optional().isInt({ min: 100, max: 50000 }).withMessage('Bitrate must be between 100 and 50000 kbps'),
+  body('fps').optional().isInt({ min: 1, max: 120 }).withMessage('FPS must be between 1 and 120'),
+  body('resolution').optional().matches(/^[0-9]{2,5}x[0-9]{2,5}$/).withMessage('Resolution must be in format WIDTHxHEIGHT'),
+  body('duration').optional().isInt({ min: 1, max: 86400 }).withMessage('Duration must be between 1 and 86400 minutes')
 ], async (req, res) => {
   try {
     console.log('Session userId for stream creation:', req.session.userId);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ success: false, error: errors.array()[0].msg });
+    }
+
+    // Additional validation for resolution dimensions
+    if (req.body.resolution) {
+      const [width, height] = req.body.resolution.split('x').map(Number);
+      if (width < 128 || width > 7680 || height < 128 || height > 4320) {
+        return res.status(400).json({ success: false, error: 'Resolution dimensions out of acceptable range' });
+      }
     }
     let platform = 'Custom';
     let platform_icon = 'ti-broadcast';

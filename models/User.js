@@ -57,12 +57,22 @@ class User {
     }
   }
   static update(userId, userData) {
+    // Whitelist of allowed fields to prevent SQL injection
+    const allowedFields = ['username', 'password', 'avatar_path', 'user_role', 'status'];
     const fields = [];
     const values = [];
+
     Object.entries(userData).forEach(([key, value]) => {
-      fields.push(`${key} = ?`);
-      values.push(value);
+      if (allowedFields.includes(key)) {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
     });
+
+    if (fields.length === 0) {
+      return Promise.reject(new Error('No valid fields to update'));
+    }
+
     fields.push('updated_at = CURRENT_TIMESTAMP');
     values.push(userId);
     const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;

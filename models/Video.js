@@ -55,12 +55,25 @@ class Video {
     });
   }
   static update(id, videoData) {
+    // Whitelist of allowed fields to prevent SQL injection
+    const allowedFields = [
+      'title', 'filepath', 'thumbnail_path', 'file_size', 'duration',
+      'format', 'resolution', 'bitrate', 'fps'
+    ];
     const fields = [];
     const values = [];
+
     Object.entries(videoData).forEach(([key, value]) => {
-      fields.push(`${key} = ?`);
-      values.push(value);
+      if (allowedFields.includes(key)) {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
     });
+
+    if (fields.length === 0) {
+      return Promise.reject(new Error('No valid fields to update'));
+    }
+
     fields.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
     const query = `UPDATE videos SET ${fields.join(', ')} WHERE id = ?`;
@@ -77,33 +90,52 @@ class Video {
   static delete(id) {
     return new Promise((resolve, reject) => {
       Video.findById(id)
-        .then(video => {
+        .then(async video => {
           if (!video) {
             return reject(new Error('Video not found'));
           }
-          db.run('DELETE FROM videos WHERE id = ?', [id], function (err) {
+          db.run('DELETE FROM videos WHERE id = ?', [id], async function (err) {
             if (err) {
               console.error('Error deleting video from database:', err.message);
               return reject(err);
             }
+            // Use async file operations to prevent blocking
             if (video.filepath) {
-              const fullPath = path.join(process.cwd(), 'public', video.filepath);
-              try {
-                if (fs.existsSync(fullPath)) {
-                  fs.unlinkSync(fullPath);
+              // Prevent path traversal by ensuring path stays within public directory
+              const publicDir = path.join(process.cwd(), 'public');
+              const relativeVideoPath = video.filepath.startsWith('/') ? video.filepath.substring(1) : video.filepath;
+              const fullPath = path.resolve(publicDir, relativeVideoPath);
+
+              // Security check: ensure resolved path is within public directory
+              if (!fullPath.startsWith(publicDir)) {
+                console.error('Path traversal attempt detected:', fullPath);
+              } else {
+                try {
+                  await fs.promises.unlink(fullPath);
+                } catch (fileErr) {
+                  if (fileErr.code !== 'ENOENT') {  // Ignore "file not found" errors
+                    console.error('Error deleting video file:', fileErr);
+                  }
                 }
-              } catch (fileErr) {
-                console.error('Error deleting video file:', fileErr);
               }
             }
             if (video.thumbnail_path) {
-              const thumbnailPath = path.join(process.cwd(), 'public', video.thumbnail_path);
-              try {
-                if (fs.existsSync(thumbnailPath)) {
-                  fs.unlinkSync(thumbnailPath);
+              // Prevent path traversal for thumbnails
+              const publicDir = path.join(process.cwd(), 'public');
+              const relativeThumbnailPath = video.thumbnail_path.startsWith('/') ? video.thumbnail_path.substring(1) : video.thumbnail_path;
+              const thumbnailPath = path.resolve(publicDir, relativeThumbnailPath);
+
+              // Security check: ensure resolved path is within public directory
+              if (!thumbnailPath.startsWith(publicDir)) {
+                console.error('Path traversal attempt detected:', thumbnailPath);
+              } else {
+                try {
+                  await fs.promises.unlink(thumbnailPath);
+                } catch (thumbErr) {
+                  if (thumbErr.code !== 'ENOENT') {  // Ignore "file not found" errors
+                    console.error('Error deleting thumbnail:', thumbErr);
+                  }
                 }
-              } catch (thumbErr) {
-                console.error('Error deleting thumbnail:', thumbErr);
               }
             }
             resolve({ success: true, id });

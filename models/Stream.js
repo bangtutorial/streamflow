@@ -113,17 +113,34 @@ class Stream {
     });
   }
   static update(id, streamData) {
+    // Whitelist of allowed fields to prevent SQL injection
+    const allowedFields = [
+      'title', 'video_id', 'rtmp_url', 'stream_key', 'platform', 'platform_icon',
+      'bitrate', 'resolution', 'fps', 'orientation', 'loop_video', 'schedule_time',
+      'duration', 'status', 'status_updated_at', 'use_advanced_settings', 'start_time', 'end_time'
+    ];
     const fields = [];
     const values = [];
+
     Object.entries(streamData).forEach(([key, value]) => {
-      if (key === 'loop_video' && typeof value === 'boolean') {
-        fields.push(`${key} = ?`);
-        values.push(value ? 1 : 0);
-      } else {
-        fields.push(`${key} = ?`);
-        values.push(value);
+      if (allowedFields.includes(key)) {
+        if (key === 'loop_video' && typeof value === 'boolean') {
+          fields.push(`${key} = ?`);
+          values.push(value ? 1 : 0);
+        } else if (key === 'use_advanced_settings' && typeof value === 'boolean') {
+          fields.push(`${key} = ?`);
+          values.push(value ? 1 : 0);
+        } else {
+          fields.push(`${key} = ?`);
+          values.push(value);
+        }
       }
     });
+
+    if (fields.length === 0) {
+      return Promise.reject(new Error('No valid fields to update'));
+    }
+
     fields.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
     const query = `UPDATE streams SET ${fields.join(', ')} WHERE id = ?`;
@@ -236,14 +253,14 @@ class Stream {
       const startTimeStr = startTime.toISOString();
       const endTimeStr = endTime.toISOString();
       const query = `
-        SELECT s.*, 
-               v.title AS video_title, 
+        SELECT s.*,
+               v.title AS video_title,
                v.filepath AS video_filepath,
-               v.thumbnail_path AS video_thumbnail, 
+               v.thumbnail_path AS video_thumbnail,
                v.duration AS video_duration,
                v.resolution AS video_resolution,
                v.bitrate AS video_bitrate,
-               v.fps AS video_fps  
+               v.fps AS video_fps
         FROM streams s
         LEFT JOIN videos v ON s.video_id = v.id
         WHERE s.status = 'scheduled'
@@ -263,6 +280,26 @@ class Stream {
           });
         }
         resolve(rows || []);
+      });
+    });
+  }
+
+  static isStreamKeyInUse(streamKey, userId, excludeId = null) {
+    return new Promise((resolve, reject) => {
+      let query = 'SELECT COUNT(*) as count FROM streams WHERE stream_key = ? AND user_id = ?';
+      const params = [streamKey, userId];
+
+      if (excludeId) {
+        query += ' AND id != ?';
+        params.push(excludeId);
+      }
+
+      db.get(query, params, (err, row) => {
+        if (err) {
+          console.error('Error checking stream key usage:', err.message);
+          return reject(err);
+        }
+        resolve(row.count > 0);
       });
     });
   }

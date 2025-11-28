@@ -414,12 +414,12 @@ function showToast(message, type = 'success') {
   const toastMessage = document.getElementById('toast-message');
   
   if (type === 'success') {
-    toastIcon.className = 'ti ti-check text-green-400 mr-2';
+    toastIcon.className = 'ti ti-check text-green-400 text-xl mr-2 font-loaded';
   } else {
-    toastIcon.className = 'ti ti-x text-red-400 mr-2';
+    toastIcon.className = 'ti ti-x text-red-400 text-xl mr-2 font-loaded';
   }
   
-  toast.className = 'fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center';
+  toast.className = 'fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50';
   toastMessage.textContent = message;
   toast.classList.remove('hidden');
   

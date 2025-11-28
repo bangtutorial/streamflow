@@ -1743,7 +1743,38 @@ app.put('/api/streams/:id', isAuthenticated, async (req, res) => {
     const updateData = {};
     if (req.body.streamTitle) updateData.title = req.body.streamTitle;
     if (req.body.videoId) updateData.video_id = req.body.videoId;
-    if (req.body.rtmpUrl) updateData.rtmp_url = req.body.rtmpUrl;
+    
+    if (req.body.rtmpUrl) {
+      updateData.rtmp_url = req.body.rtmpUrl;
+      
+      let platform = 'Custom';
+      let platform_icon = 'ti-broadcast';
+      if (req.body.rtmpUrl.includes('youtube.com')) {
+        platform = 'YouTube';
+        platform_icon = 'ti-brand-youtube';
+      } else if (req.body.rtmpUrl.includes('facebook.com')) {
+        platform = 'Facebook';
+        platform_icon = 'ti-brand-facebook';
+      } else if (req.body.rtmpUrl.includes('twitch.tv')) {
+        platform = 'Twitch';
+        platform_icon = 'ti-brand-twitch';
+      } else if (req.body.rtmpUrl.includes('tiktok.com')) {
+        platform = 'TikTok';
+        platform_icon = 'ti-brand-tiktok';
+      } else if (req.body.rtmpUrl.includes('instagram.com')) {
+        platform = 'Instagram';
+        platform_icon = 'ti-brand-instagram';
+      } else if (req.body.rtmpUrl.includes('shopee.io')) {
+        platform = 'Shopee Live';
+        platform_icon = 'ti-brand-shopee';
+      } else if (req.body.rtmpUrl.includes('restream.io')) {
+        platform = 'Restream.io';
+        platform_icon = 'ti-live-photo';
+      }
+      updateData.platform = platform;
+      updateData.platform_icon = platform_icon;
+    }
+    
     if (req.body.streamKey) updateData.stream_key = req.body.streamKey;
     if (req.body.bitrate) updateData.bitrate = parseInt(req.body.bitrate);
     if (req.body.resolution) updateData.resolution = req.body.resolution;
@@ -1755,6 +1786,12 @@ app.put('/api/streams/:id', isAuthenticated, async (req, res) => {
     if (req.body.useAdvancedSettings !== undefined) {
       updateData.use_advanced_settings = req.body.useAdvancedSettings === 'true' || req.body.useAdvancedSettings === true;
     }
+    if (req.body.duration !== undefined && req.body.duration !== null && req.body.duration !== '') {
+      updateData.duration = parseInt(req.body.duration);
+    } else if ('duration' in req.body && !req.body.duration) {
+      updateData.duration = null;
+    }
+    
     if (req.body.scheduleTime) {
       const scheduleDate = new Date(req.body.scheduleTime);
       

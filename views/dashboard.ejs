@@ -152,14 +152,13 @@
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Platform</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Start Date</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Schedule</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Duration</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-700">
             <tr id="empty-state" class="hover:bg-dark-700/50 transition-colors" style="display: none;">
-              <td colspan="7" class="px-6 py-10 text-center">
+              <td colspan="6" class="px-6 py-10 text-center">
                 <div class="flex flex-col items-center">
                   <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
                     <i class="ti ti-broadcast text-gray-500 text-2xl"></i>
@@ -331,7 +330,7 @@
                 </span>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="h-[42px] flex items-center justify-between">
+                <div class="h-[42px] mt-3 flex items-center justify-between">
                   <label class="text-sm text-gray-300">Loop Video</label>
                   <label class="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" name="loopVideo" class="sr-only peer" checked>
@@ -342,14 +341,14 @@
                   </label>
                 </div>
                 <div>
-                  <input type="datetime-local"
+                  <label class="text-xs text-gray-400 block mb-1">Start Stream</label>
+                  <input type="datetime-local" id="scheduleStartTime" name="scheduleStartTime"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
                 </div>
-                <div class="relative">
-                  <input type="number" min="1"
-                    class="w-full h-[42px] px-4 pr-16 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm"
-                    placeholder="Duration">
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
+                <div>
+                  <label class="text-xs text-gray-400 block mb-1">End Stream</label>
+                  <input type="datetime-local" id="scheduleEndTime" name="scheduleEndTime"
+                    class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
                 </div>
               </div>
             </div>
@@ -626,14 +625,14 @@
                   </label>
                 </div>
                 <div>
-                  <input type="datetime-local" id="editScheduleTime"
+                  <label class="text-xs text-gray-400 block mb-1">Start Stream</label>
+                  <input type="datetime-local" id="editScheduleStartTime" name="scheduleStartTime"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
                 </div>
-                <div class="relative">
-                  <input type="number" id="editDuration" min="1"
-                    class="w-full h-[42px] px-4 pr-16 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm"
-                    placeholder="Duration">
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-gray-400">minutes</span>
+                <div>
+                  <label class="text-xs text-gray-400 block mb-1">End Stream</label>
+                  <input type="datetime-local" id="editScheduleEndTime" name="scheduleEndTime"
+                    class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
                 </div>
               </div>
             </div>
@@ -1251,13 +1250,21 @@
         resolution: document.getElementById('currentResolution').textContent.split(' ')[0],
         useAdvancedSettings: !document.getElementById('advancedSettingsContent').classList.contains('hidden')
       };
-      const scheduleTime = document.querySelector('input[type="datetime-local"]').value;
-      const duration = document.querySelector('input[type="number"]').value;
-      if (scheduleTime) {
-        formData.scheduleTime = scheduleTime;
+      const scheduleStartTime = document.getElementById('scheduleStartTime').value;
+      const scheduleEndTime = document.getElementById('scheduleEndTime').value;
+      if (scheduleStartTime && scheduleEndTime) {
+        const startDate = new Date(scheduleStartTime);
+        const endDate = new Date(scheduleEndTime);
+        if (endDate <= startDate) {
+          showToast('error', 'End stream must be after start stream');
+          return;
+        }
       }
-      if (duration) {
-        formData.duration = duration;
+      if (scheduleStartTime) {
+        formData.scheduleStartTime = scheduleStartTime;
+      }
+      if (scheduleEndTime) {
+        formData.scheduleEndTime = scheduleEndTime;
       }
       const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
       fetch('/api/streams', {
@@ -1403,19 +1410,38 @@
           <div class="text-xs text-gray-400 mb-2">
             ${settingsDisplay}
           </div>
-          <div class="flex items-center text-sm text-gray-400 mb-2">
-            <i class="ti ti-clock mr-1.5"></i>
-            <span>Duration: ${formattedDuration}</span>
-          </div>
-          ${stream.status === 'scheduled' ? `
-          <div class="flex items-center text-sm text-yellow-500 mb-3">
-            <i class="ti ti-calendar-event mr-1.5"></i>
-            <span>Starts ${scheduleDate} • ${scheduleTime}</span>
-          </div>` : `
-          <div class="flex items-center text-sm text-gray-400 mb-3">
-            <i class="ti ti-calendar mr-1.5"></i>
-            <span>${startDate || 'Not started'}</span>
-          </div>`}
+          ${(() => {
+            const endDate = stream.end_time ? formatDate(new Date(stream.end_time)) : '';
+            const endTime = stream.end_time ? formatTime(new Date(stream.end_time)) : '';
+            if (stream.status === 'scheduled') {
+              if (scheduleDate && endDate) {
+                return `<div class="text-xs mb-3">
+                          <div class="flex items-center mb-1 text-yellow-500 font-medium">
+                            <i class="ti ti-calendar-event mr-1.5"></i>
+                            <span>Start: ${scheduleDate} ${scheduleTime}</span>
+                          </div>
+                          <div class="flex items-center text-green-500 font-medium">
+                            <i class="ti ti-calendar-check mr-1.5"></i>
+                            <span>End: ${endDate} ${endTime}</span>
+                          </div>
+                        </div>`;
+              } else if (scheduleDate) {
+                return `<div class="flex items-center text-xs text-yellow-500 font-medium mb-3">
+                          <i class="ti ti-calendar-event mr-1.5"></i>
+                          <span>Start: ${scheduleDate} ${scheduleTime}</span>
+                        </div>`;
+              } else if (endDate) {
+                return `<div class="flex items-center text-xs text-green-500 font-medium mb-3">
+                          <i class="ti ti-calendar-check mr-1.5"></i>
+                          <span>End: ${endDate} ${endTime}</span>
+                        </div>`;
+              }
+            }
+            return `<div class="flex items-center text-sm text-gray-400 mb-3">
+                      <i class="ti ti-calendar mr-1.5"></i>
+                      <span>${startDate || 'Not started'}</span>
+                    </div>`;
+          })()}
           <div class="flex justify-between items-center">
             ${getActionButtonHTML(stream.status, stream.id, 'mobile')}
             <div class="flex items-center gap-3 text-gray-400">
@@ -1505,16 +1531,19 @@
           ${startDate ? `<div class="text-xs text-gray-500">Started: ${formatTime(startDate)}</div>` : ''}
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
-          ${scheduleDate
-            ? `<div class="text-sm text-yellow-500 font-medium">${formatDate(scheduleDate)}</div>
-               <div class="text-xs text-gray-400">${formatTime(scheduleDate)}</div>`
-            : `<div class="text-sm">--</div>`}
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="flex items-center">
-            <i class="ti ti-clock text-gray-400 mr-1.5"></i>
-            <span class="text-sm">${formattedDuration}</span>
-          </div>
+          ${(() => {
+            const endDate = stream.end_time ? new Date(stream.end_time) : null;
+            if (scheduleDate && endDate) {
+              return `<div class="text-xs text-yellow-500 font-medium">Start: ${formatDate(scheduleDate)} ${formatTime(scheduleDate)}</div>
+                      <div class="text-xs text-green-500 font-medium">End: ${formatDate(endDate)} ${formatTime(endDate)}</div>`;
+            } else if (scheduleDate) {
+              return `<div class="text-xs text-yellow-500 font-medium">Start: ${formatDate(scheduleDate)} ${formatTime(scheduleDate)}</div>`;
+            } else if (endDate) {
+              return `<div class="text-xs text-green-500 font-medium">End: ${formatDate(endDate)} ${formatTime(endDate)}</div>`;
+            } else {
+              return `<div class="text-sm">--</div>`;
+            }
+          })()}
         </td>
         <td class="px-6 py-4 whitespace-nowrap min-w-[150px]">
           <div class="flex items-center">
@@ -1930,15 +1959,27 @@
       }
       if (stream.schedule_time) {
         const scheduleDate = new Date(stream.schedule_time);
-        const formattedDate = scheduleDate.toISOString().slice(0, 16);
-        document.getElementById('editScheduleTime').value = formattedDate;
+        const year = scheduleDate.getFullYear();
+        const month = String(scheduleDate.getMonth() + 1).padStart(2, '0');
+        const day = String(scheduleDate.getDate()).padStart(2, '0');
+        const hours = String(scheduleDate.getHours()).padStart(2, '0');
+        const minutes = String(scheduleDate.getMinutes()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+        document.getElementById('editScheduleStartTime').value = formattedDate;
       } else {
-        document.getElementById('editScheduleTime').value = '';
+        document.getElementById('editScheduleStartTime').value = '';
       }
-      if (stream.duration) {
-        document.getElementById('editDuration').value = stream.duration;
+      if (stream.end_time) {
+        const endDate = new Date(stream.end_time);
+        const year = endDate.getFullYear();
+        const month = String(endDate.getMonth() + 1).padStart(2, '0');
+        const day = String(endDate.getDate()).padStart(2, '0');
+        const hours = String(endDate.getHours()).padStart(2, '0');
+        const minutes = String(endDate.getMinutes()).padStart(2, '0');
+        const formattedEndDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+        document.getElementById('editScheduleEndTime').value = formattedEndDate;
       } else {
-        document.getElementById('editDuration').value = '';
+        document.getElementById('editScheduleEndTime').value = '';
       }
       const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
       const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
@@ -2258,14 +2299,18 @@
             resolution: document.getElementById('editCurrentResolution').textContent,
             useAdvancedSettings: !document.getElementById('editAdvancedSettingsContent').classList.contains('hidden')
           };
-          const scheduleTime = document.getElementById('editScheduleTime').value;
-          const duration = document.getElementById('editDuration').value;
-          if (scheduleTime) {
-            formData.scheduleTime = scheduleTime;
+          const scheduleStartTime = document.getElementById('editScheduleStartTime').value;
+          const scheduleEndTime = document.getElementById('editScheduleEndTime').value;
+          if (scheduleStartTime && scheduleEndTime) {
+            const startDate = new Date(scheduleStartTime);
+            const endDate = new Date(scheduleEndTime);
+            if (endDate <= startDate) {
+              showToast('error', 'End stream must be after start stream');
+              return;
+            }
           }
-          if (duration) {
-            formData.duration = parseInt(duration);
-          }
+          formData.scheduleStartTime = scheduleStartTime || '';
+          formData.scheduleEndTime = scheduleEndTime || '';
           const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
           fetch(`/api/streams/${streamId}`, {
             method: 'PUT',
@@ -2421,13 +2466,11 @@
     });
   </script>
 
-  <!-- Toast Notification -->
   <div id="toast" class="fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden flex items-center">
     <i id="toast-icon" class="mr-2"></i>
     <span id="toast-message"></span>
   </div>
 
-  <!-- Tips Streaming Modal -->
   <div id="tipsStreamingModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
     <div class="flex min-h-screen items-center justify-center p-4">
       <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-2xl modal-container">

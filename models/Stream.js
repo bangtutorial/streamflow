@@ -16,32 +16,34 @@ class Stream {
       orientation = 'horizontal',
       loop_video = true,
       schedule_time = null,
+      end_time = null,
       duration = null,
       use_advanced_settings = false,
+      status,
       user_id
     } = streamData;
     const loop_video_int = loop_video ? 1 : 0;
     const use_advanced_settings_int = use_advanced_settings ? 1 : 0;
-    const status = schedule_time ? 'scheduled' : 'offline';
+    const final_status = status || (schedule_time ? 'scheduled' : 'offline');
     const status_updated_at = new Date().toISOString();
     return new Promise((resolve, reject) => {
       db.run(
         `INSERT INTO streams (
           id, title, video_id, rtmp_url, stream_key, platform, platform_icon,
           bitrate, resolution, fps, orientation, loop_video,
-          schedule_time, duration, status, status_updated_at, use_advanced_settings, user_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          schedule_time, end_time, duration, status, status_updated_at, use_advanced_settings, user_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, title, video_id, rtmp_url, stream_key, platform, platform_icon,
           bitrate, resolution, fps, orientation, loop_video_int,
-          schedule_time, duration, status, status_updated_at, use_advanced_settings_int, user_id
+          schedule_time, end_time, duration, final_status, status_updated_at, use_advanced_settings_int, user_id
         ],
         function (err) {
           if (err) {
             console.error('Error creating stream:', err.message);
             return reject(err);
           }
-          resolve({ id, ...streamData, status, status_updated_at });
+          resolve({ id, ...streamData, status: final_status, status_updated_at });
         }
       );
     });

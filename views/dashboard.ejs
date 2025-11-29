@@ -370,7 +370,11 @@
                       </div>
                     </div>
                   </div>
-                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="advancedSettingsCheckbox" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
                 </button>
                 <div id="advancedSettingsContent" class="hidden space-y-6 pt-4">
                   <div class="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-3 mb-4">
@@ -654,7 +658,11 @@
                       </div>
                     </div>
                   </div>
-                  <i class="ti ti-chevron-down text-gray-400 transition-transform"></i>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="editAdvancedSettingsCheckbox" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
                 </button>
                 <div id="editAdvancedSettingsContent" class="hidden space-y-6 pt-4">
                   <div class="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-3 mb-4">
@@ -1982,14 +1990,13 @@
         document.getElementById('editScheduleEndTime').value = '';
       }
       const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
-      const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
-      const icon = advancedSettingsToggle.querySelector('i');
+      const advancedSettingsCheckbox = document.getElementById('editAdvancedSettingsCheckbox');
       if (stream.use_advanced_settings) {
         advancedSettingsContent.classList.remove('hidden');
-        icon.style.transform = 'rotate(180deg)';
+        advancedSettingsCheckbox.checked = true;
       } else {
         advancedSettingsContent.classList.add('hidden');
-        icon.style.transform = '';
+        advancedSettingsCheckbox.checked = false;
       }
       const modal = document.getElementById('editStreamModal');
       document.body.style.overflow = 'hidden';
@@ -2049,11 +2056,10 @@
       }
       
       const advancedSettingsContent = document.getElementById('editAdvancedSettingsContent');
-      const advancedSettingsToggle = document.getElementById('editAdvancedSettingsToggle');
-      if (advancedSettingsContent && advancedSettingsToggle) {
+      const advancedSettingsCheckbox = document.getElementById('editAdvancedSettingsCheckbox');
+      if (advancedSettingsContent && advancedSettingsCheckbox) {
         advancedSettingsContent.classList.add('hidden');
-        const icon = advancedSettingsToggle.querySelector('i');
-        if (icon) icon.style.transform = '';
+        advancedSettingsCheckbox.checked = false;
       }
     }
     function toggleEditVideoSelector() {
@@ -2361,20 +2367,23 @@
       });
     }
     document.addEventListener('DOMContentLoaded', function () {
-      setupAdvancedSettings('advancedSettingsToggle', 'advancedSettingsContent');
-      setupAdvancedSettings('editAdvancedSettingsToggle', 'editAdvancedSettingsContent');
+      setupAdvancedSettings('advancedSettingsToggle', 'advancedSettingsContent', 'advancedSettingsCheckbox');
+      setupAdvancedSettings('editAdvancedSettingsToggle', 'editAdvancedSettingsContent', 'editAdvancedSettingsCheckbox');
     });
-    function setupAdvancedSettings(toggleId, contentId) {
+    function setupAdvancedSettings(toggleId, contentId, checkboxId) {
       const toggle = document.getElementById(toggleId);
       const content = document.getElementById(contentId);
-      if (toggle && content) {
-        toggle.addEventListener('click', function () {
-          content.classList.toggle('hidden');
-          const icon = this.querySelector('i');
-          if (content.classList.contains('hidden')) {
-            icon.style.transform = '';
+      const checkbox = document.getElementById(checkboxId);
+      
+      if (toggle && content && checkbox) {
+        toggle.addEventListener('click', function (e) {
+          e.preventDefault();
+          checkbox.checked = !checkbox.checked;
+          
+          if (checkbox.checked) {
+            content.classList.remove('hidden');
           } else {
-            icon.style.transform = 'rotate(180deg)';
+            content.classList.add('hidden');
           }
         });
       }

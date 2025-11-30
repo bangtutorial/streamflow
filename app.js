@@ -1694,21 +1694,44 @@ app.post('/api/streams', isAuthenticated, [
       use_advanced_settings: req.body.useAdvancedSettings === 'true' || req.body.useAdvancedSettings === true,
       user_id: req.session.userId
     };
-    if (req.body.scheduleTime) {
-      const scheduleDate = new Date(req.body.scheduleTime);
+    const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    function parseLocalDateTime(dateTimeString) {
+      const [datePart, timePart] = dateTimeString.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hours, minutes] = timePart.split(':').map(Number);
       
-      const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      console.log(`[CREATE STREAM] Server timezone: ${serverTimezone}`);
-      console.log(`[CREATE STREAM] Input time: ${req.body.scheduleTime}`);
-      console.log(`[CREATE STREAM] Parsed time: ${scheduleDate.toISOString()}`);
-      console.log(`[CREATE STREAM] Local display: ${scheduleDate.toLocaleString('en-US', { timeZone: serverTimezone })}`);
+      return new Date(year, month - 1, day, hours, minutes);
+    }
+    
+    if (req.body.scheduleStartTime) {
+      const scheduleStartDate = parseLocalDateTime(req.body.scheduleStartTime);
+      streamData.schedule_time = scheduleStartDate.toISOString();
+      streamData.status = 'scheduled';
       
-      streamData.schedule_time = scheduleDate.toISOString();
+      if (req.body.scheduleEndTime) {
+        const scheduleEndDate = parseLocalDateTime(req.body.scheduleEndTime);
+        
+        if (scheduleEndDate <= scheduleStartDate) {
+          return res.status(400).json({ 
+            success: false, 
+            error: 'End time must be after start time' 
+          });
+        }
+        
+        streamData.end_time = scheduleEndDate.toISOString();
+        const durationMs = scheduleEndDate - scheduleStartDate;
+        const durationMinutes = Math.round(durationMs / (1000 * 60));
+        streamData.duration = durationMinutes > 0 ? durationMinutes : null;
+      }
+    } else if (req.body.scheduleEndTime) {
+      const scheduleEndDate = parseLocalDateTime(req.body.scheduleEndTime);
+      streamData.end_time = scheduleEndDate.toISOString();
     }
-    if (req.body.duration) {
-      streamData.duration = parseInt(req.body.duration);
+    
+    if (!streamData.status) {
+      streamData.status = 'offline';
     }
-    streamData.status = req.body.scheduleTime ? 'scheduled' : 'offline';
     const stream = await Stream.create(streamData);
     res.json({ success: true, stream });
   } catch (error) {
@@ -1786,26 +1809,56 @@ app.put('/api/streams/:id', isAuthenticated, async (req, res) => {
     if (req.body.useAdvancedSettings !== undefined) {
       updateData.use_advanced_settings = req.body.useAdvancedSettings === 'true' || req.body.useAdvancedSettings === true;
     }
-    if (req.body.duration !== undefined && req.body.duration !== null && req.body.duration !== '') {
-      updateData.duration = parseInt(req.body.duration);
-    } else if ('duration' in req.body && !req.body.duration) {
-      updateData.duration = null;
+    const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    
+    function parseLocalDateTime(dateTimeString) {
+      const [datePart, timePart] = dateTimeString.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hours, minutes] = timePart.split(':').map(Number);
+      
+      return new Date(year, month - 1, day, hours, minutes);
     }
     
-    if (req.body.scheduleTime) {
-      const scheduleDate = new Date(req.body.scheduleTime);
-      
-      const serverTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      console.log(`[UPDATE STREAM] Server timezone: ${serverTimezone}`);
-      console.log(`[UPDATE STREAM] Input time: ${req.body.scheduleTime}`);
-      console.log(`[UPDATE STREAM] Parsed time: ${scheduleDate.toISOString()}`);
-      console.log(`[UPDATE STREAM] Local display: ${scheduleDate.toLocaleString('en-US', { timeZone: serverTimezone })}`);
-      
-      updateData.schedule_time = scheduleDate.toISOString();
+    if (req.body.scheduleStartTime) {
+      const scheduleStartDate = parseLocalDateTime(req.body.scheduleStartTime);
+      updateData.schedule_time = scheduleStartDate.toISOString();
       updateData.status = 'scheduled';
-    } else if ('scheduleTime' in req.body && !req.body.scheduleTime) {
+      
+      if (req.body.scheduleEndTime) {
+        const scheduleEndDate = parseLocalDateTime(req.body.scheduleEndTime);
+        
+        if (scheduleEndDate <= scheduleStartDate) {
+          return res.status(400).json({ 
+            success: false, 
+            error: 'End time must be after start time' 
+          });
+        }
+        
+        updateData.end_time = scheduleEndDate.toISOString();
+        const durationMs = scheduleEndDate - scheduleStartDate;
+        const durationMinutes = Math.round(durationMs / (1000 * 60));
+        updateData.duration = durationMinutes > 0 ? durationMinutes : null;
+      } else if ('scheduleEndTime' in req.body && req.body.scheduleEndTime === '') {
+        updateData.end_time = null;
+        updateData.duration = null;
+      }
+    } else if ('scheduleStartTime' in req.body && !req.body.scheduleStartTime) {
       updateData.schedule_time = null;
       updateData.status = 'offline';
+      
+      if (req.body.scheduleEndTime) {
+        const scheduleEndDate = parseLocalDateTime(req.body.scheduleEndTime);
+        updateData.end_time = scheduleEndDate.toISOString();
+      } else if ('scheduleEndTime' in req.body && req.body.scheduleEndTime === '') {
+        updateData.end_time = null;
+        updateData.duration = null;
+      }
+    } else if (req.body.scheduleEndTime) {
+      const scheduleEndDate = parseLocalDateTime(req.body.scheduleEndTime);
+      updateData.end_time = scheduleEndDate.toISOString();
+    } else if ('scheduleEndTime' in req.body && req.body.scheduleEndTime === '') {
+      updateData.end_time = null;
+      updateData.duration = null;
     }
     
     const updatedStream = await Stream.update(req.params.id, updateData);

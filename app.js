@@ -14,13 +14,14 @@ const bcrypt = require('bcrypt');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const User = require('./models/User');
-const { db, checkIfUsersExist } = require('./db/database');
+const { db, checkIfUsersExist, initializeDatabase } = require('./db/database');
 const systemMonitor = require('./services/systemMonitor');
 const { uploadVideo, upload } = require('./middleware/uploadMiddleware');
 const { ensureDirectories } = require('./utils/storage');
 const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
 const Video = require('./models/Video');
 const Playlist = require('./models/Playlist');
+const Stream = require('./models/Stream');
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const streamingService = require('./services/streamingService');
@@ -1632,8 +1633,7 @@ app.get('/api/stream/content', isAuthenticated, async (req, res) => {
     res.status(500).json({ error: 'Failed to load content' });
   }
 });
-const Stream = require('./models/Stream');
-const { title } = require('process');
+
 app.get('/api/streams', isAuthenticated, async (req, res) => {
   try {
     const filter = req.query.filter;
@@ -2253,6 +2253,13 @@ app.get('/api/server-time', (req, res) => {
   });
 });
 const server = app.listen(port, '0.0.0.0', async () => {
+  try {
+    await initializeDatabase();
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  }
+  
   const ipAddresses = getLocalIpAddresses();
   console.log(`StreamFlow running at:`);
   if (ipAddresses && ipAddresses.length > 0) {

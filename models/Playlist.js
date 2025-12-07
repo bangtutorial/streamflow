@@ -7,7 +7,11 @@ class Playlist {
       db.all(
         `SELECT p.*, 
          COUNT(pv.id) as video_count,
-         GROUP_CONCAT(v.thumbnail_path) as thumbnails
+         (SELECT GROUP_CONCAT(v2.thumbnail_path)
+          FROM playlist_videos pv2
+          JOIN videos v2 ON pv2.video_id = v2.id
+          WHERE pv2.playlist_id = p.id
+          ORDER BY pv2.position ASC) as thumbnails
          FROM playlists p 
          LEFT JOIN playlist_videos pv ON p.id = pv.playlist_id 
          LEFT JOIN videos v ON pv.video_id = v.id

@@ -85,19 +85,27 @@ class Stream {
         LEFT JOIN playlists p ON s.video_id = p.id
       `;
       const params = [];
+      const conditions = [];
+      
       if (userId) {
-        query += ' WHERE s.user_id = ?';
+        conditions.push('s.user_id = ?');
         params.push(userId);
-        if (filter) {
-          if (filter === 'live') {
-            query += " AND s.status = 'live'";
-          } else if (filter === 'scheduled') {
-            query += " AND s.status = 'scheduled'";
-          } else if (filter === 'offline') {
-            query += " AND s.status = 'offline'";
-          }
+      }
+      
+      if (filter) {
+        if (filter === 'live') {
+          conditions.push("s.status = 'live'");
+        } else if (filter === 'scheduled') {
+          conditions.push("s.status = 'scheduled'");
+        } else if (filter === 'offline') {
+          conditions.push("s.status = 'offline'");
         }
       }
+      
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
+      }
+      
       query += ' ORDER BY s.created_at DESC';
       db.all(query, params, (err, rows) => {
         if (err) {
@@ -154,36 +162,63 @@ class Stream {
       );
     });
   }
-  static updateStatus(id, status, userId, options = {}) {
+  static updateStatus(id, status, userId = null, options = {}) {
     const status_updated_at = new Date().toISOString();
-    const { startTimeOverride = null, endTimeOverride = null } = options;
+    const { startTimeOverride = null, endTimeOverride = null, clearEndTime = false } = options;
     let start_time = null;
     let end_time = null;
+    
     if (status === 'live') {
       start_time = startTimeOverride || new Date().toISOString();
-    } else if (status === 'offline') {
-      end_time = endTimeOverride || new Date().toISOString();
     }
+    if (endTimeOverride) {
+      end_time = endTimeOverride;
+    }
+    
     return new Promise((resolve, reject) => {
-      db.run(
-        `UPDATE streams SET 
-          status = ?, 
-          status_updated_at = ?, 
-          start_time = CASE WHEN ? IS NOT NULL THEN ? ELSE start_time END, 
-          end_time = CASE WHEN ? IS NOT NULL THEN ? ELSE end_time END,
-          updated_at = CURRENT_TIMESTAMP
-         WHERE id = ? AND user_id = ?`,
-        [
+      let query;
+      let params;
+      
+      if (status === 'offline' && !endTimeOverride) {
+        query = `UPDATE streams SET 
+            status = ?, 
+            status_updated_at = ?, 
+            start_time = CASE WHEN ? IS NOT NULL THEN ? ELSE start_time END,
+            end_time = NULL,
+            updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`;
+        params = [
+          status,
+          status_updated_at,
+          start_time,
+          start_time,
+          id
+        ];
+      } else {
+        query = `UPDATE streams SET 
+            status = ?, 
+            status_updated_at = ?, 
+            start_time = CASE WHEN ? IS NOT NULL THEN ? ELSE start_time END, 
+            end_time = CASE WHEN ? IS NOT NULL THEN ? ELSE end_time END,
+            updated_at = CURRENT_TIMESTAMP
+           WHERE id = ?`;
+        params = [
           status,
           status_updated_at,
           start_time,
           start_time,
           end_time,
           end_time,
-          id,
-          userId
-        ],
-        function (err) {
+          id
+        ];
+      }
+      
+      if (userId) {
+        query += ' AND user_id = ?';
+        params.push(userId);
+      }
+      
+      db.run(query, params, function (err) {
           if (err) {
             console.error('Error updating stream status:', err.message);
             return reject(err);

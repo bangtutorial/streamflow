@@ -61,7 +61,7 @@
       </div>
     </div>
   </div>
-  <div class="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+  <div class="hidden md:grid md:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-5 gap-6 mb-6">
     <div class="bg-gray-800 rounded-lg p-6 shadow-md">
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold">Active Streams</h3>
@@ -96,8 +96,24 @@
       <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
         <div id="memory-bar" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
       </div>
-    </div>    
-    <div class="bg-gray-800 rounded-lg p-6 shadow-md">      
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 shadow-md hidden 3xl:block">      
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Disk Usage</h3>
+        <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-database text-xl text-white font-loaded"></i>
+        </div>
+      </div>
+      <div class="mt-2">
+        <p class="text-3xl font-bold">
+          <span id="disk-used-wide">0 GB</span><span id="disk-total-wide" class="text-sm text-gray-400"> / 0 GB</span>
+        </p>        
+        <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
+          <div id="disk-bar-wide" class="bg-primary h-2.5 rounded-full transition-colors duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 shadow-md 3xl:hidden">      
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold" id="network-disk-title">Internet Speed</h3>
         <div class="w-10 h-10 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('desktop')" title="Click to switch between Internet Speed and Disk Usage">
@@ -120,6 +136,24 @@
         </p>        
         <div class="w-full bg-gray-700 rounded-full h-2.5 mt-2">
           <div id="disk-bar" class="bg-primary h-2.5 rounded-full transition-colors duration-300" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+    <div class="bg-gray-800 rounded-lg p-6 shadow-md hidden 3xl:block">      
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold">Internet Speed</h3>
+        <div class="w-10 h-10 bg-dark-700 rounded-lg flex items-center justify-center">
+          <i class="ti ti-wifi text-xl text-white font-loaded"></i>
+        </div>
+      </div>
+      <div id="network-content-desktop-wide" class="mt-2 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-400">↑ Upload</span>
+          <span id="upload-speed-wide" class="text-lg font-bold text-blue-400">0 Mbps</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-400">↓ Download</span>
+          <span id="download-speed-wide" class="text-lg font-bold text-green-400">0 Mbps</span>
         </div>
       </div>
     </div>
@@ -750,6 +784,18 @@
     </div>
   </div>
   <style>
+    @media (min-width: 1600px) {
+      .\33xl\:grid-cols-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+      .\33xl\:hidden {
+        display: none;
+      }
+      .\33xl\:block {
+        display: block;
+      }
+    }
+    
     .video-js {
       background-color: #1f2937;
       width: 100%;
@@ -1184,6 +1230,10 @@
             document.getElementById('download-speed').textContent = data.network.downloadFormatted;
             document.getElementById('upload-speed-mobile').textContent = data.network.uploadFormatted;
             document.getElementById('download-speed-mobile').textContent = data.network.downloadFormatted;
+            const uploadWide = document.getElementById('upload-speed-wide');
+            const downloadWide = document.getElementById('download-speed-wide');
+            if (uploadWide) uploadWide.textContent = data.network.uploadFormatted;
+            if (downloadWide) downloadWide.textContent = data.network.downloadFormatted;
           }         
           if (data.disk) {
             const diskUsagePercent = data.disk.usagePercent;
@@ -1193,9 +1243,16 @@
             document.getElementById('disk-used-mobile').textContent = data.disk.used;
             document.getElementById('disk-total-mobile').textContent = ' / ' + data.disk.total;
             
+            const diskUsedWide = document.getElementById('disk-used-wide');
+            const diskTotalWide = document.getElementById('disk-total-wide');
+            if (diskUsedWide) diskUsedWide.textContent = data.disk.used;
+            if (diskTotalWide) diskTotalWide.textContent = ' / ' + data.disk.total;
+            
             const diskBar = document.getElementById('disk-bar');
             const diskBarMobile = document.getElementById('disk-bar-mobile');
-              let barColor;
+            const diskBarWide = document.getElementById('disk-bar-wide');
+            
+            let barColor;
             if (diskUsagePercent >= 80) {
               barColor = 'bg-green-400'; 
             } else {
@@ -1205,12 +1262,16 @@
             colorClasses.forEach(cls => {
               diskBar.classList.remove(cls);
               diskBarMobile.classList.remove(cls);
+              if (diskBarWide) diskBarWide.classList.remove(cls);
             });
             
             diskBar.classList.add(barColor);
             diskBarMobile.classList.add(barColor);
+            if (diskBarWide) diskBarWide.classList.add(barColor);
+            
             diskBar.style.width = diskUsagePercent + '%';
             diskBarMobile.style.width = diskUsagePercent + '%';
+            if (diskBarWide) diskBarWide.style.width = diskUsagePercent + '%';
           }
         })
         .catch(error => console.error('Error fetching system stats:', error));

@@ -34,31 +34,52 @@
 
 <div id="playlistsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
   <% if (playlists && playlists.length > 0) { %>
-    <% playlists.forEach(function(playlist) { %>
-      <div class="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow playlist-card h-32" 
+    <% playlists.forEach(function(playlist) { 
+      const thumbnails = playlist.thumbnails ? playlist.thumbnails.split(',').filter(t => t) : [];
+      const displayThumbnails = thumbnails.slice(0, 4);
+    %>
+      <div class="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow playlist-card" 
            data-playlist-id="<%= playlist.id %>" 
            data-created-at="<%= playlist.created_at %>" 
            data-updated-at="<%= playlist.updated_at %>">
-        <div class="p-4 h-full flex flex-col justify-between">
-          <div class="flex flex-col">
-            <div class="flex items-start justify-between mb-2">
-              <h3 class="font-semibold text-lg truncate flex-1 pr-2"><%= playlist.name %></h3>
-              <div class="flex items-center gap-1 flex-shrink-0">
-                <button class="bg-blue-600 hover:bg-blue-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="viewPlaylist('<%= playlist.id %>')">
-                  <i class="ti ti-eye text-sm"></i>
-                </button>
-                <button class="bg-green-600 hover:bg-green-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="editPlaylist('<%= playlist.id %>')">
-                  <i class="ti ti-pencil text-sm"></i>
-                </button>
-                <button class="bg-red-600 hover:bg-red-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="deletePlaylist('<%= playlist.id %>', '<%= playlist.name %>')">
-                  <i class="ti ti-trash text-sm"></i>
-                </button>
-              </div>
+        <div class="p-4">
+          <div class="flex items-start justify-between mb-3">
+            <h3 class="font-semibold text-lg truncate flex-1 pr-2"><%= playlist.name %></h3>
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button class="bg-blue-600 hover:bg-blue-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="viewPlaylist('<%= playlist.id %>')">
+                <i class="ti ti-eye text-sm"></i>
+              </button>
+              <button class="bg-green-600 hover:bg-green-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="editPlaylist('<%= playlist.id %>')">
+                <i class="ti ti-pencil text-sm"></i>
+              </button>
+              <button class="bg-red-600 hover:bg-red-700 text-white w-8 h-8 flex items-center justify-center rounded-lg transition-colors" onclick="deletePlaylist('<%= playlist.id %>', '<%= playlist.name %>')">
+                <i class="ti ti-trash text-sm"></i>
+              </button>
             </div>
-            <p class="text-gray-400 text-sm line-clamp-2"><%= playlist.description || 'No description' %></p>
           </div>
           
-          <div class="flex items-center justify-between text-sm text-gray-400 mt-auto">
+          <div class="h-24 mb-3">
+            <% if (displayThumbnails.length > 0) { %>
+              <div class="grid grid-cols-4 gap-2 h-full">
+                <% displayThumbnails.forEach(function(thumb) { %>
+                  <div class="aspect-square bg-dark-700 rounded-lg overflow-hidden h-full">
+                    <img src="<%= thumb %>" alt="Video thumbnail" class="w-full h-full object-cover" onerror="this.src='/images/default-thumbnail.jpg'">
+                  </div>
+                <% }); %>
+                <% for(let i = displayThumbnails.length; i < 4; i++) { %>
+                  <div class="aspect-square bg-dark-700 rounded-lg h-full"></div>
+                <% } %>
+              </div>
+            <% } else { %>
+              <div class="bg-dark-700 rounded-lg flex items-center justify-center h-full">
+                <i class="ti ti-playlist text-4xl text-gray-600"></i>
+              </div>
+            <% } %>
+          </div>
+          
+          <p class="text-gray-400 text-sm line-clamp-1 mb-2"><%= playlist.description || 'No description' %></p>
+          
+          <div class="flex items-center justify-between text-sm text-gray-400">
             <span><%= playlist.video_count || 0 %> videos</span>
             <span class="flex items-center gap-1">
               <i class="ti ti-<%= (playlist.shuffle || playlist.is_shuffle) ? 'arrows-shuffle' : 'list-numbers' %>"></i>

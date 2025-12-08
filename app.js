@@ -1149,6 +1149,45 @@ app.get('/settings', isAuthenticated, async (req, res) => {
     res.redirect('/dashboard');
   }
 });
+
+app.get('/api/settings/logs', isAuthenticated, async (req, res) => {
+  try {
+    const logPath = path.join(__dirname, 'logs', 'app.log');
+    const lines = parseInt(req.query.lines) || 200;
+    const filter = req.query.filter || '';
+    
+    if (!fs.existsSync(logPath)) {
+      return res.json({ success: true, logs: [], message: 'Log file not found' });
+    }
+    
+    const content = fs.readFileSync(logPath, 'utf8');
+    let logLines = content.split('\n').filter(line => line.trim());
+    
+    if (filter) {
+      const filterLower = filter.toLowerCase();
+      logLines = logLines.filter(line => line.toLowerCase().includes(filterLower));
+    }
+    
+    logLines = logLines.slice(-lines);
+    
+    res.json({ success: true, logs: logLines });
+  } catch (error) {
+    console.error('Error reading logs:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/settings/logs/clear', isAuthenticated, async (req, res) => {
+  try {
+    const logPath = path.join(__dirname, 'logs', 'app.log');
+    fs.writeFileSync(logPath, '');
+    res.json({ success: true, message: 'Logs cleared successfully' });
+  } catch (error) {
+    console.error('Error clearing logs:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/settings/integrations/gdrive', isAuthenticated, [
   body('apiKey').notEmpty().withMessage('API Key is required'),
 ], async (req, res) => {

@@ -2,7 +2,7 @@ const Stream = require('../models/Stream');
 const scheduledTerminations = new Map();
 const SCHEDULE_LOOKAHEAD_SECONDS = 60;
 const MAX_TIMEOUT_MS = 2147483647;
-const LONG_DURATION_CHECK_INTERVAL = 60 * 60 * 1000;
+const LONG_DURATION_CHECK_INTERVAL = 5 * 60 * 1000;
 let streamingService = null;
 let initialized = false;
 let scheduleIntervalId = null;
@@ -65,27 +65,35 @@ async function checkStreamDurations() {
       console.error('StreamingService not initialized in scheduler');
       return;
     }
-    
+
     const liveStreams = await Stream.findAll(null, 'live');
-    
+
     for (const stream of liveStreams) {
-      if (!stream.duration || !stream.start_time) {
+      if (!stream.end_time) {
         continue;
       }
-      
-      const startTime = new Date(stream.start_time);
-      const durationMs = stream.duration * 60 * 1000;
-      const shouldEndAt = new Date(startTime.getTime() + durationMs);
+
+      const endTime = new Date(stream.end_time);
       const now = new Date();
-      const timeUntilEnd = shouldEndAt.getTime() - now.getTime();
-      
+      const timeUntilEnd = endTime.getTime() - now.getTime();
+
       if (timeUntilEnd <= 0) {
-        console.log(`Stream ${stream.id} exceeded duration (user: ${stream.user_id}), stopping now`);
-        await streamingService.stopStream(stream.id);
+        console.log(`Stream ${stream.id} reached end_time (user: ${stream.user_id}), stopping now`);
         scheduledTerminations.delete(stream.id);
-      } else if (!scheduledTerminations.has(stream.id)) {
-        const remainingMinutes = timeUntilEnd / 60000;
-        scheduleStreamTermination(stream.id, remainingMinutes, stream.user_id);
+        await streamingService.stopStream(stream.id);
+      } else {
+        const existing = scheduledTerminations.get(stream.id);
+
+        const expectedEndTime = endTime.getTime();
+        const needsReschedule = !existing ||
+          !existing.targetEndTime ||
+          Math.abs(existing.targetEndTime - expectedEndTime) > 30000;
+
+        if (needsReschedule) {
+          const remainingMinutes = timeUntilEnd / 60000;
+          console.log(`[Scheduler] Scheduling/updating termination for stream ${stream.id}, ${remainingMinutes.toFixed(1)} min remaining (end_time: ${stream.end_time})`);
+          scheduleStreamTermination(stream.id, remainingMinutes, stream.user_id);
+        }
       }
     }
   } catch (error) {
@@ -115,9 +123,9 @@ function scheduleStreamTermination(streamId, durationMinutes, userId = null) {
   
   if (durationMs > MAX_TIMEOUT_MS) {
     console.log(`Stream ${streamId} has very long duration (${clampedMinutes} min). Scheduling periodic check instead.`);
-    
+
     const checkInterval = Math.min(LONG_DURATION_CHECK_INTERVAL, MAX_TIMEOUT_MS);
-    
+
     const timeoutId = setTimeout(async () => {
       try {
         const stream = await Stream.findById(streamId);
@@ -125,16 +133,14 @@ function scheduleStreamTermination(streamId, durationMinutes, userId = null) {
           scheduledTerminations.delete(streamId);
           return;
         }
-        
-        if (stream.duration && stream.start_time) {
-          const startTime = new Date(stream.start_time);
-          const totalDurationMs = stream.duration * 60 * 1000;
-          const shouldEndAt = new Date(startTime.getTime() + totalDurationMs);
+
+        if (stream.end_time) {
+          const endTime = new Date(stream.end_time);
           const now = new Date();
-          const remainingMs = shouldEndAt.getTime() - now.getTime();
-          
+          const remainingMs = endTime.getTime() - now.getTime();
+
           if (remainingMs <= 0) {
-            console.log(`Long-running stream ${streamId} reached end time, stopping`);
+            console.log(`Long-running stream ${streamId} reached end_time, stopping`);
             await streamingService.stopStream(streamId);
             scheduledTerminations.delete(streamId);
           } else {
@@ -142,19 +148,21 @@ function scheduleStreamTermination(streamId, durationMinutes, userId = null) {
             console.log(`Re-scheduling termination for stream ${streamId}, ${remainingMinutes.toFixed(1)} minutes remaining`);
             scheduleStreamTermination(streamId, remainingMinutes, userId);
           }
+        } else {
+          scheduledTerminations.delete(streamId);
         }
       } catch (error) {
         console.error(`Error in long-duration check for stream ${streamId}:`, error);
       }
     }, checkInterval);
-    
+
     scheduledTerminations.set(streamId, {
       timeoutId,
       targetEndTime: Date.now() + durationMs,
       userId,
       isLongDuration: true
     });
-    
+
     console.log(`Scheduled long-duration check for stream ${streamId} in ${checkInterval / 60000} minutes`);
     return;
   }

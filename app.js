@@ -1155,21 +1155,40 @@ app.get('/api/settings/logs', isAuthenticated, async (req, res) => {
     const logPath = path.join(__dirname, 'logs', 'app.log');
     const lines = parseInt(req.query.lines) || 200;
     const filter = req.query.filter || '';
-    
+
     if (!fs.existsSync(logPath)) {
       return res.json({ success: true, logs: [], message: 'Log file not found' });
     }
-    
-    const content = fs.readFileSync(logPath, 'utf8');
+
+    const stats = fs.statSync(logPath);
+    const fileSize = stats.size;
+
+    const maxReadSize = 5 * 1024 * 1024;
+    let content = '';
+
+    if (fileSize > maxReadSize) {
+      const fd = fs.openSync(logPath, 'r');
+      const buffer = Buffer.alloc(maxReadSize);
+      fs.readSync(fd, buffer, 0, maxReadSize, fileSize - maxReadSize);
+      fs.closeSync(fd);
+      content = buffer.toString('utf8');
+      const firstNewline = content.indexOf('\n');
+      if (firstNewline > 0) {
+        content = content.substring(firstNewline + 1);
+      }
+    } else {
+      content = fs.readFileSync(logPath, 'utf8');
+    }
+
     let logLines = content.split('\n').filter(line => line.trim());
-    
+
     if (filter) {
       const filterLower = filter.toLowerCase();
       logLines = logLines.filter(line => line.toLowerCase().includes(filterLower));
     }
-    
+
     logLines = logLines.slice(-lines);
-    
+
     res.json({ success: true, logs: logLines });
   } catch (error) {
     console.error('Error reading logs:', error);

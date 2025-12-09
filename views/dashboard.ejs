@@ -160,7 +160,12 @@
   </div>
   <div class="mt-8">
     <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-      <h2 class="text-xl font-bold">Streaming Status</h2>
+      <div class="flex items-center gap-3">
+        <h2 class="text-xl font-bold">Streaming Status</h2>
+        <span id="dashboardServerTime" class="hidden sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-1 rounded">
+          Server time: loading...
+        </span>
+      </div>
       <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
         <div class="relative w-full sm:w-64">
           <input type="text" placeholder="Search streams..."
@@ -380,7 +385,10 @@
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
                 </div>
                 <div>
-                  <label class="text-xs text-gray-400 block mb-1">End Stream</label>
+                  <label class="text-xs text-gray-400 mb-1 flex items-end">
+                    <span>End Stream</span>
+                    <span id="durationBadge" class="ml-2 bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded hidden leading-none">00:00</span>
+                  </label>
                   <input type="datetime-local" id="scheduleEndTime" name="scheduleEndTime"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
                 </div>
@@ -668,7 +676,10 @@
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
                 </div>
                 <div>
-                  <label class="text-xs text-gray-400 block mb-1">End Stream</label>
+                  <label class="text-xs text-gray-400 mb-1 flex items-end">
+                    <span>End Stream</span>
+                    <span id="editDurationBadge" class="ml-2 bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded hidden leading-none">00:00</span>
+                  </label>
                   <input type="datetime-local" id="editScheduleEndTime" name="scheduleEndTime"
                     class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
                 </div>
@@ -2065,12 +2076,15 @@
       requestAnimationFrame(() => {
         modal.classList.add('active');
       });
+      updateDurationBadge(true);
     }
     function closeEditStreamModal() {
       const modal = document.getElementById('editStreamModal');
       document.body.style.overflow = 'auto';
       resetEditModalForm();
       modal.classList.remove('active');
+      const editDurationBadge = document.getElementById('editDurationBadge');
+      if (editDurationBadge) editDurationBadge.classList.add('hidden');
       setTimeout(() => {
         modal.classList.add('hidden');
       }, 200);
@@ -2476,12 +2490,85 @@
             if (editModalDisplay) {
               editModalDisplay.textContent = timeDisplay;
             }
+            const dashboardDisplay = document.getElementById('dashboardServerTime');
+            if (dashboardDisplay) {
+              dashboardDisplay.textContent = `Server time: ${data.formattedTime}`;
+            }
           }
         })
         .catch(error => {
           console.error('Error fetching server time:', error);
         });
     }
+
+    function calculateDuration(startTime, endTime, isEdit = false) {
+      const badge = document.getElementById(isEdit ? 'editDurationBadge' : 'durationBadge');
+      if (!badge) return;
+
+      if (!endTime) {
+        badge.classList.add('hidden');
+        return;
+      }
+
+      const endDate = new Date(endTime);
+      let startDate;
+
+      if (startTime) {
+        startDate = new Date(startTime);
+      } else {
+        startDate = new Date();
+      }
+
+      const diffMs = endDate - startDate;
+      if (diffMs <= 0) {
+        badge.classList.add('hidden');
+        return;
+      }
+
+      const totalMinutes = Math.floor(diffMs / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const formatted = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+
+      badge.textContent = formatted;
+      badge.classList.remove('hidden');
+    }
+
+    function updateDurationBadge(isEdit = false) {
+      const startInput = document.getElementById(isEdit ? 'editScheduleStartTime' : 'scheduleStartTime');
+      const endInput = document.getElementById(isEdit ? 'editScheduleEndTime' : 'scheduleEndTime');
+      calculateDuration(startInput?.value, endInput?.value, isEdit);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      const scheduleStartTime = document.getElementById('scheduleStartTime');
+      const scheduleEndTime = document.getElementById('scheduleEndTime');
+      if (scheduleStartTime) {
+        scheduleStartTime.addEventListener('change', () => updateDurationBadge(false));
+        scheduleStartTime.addEventListener('input', () => updateDurationBadge(false));
+      }
+      if (scheduleEndTime) {
+        scheduleEndTime.addEventListener('change', () => updateDurationBadge(false));
+        scheduleEndTime.addEventListener('input', () => updateDurationBadge(false));
+      }
+
+      const editScheduleStartTime = document.getElementById('editScheduleStartTime');
+      const editScheduleEndTime = document.getElementById('editScheduleEndTime');
+      if (editScheduleStartTime) {
+        editScheduleStartTime.addEventListener('change', () => updateDurationBadge(true));
+        editScheduleStartTime.addEventListener('input', () => updateDurationBadge(true));
+      }
+      if (editScheduleEndTime) {
+        editScheduleEndTime.addEventListener('change', () => updateDurationBadge(true));
+        editScheduleEndTime.addEventListener('input', () => updateDurationBadge(true));
+      }
+
+      setInterval(() => {
+        updateDurationBadge(false);
+        updateDurationBadge(true);
+      }, 60000);
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
       updateServerTime();
       setInterval(updateServerTime, 1000);

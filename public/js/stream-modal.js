@@ -35,6 +35,8 @@ function closeNewStreamModal() {
     const icon = advancedSettingsToggle.querySelector('i');
     if (icon) icon.style.transform = '';
   }
+  const durationBadge = document.getElementById('durationBadge');
+  if (durationBadge) durationBadge.classList.add('hidden');
   setTimeout(() => {
     modal.classList.add('hidden');
   }, 200);

@@ -433,13 +433,13 @@ async function startStream(streamId, isRetry = false) {
       cleanupStreamData(streamId);
     });
     
-    if (typeof schedulerService !== 'undefined') {
-      const durationMinutes = Number(stream.duration);
-      if (Number.isFinite(durationMinutes) && durationMinutes > 0) {
-        const totalDurationMs = durationMinutes * 60 * 1000;
-        const elapsedMs = Math.max(0, Date.now() - streamStartTime.getTime());
-        const remainingMs = Math.max(0, totalDurationMs - elapsedMs);
+    if (typeof schedulerService !== 'undefined' && stream.end_time) {
+      const endTime = new Date(stream.end_time);
+      const now = new Date();
+      const remainingMs = endTime.getTime() - now.getTime();
+      if (remainingMs > 0) {
         const remainingMinutes = remainingMs / 60000;
+        console.log(`[StreamingService] Scheduling termination for stream ${streamId} at ${stream.end_time} (${remainingMinutes.toFixed(1)} min remaining)`);
         schedulerService.scheduleStreamTermination(streamId, remainingMinutes);
       }
     }

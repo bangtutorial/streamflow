@@ -4,7 +4,7 @@ Semua perubahan penting pada StreamFlow akan didokumentasikan di file ini.
 
 ---
 
-## [2.1.0] - 2025
+## v2.1 - October 2, 2025
 
 ### ✨ Added
 - Fitur playlist untuk streaming banyak video sekaligus
@@ -21,7 +21,7 @@ Semua perubahan penting pada StreamFlow akan didokumentasikan di file ini.
 
 ---
 
-## [2.0.0] - 2024
+## v2.0 - May 30, 2025
 
 ### ✨ Added
 - User interface baru dan responsive
@@ -37,7 +37,7 @@ Semua perubahan penting pada StreamFlow akan didokumentasikan di file ini.
 
 ---
 
-## [1.1.0] - 2024
+## v1.1 - February 24, 2025
 
 ### ✨ Added
 - Halaman galeri video
@@ -55,7 +55,7 @@ Semua perubahan penting pada StreamFlow akan didokumentasikan di file ini.
 
 ---
 
-## [1.0.0] - 2024
+## v1.0 - February 6, 2025
 
 ### ✨ Added
 - Halaman setup akun

@@ -1,0 +1,1248 @@
+<% layout('layout') -%>
+
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+  <div>
+    <h2 class="text-2xl font-bold">Stream Rotations</h2>
+    <p class="text-gray-400 text-sm mt-1">Auto-rotate YouTube streams with different metadata</p>
+  </div>
+  <% if (youtubeConnected) { %>
+  <button onclick="openCreateRotationModal()" class="w-full md:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+    <i class="ti ti-plus"></i>
+    <span>New Rotation</span>
+  </button>
+  <% } %>
+</div>
+
+<% if (!youtubeConnected) { %>
+<div class="bg-yellow-900/20 border border-yellow-600/30 rounded-lg p-6 mb-6">
+  <div class="flex items-start gap-4">
+    <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+      <i class="ti ti-brand-youtube text-yellow-400 text-2xl"></i>
+    </div>
+    <div>
+      <h3 class="text-lg font-medium text-yellow-200">YouTube Connection Required</h3>
+      <p class="text-yellow-300/80 mt-1">To use Stream Rotations, you need to connect your YouTube account first.</p>
+      <a href="/settings?activeTab=integration" class="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-yellow-600 hover:bg-yellow-500 text-white rounded-lg transition-colors">
+        <i class="ti ti-plug"></i>
+        <span>Connect YouTube</span>
+      </a>
+    </div>
+  </div>
+</div>
+<% } else { %>
+
+<% if (rotations && rotations.length > 0) { %>
+<div class="block md:hidden space-y-2">
+  <% rotations.forEach(rotation => { %>
+  <div class="bg-gray-800 rounded-lg shadow-md overflow-hidden" data-rotation-id="<%= rotation.id %>">
+    <div class="p-3">
+      <div class="flex gap-3">
+        <div class="relative flex-shrink-0 w-20 h-14 bg-dark-700 rounded overflow-hidden">
+          <% if (rotation.first_thumbnail) { %>
+            <img src="/uploads/thumbnails/<%= rotation.first_thumbnail.split('/').pop() %>" class="w-full h-full object-cover" alt="<%= rotation.name %>" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="w-full h-full bg-primary/20 items-center justify-center hidden">
+              <i class="ti ti-rotate text-primary text-lg"></i>
+            </div>
+          <% } else { %>
+            <div class="w-full h-full bg-primary/20 flex items-center justify-center">
+              <i class="ti ti-rotate text-primary text-lg"></i>
+            </div>
+          <% } %>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h4 class="text-sm font-medium text-white truncate leading-tight"><%= rotation.name %></h4>
+          <div class="flex items-center gap-1.5 mt-1">
+            <% if (rotation.youtube_channel_name) { %>
+            <div class="flex items-center text-[10px] text-gray-400">
+              <% if (rotation.youtube_channel_thumbnail) { %>
+              <img src="<%= rotation.youtube_channel_thumbnail %>" alt="" class="w-3 h-3 rounded-full object-cover mr-0.5">
+              <% } else { %>
+              <div class="w-3 h-3 rounded-full bg-red-600 flex items-center justify-center mr-0.5">
+                <i class="ti ti-brand-youtube text-white text-[6px]"></i>
+              </div>
+              <% } %>
+              <span class="truncate max-w-[80px]"><%= rotation.youtube_channel_name %></span>
+            </div>
+            <span class="text-gray-600 text-[10px]">•</span>
+            <% } %>
+            <span class="text-[10px] text-gray-400"><%= rotation.item_count %> items</span>
+          </div>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <% if (rotation.start_time && rotation.end_time) { %>
+            <span class="text-[10px] text-yellow-500"><%= new Date(rotation.start_time).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false}) %></span>
+            <span class="text-[10px] text-gray-500">→</span>
+            <span class="text-[10px] text-green-500"><%= new Date(rotation.end_time).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false}) %></span>
+            <span class="text-gray-600 text-[10px]">•</span>
+            <% } %>
+            <% if (rotation.repeat_mode === 'daily') { %>
+            <span class="text-[10px] text-blue-400">Daily</span>
+            <% } else if (rotation.repeat_mode === 'weekly') { %>
+            <span class="text-[10px] text-purple-400">Weekly</span>
+            <% } else if (rotation.repeat_mode === 'monthly') { %>
+            <span class="text-[10px] text-orange-400">Monthly</span>
+            <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-gray-700 px-3 py-1 flex items-center justify-between">
+      <div>
+        <% if (rotation.status === 'active') { %>
+        <span class="flex items-center text-green-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse mr-1"></span>
+          <span class="text-[10px] font-medium">Running • Item <%= (rotation.current_index || 0) + 1 %>/<%= rotation.item_count %></span>
+        </span>
+        <% } else if (rotation.status === 'paused') { %>
+        <span class="flex items-center text-yellow-400">
+          <i class="ti ti-player-pause text-[10px] mr-1"></i>
+          <span class="text-[10px] font-medium">Paused</span>
+        </span>
+        <% } else if (rotation.status === 'completed') { %>
+        <span class="flex items-center text-blue-400">
+          <i class="ti ti-check text-[10px] mr-1"></i>
+          <span class="text-[10px] font-medium">Completed</span>
+        </span>
+        <% } else { %>
+        <span class="flex items-center text-gray-400">
+          <i class="ti ti-circle-dot text-[10px] mr-1"></i>
+          <span class="text-[10px] font-medium">Inactive</span>
+        </span>
+        <% } %>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <% if (rotation.status === 'inactive' || rotation.status === 'paused' || rotation.status === 'completed') { %>
+        <button onclick="activateRotation('<%= rotation.id %>')" class="px-2.5 py-1 text-white text-[10px] font-medium rounded transition-colors bg-primary hover:bg-blue-600">Start</button>
+        <% } else if (rotation.status === 'active') { %>
+        <button onclick="stopRotation('<%= rotation.id %>')" class="px-2.5 py-1 text-white text-[10px] font-medium rounded transition-colors bg-red-500 hover:bg-red-600">Stop</button>
+        <% } %>
+        <button class="p-1 hover:bg-dark-700 rounded transition-colors" onclick="editRotation('<%= rotation.id %>')">
+          <i class="ti ti-edit text-gray-400 hover:text-white text-sm"></i>
+        </button>
+        <% if (rotation.status === 'active') { %>
+        <button class="p-1 rounded opacity-50 cursor-not-allowed" disabled title="Cannot delete while running">
+          <i class="ti ti-trash text-gray-500 text-sm"></i>
+        </button>
+        <% } else { %>
+        <button class="p-1 hover:bg-dark-700 rounded transition-colors" onclick="deleteRotation('<%= rotation.id %>')">
+          <i class="ti ti-trash text-gray-400 hover:text-red-400 text-sm"></i>
+        </button>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% }); %>
+</div>
+<div class="hidden md:block bg-gray-800 rounded-lg shadow-md overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full">
+      <thead class="bg-gray-700 sticky top-0 z-9">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Rotation Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Channel</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Schedule</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Repeat</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Current Item</th>
+          <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700">
+        <% rotations.forEach(rotation => { %>
+        <tr class="hover:bg-dark-700/50 transition-colors">
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <div class="w-20 h-12 rounded overflow-hidden flex-shrink-0 bg-dark-700">
+                <% if (rotation.first_thumbnail) { %>
+                  <img src="/uploads/thumbnails/<%= rotation.first_thumbnail.split('/').pop() %>" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                  <div class="w-full h-full bg-primary/20 items-center justify-center hidden">
+                    <i class="ti ti-rotate text-primary text-lg"></i>
+                  </div>
+                <% } else { %>
+                  <div class="w-full h-full bg-primary/20 flex items-center justify-center">
+                    <i class="ti ti-rotate text-primary text-lg"></i>
+                  </div>
+                <% } %>
+              </div>
+              <div>
+                <div class="text-sm font-medium text-white"><%= rotation.name %></div>
+                <div class="text-xs text-gray-400"><%= rotation.item_count %> items</div>
+              </div>
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <% if (rotation.youtube_channel_name && rotation.youtube_channel_external_id) { %>
+            <a href="https://www.youtube.com/channel/<%= rotation.youtube_channel_external_id %>" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               class="inline-flex items-center gap-1.5 hover:transition-colors group"
+               title="<%= rotation.youtube_channel_name %>">
+              <% if (rotation.youtube_channel_thumbnail) { %>
+              <img src="<%= rotation.youtube_channel_thumbnail %>" alt="" class="w-5 h-5 rounded-full object-cover">
+              <% } else { %>
+              <div class="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center">
+                <i class="ti ti-brand-youtube text-white text-xs"></i>
+              </div>
+              <% } %>
+              <span class="text-sm group-hover:text-gray-300"><%= rotation.youtube_channel_name %></span>
+            </a>
+            <% } else { %>
+            <span class="text-gray-500 text-xs">—</span>
+            <% } %>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <% if (rotation.start_time && rotation.end_time) { %>
+              <div class="text-xs text-yellow-500 font-medium">Start: <%= new Date(rotation.start_time).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false}) %></div>
+              <div class="text-xs text-green-500 font-medium">End: <%= new Date(rotation.end_time).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false}) %></div>
+            <% } else { %>
+              <div class="text-sm text-gray-400">--</div>
+            <% } %>
+          </td>
+          <td class="px-6 py-4">
+            <% if (rotation.repeat_mode === 'daily') { %>
+              <span class="text-blue-400 text-sm">Every Day</span>
+            <% } else if (rotation.repeat_mode === 'weekly') { %>
+              <span class="text-purple-400 text-sm">Every Week</span>
+            <% } else if (rotation.repeat_mode === 'monthly') { %>
+              <span class="text-orange-400 text-sm">Every Month</span>
+            <% } else { %>
+              <span class="text-gray-500 text-sm">No Repeat</span>
+            <% } %>
+          </td>
+          <td class="px-6 py-4">
+            <% if (rotation.status === 'active') { %>
+            <span class="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full inline-flex items-center gap-1">
+              Running
+            </span>
+            <% } else if (rotation.status === 'paused') { %>
+            <span class="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full inline-flex items-center gap-1">
+              <i class="ti ti-player-pause text-xs"></i>Paused
+            </span>
+            <% } else if (rotation.status === 'completed') { %>
+            <span class="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full inline-flex items-center gap-1">
+              <i class="ti ti-check text-xs"></i>Completed
+            </span>
+            <% } else { %>
+            <span class="px-2 py-1 bg-gray-500/20 text-gray-400 text-xs rounded-full">Inactive</span>
+            <% } %>
+          </td>
+          <td class="px-6 py-4">
+            <% if (rotation.status === 'active') { %>
+              <div class="text-sm font-medium text-white">Item <%= (rotation.current_index || 0) + 1 %>/<%= rotation.item_count %></div>
+              <% if (rotation.start_time && rotation.end_time) { %>
+                <%
+                  const startDate = new Date(rotation.start_time.replace('T', ' ').replace(/-/g, '/'));
+                  const endDate = new Date(rotation.end_time.replace('T', ' ').replace(/-/g, '/'));
+                  const formatDate = (d) => {
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const year = d.getFullYear();
+                    const hours = String(d.getHours()).padStart(2, '0');
+                    const mins = String(d.getMinutes()).padStart(2, '0');
+                    return `${day}/${month}/${year}, ${hours}:${mins}`;
+                  };
+                %>
+                <div class="text-xs text-gray-400">Schedule: <%= formatDate(startDate) %> - <%= formatDate(endDate).split(', ')[1] %></div>
+              <% } %>
+            <% } else { %>
+              <span class="text-sm text-gray-500">--</span>
+            <% } %>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right">
+            <div class="flex items-center justify-end space-x-2">
+              <% if (rotation.status === 'inactive' || rotation.status === 'paused' || rotation.status === 'completed') { %>
+              <button onclick="activateRotation('<%= rotation.id %>')" class="inline-flex items-center px-2.5 py-1.5 text-white text-xs font-medium rounded transition-colors bg-primary hover:bg-blue-600">
+                Start
+              </button>
+              <% } else if (rotation.status === 'active') { %>
+              <button onclick="stopRotation('<%= rotation.id %>')" class="inline-flex items-center px-2.5 py-1.5 text-white text-xs font-medium rounded transition-colors bg-red-500 hover:bg-red-600">
+                Stop
+              </button>
+              <% } %>
+              <div class="ml-2 flex items-center gap-1">
+                <button onclick="editRotation('<%= rotation.id %>')" class="p-1.5 hover:bg-dark-700 rounded transition-colors">
+                  <i class="ti ti-edit text-gray-400 hover:text-white"></i>
+                </button>
+                <% if (rotation.status === 'active') { %>
+                <button disabled class="p-1.5 rounded cursor-not-allowed opacity-50" title="Cannot delete while running">
+                  <i class="ti ti-trash text-gray-500"></i>
+                </button>
+                <% } else { %>
+                <button onclick="deleteRotation('<%= rotation.id %>')" class="p-1.5 hover:bg-dark-700 rounded transition-colors">
+                  <i class="ti ti-trash text-gray-400 hover:text-red-400"></i>
+                </button>
+                <% } %>
+              </div>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% } else { %>
+<div class="bg-gray-800 rounded-lg p-4 md:p-10 text-center">
+  <div class="w-12 h-12 md:w-16 md:h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+    <i class="ti ti-rotate text-gray-500 text-xl md:text-2xl"></i>
+  </div>
+  <h3 class="text-base md:text-lg font-medium text-gray-300 mb-1 md:mb-2">No Rotations Yet</h3>
+  <p class="text-gray-500 text-sm md:text-base mb-4">Create your first rotation to auto-schedule YouTube streams</p>
+</div>
+<% } %>
+<% } %>
+
+<div id="createRotationModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
+      <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-gray-700">
+        <h3 class="text-lg font-semibold" id="rotationModalTitle">Create New Rotation</h3>
+        <button onclick="closeCreateRotationModal()" class="text-gray-400 hover:text-white">
+          <i class="ti ti-x text-xl"></i>
+        </button>
+      </div>
+      <div class="p-4 sm:px-6 overflow-y-auto flex-grow">
+        <form id="rotationForm" class="space-y-6">
+          <input type="hidden" id="rotationId" name="rotationId" value="">
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="text-sm font-medium text-white block mb-2">Rotation Name</label>
+              <input type="text" id="rotationName" name="rotationName" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary" placeholder="e.g., Lo-fi Jazz Stream" required>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-white block mb-2">YouTube Channel</label>
+              <div class="relative" id="rotationChannelSelector">
+                <button type="button" onclick="toggleRotationChannelDropdown()" class="w-full flex items-center gap-3 px-3 py-2.5 bg-dark-700 border border-gray-600 rounded-lg hover:border-gray-500 focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left">
+                  <img id="rotationChannelThumb" src="<%= typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 0 ? (youtubeChannels.find(c => c.is_default) || youtubeChannels[0]).channel_thumbnail : '' %>" alt="" class="w-6 h-6 rounded-full object-cover flex-shrink-0" onerror="this.src='/images/default-avatar.jpg'">
+                  <span id="rotationChannelName" class="flex-1 text-sm text-white truncate"><%= typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 0 ? (youtubeChannels.find(c => c.is_default) || youtubeChannels[0]).channel_name : 'Select Channel' %></span>
+                  <i class="ti ti-chevron-down text-gray-400 flex-shrink-0"></i>
+                </button>
+                <div id="rotationChannelDropdown" class="hidden absolute z-30 mt-1 w-full bg-dark-700 border border-gray-600 rounded-lg shadow-lg overflow-hidden">
+                  <% if (typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 0) { %>
+                    <% youtubeChannels.forEach(function(channel) { %>
+                    <button type="button" onclick="selectRotationChannel('<%= channel.id %>', '<%= channel.channel_name %>', '<%= channel.channel_thumbnail %>')" class="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-600 text-left rotation-channel-option" data-channel-id="<%= channel.id %>">
+                      <img src="<%= channel.channel_thumbnail %>" alt="" class="w-6 h-6 rounded-full object-cover flex-shrink-0" onerror="this.src='/images/default-channel.png'">
+                      <span class="text-sm text-white truncate"><%= channel.channel_name %></span>
+                    </button>
+                    <% }); %>
+                  <% } %>
+                </div>
+                <input type="hidden" id="rotationChannelId" name="rotationChannelId" value="<%= typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 0 ? (youtubeChannels.find(c => c.is_default) || youtubeChannels[0]).id : '' %>">
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-sm font-medium text-white">Schedule Settings</span>
+            <span id="rotationServerTime" class="bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">
+              Server time: loading...
+            </span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="text-sm font-medium text-white block mb-2">Start Time</label>
+              <input type="time" id="rotationStartTime" name="rotationStartTime" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary [color-scheme:dark]" required>
+              <p class="text-xs text-gray-500 mt-1">Daily start time for the rotation</p>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-white block mb-2">End Time <span id="rotationDurationBadge" class="bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded ml-2">Duration: 00:00</span></label>
+              <input type="time" id="rotationEndTime" name="rotationEndTime" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary [color-scheme:dark]" required>
+              <p class="text-xs text-gray-500 mt-1">Daily end time for the rotation</p>
+            </div>
+            <div>
+              <label class="text-sm font-medium text-white block mb-2">Repeat</label>
+              <select id="repeatMode" name="repeatMode" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
+                <option value="daily" selected>Every Day</option>
+                <option value="weekly">Every Week</option>
+                <option value="monthly">Every Month</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label class="text-sm font-medium text-white block mb-2">Privacy</label>
+                <select id="globalPrivacy" name="globalPrivacy" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
+                  <option value="public">Public</option>
+                  <option value="unlisted" selected>Unlisted</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-white block mb-2">Category</label>
+                <select id="globalCategory" name="globalCategory" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
+                  <option value="22">People & Blogs</option>
+                  <option value="20">Gaming</option>
+                  <option value="24">Entertainment</option>
+                  <option value="10">Music</option>
+                  <option value="28">Science & Technology</option>
+                  <option value="17">Sports</option>
+                  <option value="27">Education</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-700 pt-4">
+            <h4 class="text-sm font-medium text-white mb-4">Rotation Items</h4>
+            <div id="rotationItemsContainer" class="space-y-4"></div>
+            <button type="button" onclick="addRotationItem()" class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gray-700/50 hover:bg-gray-700 border-2 border-dashed border-gray-600 hover:border-gray-500 text-gray-400 hover:text-white rounded-lg transition-colors">
+              <i class="ti ti-plus"></i>
+              <span>Add Stream</span>
+            </button>
+          </div>
+        </form>
+      </div>
+      <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 border-t border-gray-700">
+        <button onclick="closeCreateRotationModal()" class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">Cancel</button>
+        <button type="button" onclick="saveRotation()" class="px-5 py-2.5 text-sm font-medium bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">Save Rotation</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden flex items-center border-l-4">
+  <i id="toast-icon" class="mr-2"></i>
+  <span id="toast-message"></span>
+</div>
+
+
+<style>
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 20px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.5);
+}
+.modal-overlay,
+.overflow-y-auto,
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+.modal-overlay::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+#videoListContainer {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+#videoListContainer::-webkit-scrollbar {
+  width: 6px;
+}
+#videoListContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+#videoListContainer::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 20px;
+}
+.highlight {
+  background-color: rgba(59, 130, 246, 0.2);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+</style>
+
+<script>
+const videos = <%- JSON.stringify(videos) %>;
+const playlists = <%- JSON.stringify(playlists || []) %>;
+const csrfToken = '<%= csrfToken %>';
+let rotationItemCount = 0;
+
+function updateRotationServerTime() {
+  fetch('/api/server-time')
+    .then(response => response.json())
+    .then(data => {
+      const serverTimeEl = document.getElementById('rotationServerTime');
+      if (serverTimeEl && data.formattedTime) {
+        serverTimeEl.textContent = `Server time: ${data.formattedTime}`;
+      }
+    })
+    .catch(error => console.error('Error fetching server time:', error));
+}
+
+updateRotationServerTime();
+setInterval(updateRotationServerTime, 1000);
+
+function calculateDuration() {
+  const startTime = document.getElementById('rotationStartTime').value;
+  const endTime = document.getElementById('rotationEndTime').value;
+  const badge = document.getElementById('rotationDurationBadge');
+  
+  if (!startTime || !endTime) {
+    badge.textContent = 'Duration: 00:00';
+    return;
+  }
+  
+  const [startH, startM] = startTime.split(':').map(Number);
+  const [endH, endM] = endTime.split(':').map(Number);
+  
+  let startMinutes = startH * 60 + startM;
+  let endMinutes = endH * 60 + endM;
+  
+  if (endMinutes <= startMinutes) {
+    endMinutes += 24 * 60;
+  }
+  
+  const diffMinutes = endMinutes - startMinutes;
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  
+  badge.textContent = `Duration: ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+document.getElementById('rotationStartTime').addEventListener('change', calculateDuration);
+document.getElementById('rotationEndTime').addEventListener('change', calculateDuration);
+
+function showToast(type, message) {
+  const toast = document.getElementById('toast');
+  const toastIcon = document.getElementById('toast-icon');
+  const toastMessage = document.getElementById('toast-message');
+  
+  if (type === 'success') {
+    toastIcon.className = 'ti ti-check text-green-400 text-xl mr-2 font-loaded';
+    toast.classList.add('border-l-4', 'border-green-400');
+    toast.classList.remove('border-l-4', 'border-red-400', 'border-yellow-400');
+  } else if (type === 'error') {
+    toastIcon.className = 'ti ti-x text-red-400 text-xl mr-2 font-loaded';
+    toast.classList.add('border-l-4', 'border-red-400');
+    toast.classList.remove('border-l-4', 'border-green-400', 'border-yellow-400');
+  } else if (type === 'warning') {
+    toastIcon.className = 'ti ti-alert-triangle text-yellow-400 text-xl mr-2 font-loaded';
+    toast.classList.add('border-l-4', 'border-yellow-400');
+    toast.classList.remove('border-l-4', 'border-green-400', 'border-red-400');
+  }
+  
+  toastMessage.textContent = message;
+  toast.classList.remove('hidden');
+  
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3000);
+}
+
+function openCreateRotationModal() {
+  const modal = document.getElementById('createRotationModal');
+  document.getElementById('rotationModalTitle').textContent = 'Create New Rotation';
+  document.getElementById('rotationForm').reset();
+  document.getElementById('rotationId').value = '';
+  document.getElementById('rotationDurationBadge').textContent = 'Duration: 00:00';
+  
+  document.getElementById('repeatMode').value = 'daily';
+  
+  const channelSelectorBtn = document.querySelector('#rotationChannelSelector > button');
+  channelSelectorBtn.disabled = false;
+  channelSelectorBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+  channelSelectorBtn.onclick = toggleRotationChannelDropdown;
+  channelSelectorBtn.title = '';
+  
+  document.getElementById('rotationItemsContainer').innerHTML = '';
+  rotationItemCount = 0;
+  addRotationItem();
+  document.body.style.overflow = 'hidden';
+  modal.classList.remove('hidden');
+  requestAnimationFrame(() => {
+    modal.classList.add('active');
+  });
+}
+
+function closeCreateRotationModal() {
+  const modal = document.getElementById('createRotationModal');
+  modal.classList.remove('active');
+  setTimeout(() => {
+    modal.classList.add('hidden');
+    document.body.style.overflow = '';
+  }, 200);
+}
+
+function formatDuration(seconds) {
+  if (!seconds) return '';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function addRotationItem() {
+  rotationItemCount++;
+  const container = document.getElementById('rotationItemsContainer');
+  const idx = rotationItemCount;
+  
+  const itemHtml = `
+    <div class="rotation-item bg-gray-900 rounded-lg p-4 border border-gray-700" data-index="${idx}">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-medium text-gray-300 item-number">#${idx}</span>
+        <button type="button" onclick="removeRotationItem(this)" class="text-gray-400 hover:text-red-400">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="relative">
+          <label class="text-xs text-gray-400 block mb-1">Video</label>
+          <div class="relative">
+            <button type="button" onclick="toggleVideoSelector(${idx})"
+              class="video-selector-btn w-full flex items-center justify-between px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left">
+              <span class="text-sm text-gray-300 selected-video-text">Choose a video...</span>
+              <i class="ti ti-chevron-down text-gray-400"></i>
+            </button>
+            <input type="hidden" name="items[${idx}][video_id]" class="video-id-input" value="">
+            <div class="video-selector-dropdown hidden absolute z-20 mt-2 w-full bg-dark-700 rounded-lg border border-gray-600 shadow-lg">
+              <div class="p-2 border-b border-gray-600/50">
+                <div class="relative">
+                  <input type="text" class="video-search-input w-full bg-dark-800 text-white pl-8 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700" placeholder="Search videos...">
+                  <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                </div>
+              </div>
+              <div class="video-list-container p-2 space-y-1 max-h-60 overflow-y-auto"></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Title</label>
+          <input type="text" name="items[${idx}][title]" class="w-full px-3 py-2.5 bg-dark-700 border border-gray-600 rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Stream title" required>
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-xs text-gray-400 block mb-1">Description</label>
+          <textarea name="items[${idx}][description]" rows="3" class="w-full px-3 py-2.5 bg-dark-700 border border-gray-600 rounded-lg text-sm resize-y min-h-[60px] focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Stream description"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-xs text-gray-400 block mb-1">Tags</label>
+          <div class="tags-container relative flex flex-wrap gap-2 p-2 bg-dark-700 border border-gray-600 rounded-lg min-h-[42px]" data-index="${idx}">
+            <input type="text" class="tags-input flex-1 min-w-[100px] bg-transparent border-none outline-none text-white text-sm placeholder-gray-500" placeholder="Type and press Enter...">
+            <button type="button" class="tags-clear-btn absolute top-0 right-2 text-gray-400 hover:text-white transition-colors" title="Clear all tags">
+              <i class="ti ti-x text-xs"></i>
+            </button>
+          </div>
+          <input type="hidden" name="items[${idx}][tags]" class="tags-hidden" value="">
+          <div class="flex items-center justify-between mt-1">
+            <p class="text-xs text-gray-500">Press Enter or comma to add tag</p>
+            <span class="tags-char-count text-xs text-gray-500">0/500</span>
+          </div>
+        </div>
+        <div class="md:col-span-2">
+          <label class="text-xs text-gray-400 block mb-1">Thumbnail</label>
+          <div class="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer thumbnail-upload-area">
+            <input type="file" name="items[${idx}][thumbnail]" accept="image/*" class="hidden thumbnail-input">
+            <div class="thumbnail-preview hidden">
+              <img src="" alt="Thumbnail" class="max-h-24 mx-auto rounded thumbnail-img">
+            </div>
+            <div class="thumbnail-placeholder">
+              <i class="ti ti-photo text-2xl text-gray-500 mb-1"></i>
+              <p class="text-xs text-gray-400">Click to upload thumbnail</p>
+              <p class="text-xs text-gray-500">Recommended: 1280x720</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  container.insertAdjacentHTML('beforeend', itemHtml);
+  
+  const itemEl = container.querySelector(`.rotation-item[data-index="${idx}"]`);
+  initVideoSelector(itemEl, idx);
+  initTagsInput(itemEl, idx);
+  initThumbnailUpload(itemEl);
+}
+
+function initVideoSelector(itemEl, idx) {
+  const btn = itemEl.querySelector('.video-selector-btn');
+  const dropdown = itemEl.querySelector('.video-selector-dropdown');
+  const searchInput = itemEl.querySelector('.video-search-input');
+  const listContainer = itemEl.querySelector('.video-list-container');
+  const hiddenInput = itemEl.querySelector('.video-id-input');
+  const selectedText = itemEl.querySelector('.selected-video-text');
+  
+  function renderVideoList(filter = '') {
+    let html = '';
+    
+    const filteredPlaylists = playlists.filter(p => p.name.toLowerCase().includes(filter.toLowerCase()));
+    if (filteredPlaylists.length > 0) {
+      html += '<div class="text-xs text-gray-400 px-2 py-1 font-medium">Playlists</div>';
+      html += filteredPlaylists.map(p => {
+        const name = filter ? p.name.replace(new RegExp(`(${filter})`, 'gi'), '<span class="highlight">$1</span>') : p.name;
+        return `
+          <div class="video-option flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 cursor-pointer transition-colors" data-id="playlist:${p.id}" data-title="${p.name}" data-type="playlist">
+            <div class="w-16 h-10 bg-primary/20 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+              <i class="ti ti-playlist text-primary text-lg"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-white truncate">${name}</p>
+              <p class="text-xs text-gray-500">${p.video_count || 0} videos</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    const filteredVideos = videos.filter(v => v.title.toLowerCase().includes(filter.toLowerCase()));
+    if (filteredVideos.length > 0) {
+      if (filteredPlaylists.length > 0) {
+        html += '<div class="border-t border-gray-600 my-2"></div>';
+      }
+      html += '<div class="text-xs text-gray-400 px-2 py-1 font-medium">Videos</div>';
+      html += filteredVideos.map(v => {
+        const thumb = v.thumbnail_path ? `/uploads/thumbnails/${v.thumbnail_path.split('/').pop()}` : '/images/video-placeholder.png';
+        const duration = formatDuration(v.duration);
+        const title = filter ? v.title.replace(new RegExp(`(${filter})`, 'gi'), '<span class="highlight">$1</span>') : v.title;
+        return `
+          <div class="video-option flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 cursor-pointer transition-colors" data-id="${v.id}" data-title="${v.title}" data-type="video">
+            <div class="w-16 h-10 bg-dark-800 rounded overflow-hidden flex-shrink-0 relative">
+              <img src="${thumb}" alt="" class="w-full h-full object-cover" onerror="this.src='/images/video-placeholder.png'">
+              ${duration ? `<span class="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-xs px-1 rounded">${duration}</span>` : ''}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-white truncate">${title}</p>
+              <p class="text-xs text-gray-500">${v.resolution || 'Unknown'} • ${v.format || 'mp4'}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    listContainer.innerHTML = html || '<p class="text-center text-gray-500 py-4 text-sm">No videos or playlists found</p>';
+    
+    listContainer.querySelectorAll('.video-option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        hiddenInput.value = opt.dataset.id;
+        const isPlaylist = opt.dataset.type === 'playlist';
+        const displayText = isPlaylist ? `[Playlist] ${opt.dataset.title}` : opt.dataset.title;
+        selectedText.textContent = displayText;
+        selectedText.classList.remove('text-gray-300');
+        selectedText.classList.add('text-white');
+        dropdown.classList.add('hidden');
+      });
+    });
+  }
+  
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.querySelectorAll('.video-selector-dropdown').forEach(d => {
+      if (d !== dropdown) d.classList.add('hidden');
+    });
+    dropdown.classList.toggle('hidden');
+    if (!dropdown.classList.contains('hidden')) {
+      renderVideoList();
+      searchInput.focus();
+    }
+  });
+  
+  searchInput.addEventListener('input', (e) => {
+    renderVideoList(e.target.value);
+  });
+  
+  searchInput.addEventListener('click', (e) => e.stopPropagation());
+  dropdown.addEventListener('click', (e) => e.stopPropagation());
+}
+
+function toggleVideoSelector(idx) {
+}
+
+function initTagsInput(itemEl, idx) {
+  const container = itemEl.querySelector('.tags-container');
+  const input = container.querySelector('.tags-input');
+  const hidden = itemEl.querySelector('.tags-hidden');
+  const charCountEl = itemEl.querySelector('.tags-char-count');
+  const copyBtn = itemEl.querySelector('.tags-copy-btn');
+  const clearBtn = itemEl.querySelector('.tags-clear-btn');
+  const MAX_CHARS = 500;
+  let tags = [];
+
+  function sanitizeTag(tag) {
+    return tag.replace(/[^a-zA-Z0-9\s&\-]/g, '').trim();
+  }
+
+  function getCharCount() {
+    return tags.join(',').length;
+  }
+
+  function updateCharCount() {
+    const count = getCharCount();
+    if (charCountEl) {
+      charCountEl.textContent = `${count}/${MAX_CHARS}`;
+      charCountEl.className = count > MAX_CHARS ? 'tags-char-count text-xs text-red-400' : 'tags-char-count text-xs text-gray-500';
+    }
+  }
+
+  function addTags(tagString) {
+    const newTags = tagString.split(',')
+      .map(tag => sanitizeTag(tag))
+      .filter(tag => tag && !tags.includes(tag));
+    
+    for (const tag of newTags) {
+      const potentialLength = [...tags, tag].join(',').length;
+      if (potentialLength <= MAX_CHARS) {
+        tags.push(tag);
+      }
+    }
+    renderTags();
+  }
+
+  function renderTags() {
+    container.querySelectorAll('.tag-chip').forEach(el => el.remove());
+    tags.forEach((tag, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'inline-flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/30 rounded-full text-xs text-blue-300 tag-chip';
+      chip.innerHTML = `${tag}<button type="button" class="tag-remove-btn flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-white/20"><i class="ti ti-x text-xs"></i></button>`;
+      chip.querySelector('.tag-remove-btn').addEventListener('click', () => {
+        tags.splice(i, 1);
+        renderTags();
+      });
+      container.insertBefore(chip, input);
+    });
+    hidden.value = tags.join(',');
+    updateCharCount();
+  }
+
+
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      tags = [];
+      renderTags();
+    });
+  }
+
+  input.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+    addTags(pastedText);
+    input.value = '';
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const val = input.value.trim();
+      if (val) {
+        addTags(val);
+        input.value = '';
+      }
+    }
+  });
+
+  input.addEventListener('input', (e) => {
+    const cursorPos = e.target.selectionStart;
+    const sanitized = e.target.value.replace(/[^a-zA-Z0-9\s,&\-]/g, '');
+    if (sanitized !== e.target.value) {
+      e.target.value = sanitized;
+      e.target.setSelectionRange(Math.max(0, cursorPos - 1), Math.max(0, cursorPos - 1));
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    const val = input.value.trim();
+    if (val) {
+      addTags(val);
+      input.value = '';
+    }
+  });
+
+  container._tags = tags;
+  container._renderTags = renderTags;
+  container._addTags = addTags;
+}
+
+function initThumbnailUpload(itemEl) {
+  const area = itemEl.querySelector('.thumbnail-upload-area');
+  const input = itemEl.querySelector('.thumbnail-input');
+  const preview = itemEl.querySelector('.thumbnail-preview');
+  const placeholder = itemEl.querySelector('.thumbnail-placeholder');
+  const img = itemEl.querySelector('.thumbnail-img');
+
+  area.addEventListener('click', () => input.click());
+  
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        img.src = ev.target.result;
+        preview.classList.remove('hidden');
+        placeholder.classList.add('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+}
+
+function removeRotationItem(btn) {
+  const items = document.querySelectorAll('.rotation-item');
+  if (items.length > 1) {
+    btn.closest('.rotation-item').remove();
+    reindexItems();
+  } else {
+    showToast('error', 'At least one item is required');
+  }
+}
+
+function reindexItems() {
+  document.querySelectorAll('.rotation-item').forEach((item, index) => {
+    item.querySelector('.item-number').textContent = `#${index + 1}`;
+  });
+}
+
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('.video-selector-dropdown').forEach(d => d.classList.add('hidden'));
+  if (!e.target.closest('#rotationChannelSelector')) {
+    const dropdown = document.getElementById('rotationChannelDropdown');
+    if (dropdown) dropdown.classList.add('hidden');
+  }
+});
+
+function toggleRotationChannelDropdown() {
+  const dropdown = document.getElementById('rotationChannelDropdown');
+  if (dropdown) dropdown.classList.toggle('hidden');
+}
+
+function selectRotationChannel(channelId, channelName, channelThumbnail) {
+  document.getElementById('rotationChannelId').value = channelId;
+  document.getElementById('rotationChannelThumb').src = channelThumbnail;
+  document.getElementById('rotationChannelName').textContent = channelName;
+  toggleRotationChannelDropdown();
+}
+
+async function saveRotation() {
+  const rotationId = document.getElementById('rotationId').value;
+  const name = document.getElementById('rotationName').value;
+  const repeatMode = document.getElementById('repeatMode').value;
+  const startTime = document.getElementById('rotationStartTime').value;
+  const endTime = document.getElementById('rotationEndTime').value;
+  const globalPrivacy = document.getElementById('globalPrivacy').value;
+  const globalCategory = document.getElementById('globalCategory').value;
+  
+  if (!name) {
+    showToast('error', 'Please enter rotation name');
+    return;
+  }
+  if (!startTime || !endTime) {
+    showToast('error', 'Please set start and end time');
+    return;
+  }
+  
+  const saveBtn = document.querySelector('#createRotationModal button[onclick="saveRotation()"]');
+  const originalBtnText = saveBtn.innerHTML;
+  saveBtn.innerHTML = '<i class="ti ti-loader animate-spin font-loaded"></i> Saving...';
+  saveBtn.disabled = true;
+  saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
+  
+  function resetSaveBtn() {
+    saveBtn.innerHTML = originalBtnText;
+    saveBtn.disabled = false;
+    saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+  }
+  
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const today = `${year}-${month}-${day}`;
+  
+  const startDateTime = new Date(`${today}T${startTime}:00`);
+  const endDateTime = new Date(`${today}T${endTime}:00`);
+  
+  const formatLocalDateTime = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const h = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    const s = String(date.getSeconds()).padStart(2, '0');
+    return `${y}-${m}-${d}T${h}:${min}:${s}`;
+  };
+  
+  const startDateTimeStr = formatLocalDateTime(startDateTime);
+  const endDateTimeStr = formatLocalDateTime(endDateTime);
+  
+  const items = [];
+  const itemElements = document.querySelectorAll('.rotation-item');
+  const formData = new FormData();
+  
+  for (let i = 0; i < itemElements.length; i++) {
+    const item = itemElements[i];
+    const idx = item.dataset.index;
+    
+    const videoId = item.querySelector('.video-id-input').value;
+    const title = item.querySelector(`input[name="items[${idx}][title]"]`).value;
+    const description = item.querySelector(`textarea[name="items[${idx}][description]"]`).value;
+    const tags = item.querySelector('.tags-hidden').value;
+    const thumbnailInput = item.querySelector('.thumbnail-input');
+    
+    if (!videoId || !title) {
+      showToast('error', `Please fill video and title for item #${i + 1}`);
+      resetSaveBtn();
+      return;
+    }
+    
+    let thumbnailPath = null;
+    let originalThumbnailPath = null;
+    if (rotationId) {
+      const thumbnailImg = item.querySelector('.thumbnail-img');
+      if (thumbnailImg && thumbnailImg.src && !thumbnailInput.files[0]) {
+        thumbnailPath = thumbnailImg.src.split('/').pop();
+      }
+      originalThumbnailPath = item.dataset.originalThumbnail || null;
+    }
+    
+    items.push({
+      order_index: i,
+      video_id: videoId,
+      title,
+      description,
+      privacy: globalPrivacy,
+      category: globalCategory,
+      tags,
+      thumbnail_path: thumbnailPath,
+      original_thumbnail_path: originalThumbnailPath
+    });
+    
+    if (thumbnailInput.files[0]) {
+      formData.append('thumbnails', thumbnailInput.files[0]);
+    } else {
+      formData.append('thumbnails', new File([], ''));
+    }
+  }
+  
+  const youtubeChannelId = document.getElementById('rotationChannelId').value;
+  
+  formData.append('name', name);
+  formData.append('repeat_mode', repeatMode);
+  formData.append('start_time', startDateTimeStr);
+  formData.append('end_time', endDateTimeStr);
+  formData.append('youtube_channel_id', youtubeChannelId);
+  formData.append('items', JSON.stringify(items));
+  
+  try {
+    const url = rotationId ? `/api/rotations/${rotationId}` : '/api/rotations';
+    const method = rotationId ? 'PUT' : 'POST';
+    
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'X-CSRF-Token': csrfToken
+      },
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      showToast('success', rotationId ? 'Rotation updated!' : 'Rotation created!');
+      closeCreateRotationModal();
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      showToast('error', result.error || 'Failed to save rotation');
+      resetSaveBtn();
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('error', 'An error occurred');
+    resetSaveBtn();
+  }
+}
+
+async function editRotation(id) {
+  try {
+    const response = await fetch(`/api/rotations/${id}`);
+    const result = await response.json();
+    
+    if (result.success) {
+      const rotation = result.rotation;
+      
+      document.getElementById('rotationModalTitle').textContent = 'Edit Rotation';
+      document.getElementById('rotationId').value = rotation.id;
+      document.getElementById('rotationName').value = rotation.name;
+      document.getElementById('repeatMode').value = rotation.repeat_mode || 'daily';
+      
+      if (rotation.start_time) {
+        const startTime = new Date(rotation.start_time).toTimeString().slice(0, 5);
+        document.getElementById('rotationStartTime').value = startTime;
+      }
+      if (rotation.end_time) {
+        const endTime = new Date(rotation.end_time).toTimeString().slice(0, 5);
+        document.getElementById('rotationEndTime').value = endTime;
+      }
+      
+      calculateDuration();
+      
+      if (rotation.items && rotation.items.length > 0) {
+        document.getElementById('globalPrivacy').value = rotation.items[0].privacy || 'unlisted';
+        document.getElementById('globalCategory').value = rotation.items[0].category || '22';
+      }
+      
+      if (rotation.youtube_channel_id) {
+        document.getElementById('rotationChannelId').value = rotation.youtube_channel_id;
+        if (rotation.youtube_channel_name) {
+          document.getElementById('rotationChannelName').textContent = rotation.youtube_channel_name;
+        }
+        if (rotation.youtube_channel_thumbnail) {
+          document.getElementById('rotationChannelThumb').src = rotation.youtube_channel_thumbnail;
+        }
+      }
+      
+      const channelSelectorBtn = document.querySelector('#rotationChannelSelector > button');
+      if (rotation.status === 'active') {
+        channelSelectorBtn.disabled = true;
+        channelSelectorBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        channelSelectorBtn.onclick = null;
+        channelSelectorBtn.title = 'Cannot change channel while running';
+      } else {
+        channelSelectorBtn.disabled = false;
+        channelSelectorBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        channelSelectorBtn.onclick = toggleRotationChannelDropdown;
+        channelSelectorBtn.title = '';
+      }
+      
+      document.getElementById('rotationItemsContainer').innerHTML = '';
+      rotationItemCount = 0;
+      
+      if (rotation.items && rotation.items.length > 0) {
+        rotation.items.forEach(item => {
+          addRotationItem();
+          const itemEl = document.querySelector(`.rotation-item[data-index="${rotationItemCount}"]`);
+          
+          itemEl.querySelector('.video-id-input').value = item.video_id;
+          
+          let displayName = null;
+          if (item.video_id && item.video_id.startsWith('playlist:')) {
+            const playlistId = item.video_id.replace('playlist:', '');
+            const playlist = playlists.find(p => String(p.id) === playlistId);
+            if (playlist) {
+              displayName = `[Playlist] ${playlist.name}`;
+            }
+          } else {
+            const video = videos.find(v => String(v.id) === String(item.video_id));
+            if (video) {
+              displayName = video.title;
+            }
+          }
+          
+          if (displayName) {
+            itemEl.querySelector('.selected-video-text').textContent = displayName;
+            itemEl.querySelector('.selected-video-text').classList.remove('text-gray-300');
+            itemEl.querySelector('.selected-video-text').classList.add('text-white');
+          }
+          
+          itemEl.querySelector(`input[name="items[${rotationItemCount}][title]"]`).value = item.title;
+          itemEl.querySelector(`textarea[name="items[${rotationItemCount}][description]"]`).value = item.description || '';
+          
+          if (item.thumbnail_path) {
+            const thumbnailImg = itemEl.querySelector('.thumbnail-img');
+            const thumbnailPreview = itemEl.querySelector('.thumbnail-preview');
+            const thumbnailPlaceholder = itemEl.querySelector('.thumbnail-placeholder');
+            
+            thumbnailImg.src = `/uploads/thumbnails/${item.thumbnail_path.split('/').pop()}`;
+            thumbnailPreview.classList.remove('hidden');
+            thumbnailPlaceholder.classList.add('hidden');
+          }
+          
+          if (item.original_thumbnail_path) {
+            itemEl.dataset.originalThumbnail = item.original_thumbnail_path;
+          }
+          
+          if (item.tags) {
+            const container = itemEl.querySelector('.tags-container');
+            const tagsArr = item.tags.split(',').filter(t => t.trim());
+            if (container._addTags) {
+              container._addTags(tagsArr.join(','));
+            } else {
+              container._tags.push(...tagsArr);
+              container._renderTags();
+            }
+          }
+        });
+      } else {
+        addRotationItem();
+      }
+      
+      const modal = document.getElementById('createRotationModal');
+      document.body.style.overflow = 'hidden';
+      modal.classList.remove('hidden');
+      requestAnimationFrame(() => {
+        modal.classList.add('active');
+      });
+    } else {
+      showToast('error', 'Failed to load rotation');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('error', 'An error occurred');
+  }
+}
+
+async function deleteRotation(id) {
+  if (!confirm('Are you sure you want to delete this rotation?')) return;
+  
+  try {
+    const response = await fetch(`/api/rotations/${id}`, {
+      method: 'DELETE',
+      headers: { 'X-CSRF-Token': csrfToken }
+    });
+    const result = await response.json();
+    
+    if (result.success) {
+      showToast('success', 'Rotation deleted');
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      showToast('error', result.error || 'Failed to delete');
+    }
+  } catch (error) {
+    showToast('error', 'An error occurred');
+  }
+}
+
+async function activateRotation(id) {
+  try {
+    const response = await fetch(`/api/rotations/${id}/activate`, {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': csrfToken }
+    });
+    const result = await response.json();
+    
+    if (result.success) {
+      showToast('success', 'Rotation activated');
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      showToast('error', result.error || 'Failed to activate');
+    }
+  } catch (error) {
+    showToast('error', 'An error occurred');
+  }
+}
+
+async function stopRotation(id) {
+  try {
+    const response = await fetch(`/api/rotations/${id}/stop`, {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': csrfToken }
+    });
+    const result = await response.json();
+    
+    if (result.success) {
+      showToast('success', 'Rotation stopped');
+      setTimeout(() => window.location.reload(), 1000);
+    } else {
+      showToast('error', result.error || 'Failed to stop');
+    }
+  } catch (error) {
+    showToast('error', 'An error occurred');
+  }
+}
+</script>

@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - StreamFlow Lite</title>
-  <link rel="icon" href="/images/logo_mobile.svg" type="image/svg+xml">
-  <link rel="preload" href="/images/logo_mobile.svg" as="image" type="image/svg+xml">
+  <link rel="icon" href="/images/logo.svg" type="image/svg+xml">
+  <link rel="preload" href="/images/logo.svg" as="image" type="image/svg+xml">
   <link rel="alternate icon" href="/images/favicon.ico" type="image/x-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,6 +13,9 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css">
   <link rel="stylesheet" href="/css/styles.css">
+  <% if (typeof recaptchaSiteKey !== 'undefined' && recaptchaSiteKey) { %>
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <% } %>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -85,6 +88,12 @@
                 </button>
               </div>
             </div>
+            
+            <% if (typeof recaptchaSiteKey !== 'undefined' && recaptchaSiteKey) { %>
+            <div class="flex justify-left" style="margin-top: 7px !important;">
+              <div class="g-recaptcha" data-sitekey="<%= recaptchaSiteKey %>" data-theme="dark"></div>
+            </div>
+            <% } %>
             
             <button type="submit"
               class="w-full bg-primary hover:bg-blue-600 text-white py-2.5 rounded-lg font-medium transition-colors">

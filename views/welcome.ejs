@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome - StreamFlow</title>
+  <link rel="icon" href="/images/logo.svg" type="image/svg+xml">
+  <link rel="preload" href="/images/logo.svg" as="image" type="image/svg+xml">
+  <link rel="alternate icon" href="/images/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css">
+  <link rel="stylesheet" href="/css/styles.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        fontFamily: {
+          'inter': ['Inter', 'sans-serif'],
+          'sans': ['Inter', 'system-ui', 'sans-serif']
+        },
+        extend: {
+          colors: {
+            'primary': '#0055FF',
+            'secondary': '#0043CA',
+            'dark': {
+              '900': '#121212',
+              '800': '#252525',
+              '700': '#2D2D2D',
+              '600': '#3D3D3D',
+              '500': '#6E6E6E',
+              '400': '#8F8F8F',
+              '100': '#E5E5E5',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .donate-button {
+      background: linear-gradient(45deg, #01935d, #01e304);
+      transition: filter 0.2s ease;
+    }
+    .donate-button:hover {
+      filter: brightness(0.85);
+    }
+    .donators-container {
+      overflow: hidden;
+      mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    }
+    .donators-track {
+      display: flex;
+      gap: 1rem;
+    }
+    .donators-track.animate {
+      animation: scroll var(--scroll-duration, 20s) linear infinite;
+    }
+    @keyframes scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(var(--scroll-distance, -50%)); }
+    }
+    .donator-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .donator-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .donator-initial {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      font-weight: 600;
+      color: white;
+    }
+  </style>
+</head>
+<body class="bg-dark-900 text-white font-inter">
+  <div class="min-h-screen flex flex-col items-center justify-center px-6 py-10">
+    <div class="w-full max-w-md text-center">
+      <div class="mb-8">
+        <img src="/images/logo_mobile.svg" alt="StreamFlow Logo" class="h-9 mx-auto mb-6">
+        <h1 class="text-3xl font-bold mb-3">Welcome to StreamFlow</h1>
+      </div>
+      <div class="bg-dark-800 rounded-xl p-6 mb-6">
+        <p class="text-gray-400 text-sm mb-4">
+          Terima kasih sudah menggunakan StreamFlow
+        </p>
+        <p class="text-gray-400 text-sm mb-6">
+          Kamu bisa bantu support admin biar makin semangat ngembangin aplikasi ini 🥹<span id="pray-emoji" class="inline-block opacity-0 transition-opacity duration-300">🙏</span>
+        </p>
+        <a id="donate-btn" href="https://donate.youtube101.id/" target="_blank" rel="noopener noreferrer"
+          class="donate-button inline-flex items-center justify-center w-full text-white py-3 px-4 rounded-lg font-medium">
+          <i class="ti ti-heart mr-2"></i>
+          Donate
+        </a>
+        <div class="mt-8 pt-4 border-t border-gray-700/50">
+          <p class="text-gray-500 text-xs mb-3">Supporter:</p>
+          <div class="donators-container">
+            <div class="donators-track" id="donators-track"></div>
+          </div>
+        </div>
+      </div>
+      <div class="mb-4">
+        <p id="countdown-text" class="text-gray-500 text-sm">
+          Redirecting to dashboard in <span id="countdown">10</span> seconds...
+        </p>
+      </div>
+      <a href="/welcome/continue" class="inline-flex items-center justify-center text-primary hover:text-blue-400 font-medium transition-colors">
+        Go to Dashboard
+        <i class="ti ti-arrow-right ml-2"></i>
+      </a>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script>
+    const bgColors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#0ea5e9', '#3b82f6'];
+
+    function getInitials(name) {
+      const parts = name.trim().split(' ').filter(p => p.length > 0);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return parts[0].substring(0, 2).toUpperCase();
+    }
+
+    function getRandomColor(name) {
+      let hash = 0;
+      for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return bgColors[Math.abs(hash) % bgColors.length];
+    }
+
+    function createDonatorElement(donator) {
+      const item = document.createElement('div');
+      item.className = 'donator-item';
+      
+      if (donator.profile_photo_url) {
+        item.innerHTML = `<img src="${donator.profile_photo_url}" alt="${donator.name}" class="donator-avatar"><span class="text-xs text-gray-300">${donator.name}</span>`;
+      } else {
+        const initials = getInitials(donator.name);
+        const bgColor = getRandomColor(donator.name);
+        item.innerHTML = `<div class="donator-initial" style="background:${bgColor}">${initials}</div><span class="text-xs text-gray-300">${donator.name}</span>`;
+      }
+      return item;
+    }
+
+    async function loadDonators() {
+      try {
+        const response = await fetch('/api/donators');
+        let donators = await response.json();
+        donators = donators.slice(0, 20);
+        const track = document.getElementById('donators-track');
+        if (donators.length > 0) {
+          donators.forEach(donator => {
+            track.appendChild(createDonatorElement(donator));
+          });
+          const firstSetWidth = track.scrollWidth;
+          donators.forEach(donator => {
+            track.appendChild(createDonatorElement(donator));
+          });
+          track.style.setProperty('--scroll-distance', `-${firstSetWidth + 16}px`);
+          const duration = Math.max(donators.length * 2, 15);
+          track.style.setProperty('--scroll-duration', `${duration}s`);
+          track.classList.add('animate');
+        }
+      } catch (error) {
+        console.error('Failed to load donators:', error);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const icons = document.querySelectorAll('.ti');
+      icons.forEach(icon => {
+        icon.classList.add('font-loaded');
+      });
+
+      confetti({
+        particleCount: 50,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 }
+      });
+      confetti({
+        particleCount: 50,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 }
+      });
+
+      const donateBtn = document.getElementById('donate-btn');
+      const prayEmoji = document.getElementById('pray-emoji');
+      
+      let countdown = 15;
+      let countdownInterval;
+      let isPaused = false;
+      const countdownElement = document.getElementById('countdown');
+      const countdownTextElement = document.getElementById('countdown-text');
+      
+      function startCountdown() {
+        countdownInterval = setInterval(() => {
+          if (!isPaused) {
+            countdown--;
+            countdownElement.textContent = countdown;
+            
+            if (countdown <= 0) {
+              clearInterval(countdownInterval);
+              countdownTextElement.textContent = 'Redirecting now...';
+              window.location.href = '/welcome/continue';
+            }
+          }
+        }, 1000);
+      }
+      
+      donateBtn.addEventListener('mouseenter', () => {
+        prayEmoji.classList.remove('opacity-0');
+        prayEmoji.classList.add('opacity-100');
+        isPaused = true;
+      });
+      donateBtn.addEventListener('mouseleave', () => {
+        prayEmoji.classList.remove('opacity-100');
+        prayEmoji.classList.add('opacity-0');
+        isPaused = false;
+      });
+
+      loadDonators();
+      startCountdown();
+    });
+  </script>
+</body>
+</html>

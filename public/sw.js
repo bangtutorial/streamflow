@@ -1,6 +1,6 @@
 
 const CACHE_NAME = 'streamflow-v2-cache';
-const CACHE_VERSION = '1.0.0';
+const CACHE_VERSION = '1.0.2';
 const FULL_CACHE_NAME = `${CACHE_NAME}-${CACHE_VERSION}`;
 
 const STATIC_RESOURCES = [
@@ -57,12 +57,41 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (isStaticResource(event.request.url)) {
+  const url = event.request.url;
+  const isFontRequest = url.includes('tabler-icons') || 
+                        url.endsWith('.woff2') || 
+                        url.endsWith('.woff') || 
+                        url.endsWith('.ttf');
+
+  if (isFontRequest) {
     event.respondWith(
       caches.match(event.request)
         .then((cachedResponse) => {
           if (cachedResponse) {
-            console.log('Service Worker: Serving from cache', event.request.url);
+            return cachedResponse;
+          }
+          return fetch(event.request)
+            .then((response) => {
+              if (!response || response.status !== 200) {
+                return response;
+              }
+              const responseToCache = response.clone();
+              caches.open(FULL_CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+              return response;
+            });
+        })
+    );
+    return;
+  }
+
+  if (isStaticResource(url)) {
+    event.respondWith(
+      caches.match(event.request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
             return cachedResponse;
           }
 
@@ -77,7 +106,6 @@ self.addEventListener('fetch', (event) => {
               caches.open(FULL_CACHE_NAME)
                 .then((cache) => {
                   cache.put(event.request, responseToCache);
-                  console.log('Service Worker: Cached new resource', event.request.url);
                 });
 
               return response;
@@ -92,7 +120,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 function isStaticResource(url) {
-  return STATIC_RESOURCES.some(resource => url.includes(resource.replace(/^\
+  return STATIC_RESOURCES.some(resource => url.includes(resource)) ||
          url.includes('tabler-icons') ||
          url.includes('cdn.jsdelivr.net') ||
          url.endsWith('.css') ||

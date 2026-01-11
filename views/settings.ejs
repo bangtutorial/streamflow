@@ -9,27 +9,37 @@
   
   <div class="mb-6 border-b border-gray-700">
     <div class="flex flex-wrap -mb-px">
-      <button class="settings-tab active mr-2 py-2 px-4 text-primary border-b-2 border-primary font-medium"
+      <button class="settings-tab active mr-2 py-2 px-4 text-blue-600 border-b-2 border-primary font-medium hover:text-blue-600 hover:border-blue-600"
         data-tab="profile">
         <i class="ti ti-user mr-2"></i>Profile
       </button>
       <button
-        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-white border-b-2 border-transparent hover:border-gray-700 font-medium"
+        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 font-medium"
         data-tab="security">
         <i class="ti ti-shield-lock mr-2"></i>Security
       </button>
       <button
-        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-white border-b-2 border-transparent hover:border-gray-700 font-medium"
+        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 font-medium"
+        data-tab="integration">
+        <i class="ti ti-plug mr-2"></i>Integration
+      </button>
+      <button
+        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 font-medium"
         data-tab="logs">
         <i class="ti ti-file-text mr-2"></i>Logs
+      </button>
+      <button
+        class="settings-tab mr-2 py-2 px-4 text-gray-400 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 font-medium"
+        data-tab="about">
+        <i class="ti ti-info-circle mr-2"></i>About
       </button>
     </div>
   </div>
   
-  <div class="bg-gray-800 rounded-lg overflow-hidden">
+  <div>
     
     <div id="profile-tab" class="settings-content">
-      <div class="p-6">
+      <div class="bg-gray-800 rounded-lg p-6">
         <h3 class="text-lg font-semibold mb-6">Profile Settings</h3>
         <form id="profile-form" class="space-y-6" action="/settings/profile" method="post"
           enctype="multipart/form-data">
@@ -83,69 +93,352 @@
     </div>
     
     <div id="security-tab" class="settings-content hidden">
-      <div class="p-6">
-        <h3 class="text-lg font-semibold mb-6">Security Settings</h3>
-        <form id="password-form" class="space-y-6" action="/settings/password" method="post">
-          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <input type="hidden" name="activeTab" value="security">
-          
-          <div class="space-y-2">
-            <label for="current-password" class="block text-sm font-medium text-gray-300">Current Password</label>
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                <i class="ti ti-lock"></i>
-              </span>
-              <input type="password" id="current-password" name="currentPassword"
-                class="bg-dark-900 text-white pl-10 pr-4 py-2 rounded-lg block w-full sm:max-w-md focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="Enter your current password">
+      <div class="space-y-6">
+        
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-lg font-semibold mb-6">Change Password</h3>
+          <form id="password-form" class="space-y-6" action="/settings/password" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="activeTab" value="security">
+            
+            <div class="space-y-2">
+              <label for="current-password" class="block text-sm font-medium text-gray-300">Current Password</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <i class="ti ti-lock"></i>
+                </span>
+                <input type="password" id="current-password" name="currentPassword"
+                  class="bg-dark-900 text-white pl-10 pr-4 py-2 rounded-lg block w-full sm:max-w-md focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Enter your current password">
+              </div>
             </div>
-          </div>
-          
-          <div class="space-y-2">
-            <label for="new-password" class="block text-sm font-medium text-gray-300">New Password</label>
-            <div class="relative sm:max-w-md">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                <i class="ti ti-lock"></i>
-              </span>
-              <input type="password" id="new-password" name="newPassword"
-                class="bg-dark-900 text-white pl-10 pr-10 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="Enter new password">
-              <button type="button"
-                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white"
-                id="toggle-password">
-                <i class="ti ti-eye"></i>
+            
+            <div class="space-y-2">
+              <label for="new-password" class="block text-sm font-medium text-gray-300">New Password</label>
+              <div class="relative sm:max-w-md">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <i class="ti ti-lock"></i>
+                </span>
+                <input type="password" id="new-password" name="newPassword"
+                  class="bg-dark-900 text-white pl-10 pr-10 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Enter new password">
+                <button type="button"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white"
+                  id="toggle-password">
+                  <i class="ti ti-eye"></i>
+                </button>
+              </div>
+              <div class="text-xs text-gray-400 mt-1">
+                Password must be at least 8 characters and include uppercase, lowercase and a number
+              </div>
+            </div>
+            
+            <div class="space-y-2">
+              <label for="confirm-password" class="block text-sm font-medium text-gray-300">Confirm New Password</label>
+              <div class="relative sm:max-w-md">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <i class="ti ti-lock"></i>
+                </span>
+                <input type="password" id="confirm-password" name="confirmPassword"
+                  class="bg-dark-900 text-white pl-10 pr-4 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
+                  placeholder="Confirm new password">
+              </div>
+            </div>
+            
+            <div class="pt-4">
+              <button type="submit"
+                class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+                Change Password
               </button>
             </div>
-            <div class="text-xs text-gray-400 mt-1">
-              Password must be at least 8 characters and include uppercase, lowercase and a number
+          </form>
+        </div>
+
+        <% if (user.user_role === 'admin') { %>
+        <div class="bg-gray-800 rounded-lg p-6">
+          <h3 class="text-lg font-semibold mb-6">Google reCAPTCHA Settings</h3>
+          
+          <div class="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 mb-6 sm:max-w-md">
+            <div class="flex items-start gap-3">
+              <i class="ti ti-info-circle text-blue-400 text-xl flex-shrink-0 mt-0.5"></i>
+              <div class="text-sm">
+                <p class="text-blue-400 font-medium mb-2">Enable <b>reCAPTCHA v2</b> to protect login page</p>
+                <div class="flex flex-wrap gap-2">
+                  <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noopener noreferrer" 
+                    class="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs">
+                    <i class="ti ti-external-link"></i>
+                    Get reCAPTCHA Keys
+                  </a>
+                  <a href="https://youtu.be/-TUHupNHdpI" target="_blank" rel="noopener noreferrer" 
+                    class="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-xs">
+                    <i class="ti ti-brand-youtube-filled"></i>
+                    Tutorial
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div class="space-y-2">
-            <label for="confirm-password" class="block text-sm font-medium text-gray-300">Confirm New Password</label>
-            <div class="relative sm:max-w-md">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                <i class="ti ti-lock"></i>
-              </span>
-              <input type="password" id="confirm-password" name="confirmPassword"
-                class="bg-dark-900 text-white pl-10 pr-4 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary"
-                placeholder="Confirm new password">
+
+          <form id="recaptcha-form" class="space-y-6" action="/settings/recaptcha" method="post">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="activeTab" value="security">
+
+            <div class="space-y-2">
+              <label for="recaptcha-site-key" class="block text-sm font-medium text-gray-300">
+                <i class="ti ti-key mr-1"></i>Site Key
+              </label>
+              <div class="relative sm:max-w-md">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <i class="ti ti-world"></i>
+                </span>
+                <input type="text" id="recaptcha-site-key" name="recaptchaSiteKey"
+                  class="bg-dark-900 text-white pl-10 pr-4 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700"
+                  placeholder="Enter your reCAPTCHA Site Key"
+                  value="<%= typeof recaptchaSiteKey !== 'undefined' ? recaptchaSiteKey : '' %>">
+              </div>
             </div>
-          </div>
-          
-          <div class="pt-4">
-            <button type="submit"
-              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
-              Change Password
-            </button>
-          </div>
-        </form>
+            
+            <div class="space-y-2">
+              <label for="recaptcha-secret-key" class="block text-sm font-medium text-gray-300">
+                <i class="ti ti-lock mr-1"></i>Secret Key
+              </label>
+              <div class="relative sm:max-w-md">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                  <i class="ti ti-shield-lock"></i>
+                </span>
+                <input type="password" id="recaptcha-secret-key" name="recaptchaSecretKey"
+                  class="bg-dark-900 text-white pl-10 pr-10 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700"
+                  placeholder="Enter your reCAPTCHA Secret Key"
+                  value="<%= typeof recaptchaSecretKey !== 'undefined' ? recaptchaSecretKey : '' %>">
+                <button type="button"
+                  class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-white"
+                  id="toggle-recaptcha-secret">
+                  <i class="ti ti-eye"></i>
+                </button>
+              </div>
+              <% if (typeof hasRecaptchaKeys !== 'undefined' && hasRecaptchaKeys) { %>
+              <p class="text-xs text-gray-500">Enter a new value to update</p>
+              <% } %>
+            </div>
+
+            <div class="space-y-2">
+              <label class="flex items-center justify-between sm:max-w-md cursor-pointer group <%= typeof hasRecaptchaKeys !== 'undefined' && hasRecaptchaKeys ? '' : 'opacity-50 pointer-events-none' %>">
+                <div class="flex items-center gap-2">
+                  <i class="ti ti-shield-check text-gray-400 group-hover:text-primary transition-colors"></i>
+                  <span class="text-sm font-medium text-gray-300">Enable reCAPTCHA Protection</span>
+                </div>
+                <div class="relative">
+                  <input type="checkbox" id="recaptcha-enabled" name="recaptchaEnabled" class="sr-only peer"
+                    <%= typeof recaptchaEnabled !== 'undefined' && recaptchaEnabled ? 'checked' : '' %>
+                    <%= typeof hasRecaptchaKeys !== 'undefined' && hasRecaptchaKeys ? '' : 'disabled' %>>
+                  <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary peer-disabled:opacity-50"></div>
+                </div>
+              </label>
+              <p class="text-xs text-gray-500">
+                <% if (typeof hasRecaptchaKeys !== 'undefined' && hasRecaptchaKeys) { %>
+                <% } else { %>
+                Save your reCAPTCHA keys first to enable this feature
+                <% } %>
+              </p>
+            </div>
+
+            <div class="flex items-center gap-3 pt-2">
+              <button type="submit"
+                class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+                <i class="ti ti-device-floppy mr-2"></i>Save reCAPTCHA Keys
+              </button>
+              <% if (typeof hasRecaptchaKeys !== 'undefined' && hasRecaptchaKeys) { %>
+              <button type="button" id="remove-recaptcha"
+                class="px-4 py-2 bg-gray-700 hover:bg-red-600 text-white rounded-lg transition-colors">
+                <i class="ti ti-trash mr-2"></i>Remove Keys
+              </button>
+              <% } %>
+            </div>
+          </form>
+        </div>
+        <% } %>
 
       </div>
     </div>
 
+    <div id="integration-tab" class="settings-content hidden">
+      <div class="bg-gray-800 rounded-lg p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:divide-x lg:divide-gray-700">
+          <div class="lg:pr-8">
+            <h3 class="text-lg font-semibold mb-6">YouTube Integration</h3>
+            
+            <div class="mb-6">
+              <label class="block text-sm font-medium text-gray-300 mb-2">
+                <i class="ti ti-link mr-1"></i>Authorized Redirect URI
+              </label>
+              <p class="text-xs text-gray-500 mb-2">Copy this URL and add it to your Google Cloud OAuth 2.0 credentials</p>
+              <div class="flex items-center gap-2">
+                <div class="relative flex-1">
+                  <input type="text" id="redirect-uri" readonly
+                    class="bg-dark-900 text-gray-400 pl-4 pr-12 py-2 rounded-lg block w-full focus:outline-none border border-gray-700 cursor-not-allowed font-mono text-sm"
+                    value="">
+                  <button type="button" id="copy-redirect-uri"
+                    class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-primary transition-colors"
+                    title="Copy to clipboard">
+                    <i class="ti ti-copy"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <form id="youtube-credentials-form" class="space-y-6">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="activeTab" value="integration">
+              
+              <div class="space-y-4">
+                <div class="space-y-2">
+                  <label for="youtube-client-id" class="block text-sm font-medium text-gray-300">
+                    <i class="ti ti-key mr-1"></i>Client ID
+                  </label>
+                  <div class="relative">
+                    <input type="text" id="youtube-client-id" name="youtubeClientId"
+                      class="bg-dark-900 text-white px-4 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700"
+                      placeholder="Enter your Google Client ID"
+                      value="<%= typeof youtubeClientId !== 'undefined' ? youtubeClientId : '' %>">
+                  </div>
+                </div>
+                
+                <div class="space-y-2">
+                  <label for="youtube-client-secret" class="block text-sm font-medium text-gray-300">
+                    <i class="ti ti-lock mr-1"></i>Client Secret
+                  </label>
+                  <div class="relative">
+                    <input type="password" id="youtube-client-secret" name="youtubeClientSecret"
+                      class="bg-dark-900 text-white px-4 py-2 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700"
+                      placeholder="Enter your Google Client Secret"
+                      value="<%= typeof youtubeClientSecret !== 'undefined' ? youtubeClientSecret : '' %>">
+                  </div>
+                  <% if (typeof hasYoutubeCredentials !== 'undefined' && hasYoutubeCredentials) { %>
+                  <p class="text-xs text-gray-500">Enter a new value to update</p>
+                  <% } %>
+                </div>
+              </div>
+              
+              <div class="pt-2">
+                <button type="submit" id="save-youtube-credentials"
+                  class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors">
+                  <i class="ti ti-device-floppy mr-2"></i>Save API Credentials
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <div class="lg:pl-8">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h4 class="text-lg font-semibold mb-1">Connected Channels</h4>
+                  <p class="text-gray-400 text-sm">Manage your YouTube channels for streaming</p>
+                </div>
+                <button type="button" id="connect-youtube"
+                  class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  <%= (typeof hasYoutubeCredentials === 'undefined' || !hasYoutubeCredentials) ? 'disabled' : '' %>>
+                  <i class="ti ti-plus"></i>
+                  <span>Add Channel</span>
+                </button>
+              </div>
+              
+              <div id="youtube-channels-list" class="space-y-3">
+                <% if (typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 0) { %>
+                  <% youtubeChannels.forEach(function(channel) { %>
+                    <div class="bg-dark-900 rounded-lg p-4 border border-gray-700 channel-item" data-channel-id="<%= channel.id %>">
+                      <div class="flex items-center justify-between flex-wrap gap-4">
+                        <div class="flex items-center gap-3">
+                          <div class="w-12 h-12 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                            <% if (channel.channel_thumbnail) { %>
+                              <img src="<%= channel.channel_thumbnail %>" alt="Channel" class="w-full h-full object-cover">
+                            <% } else { %>
+                              <div class="w-full h-full flex items-center justify-center bg-red-600">
+                                <i class="ti ti-brand-youtube text-white text-xl"></i>
+                              </div>
+                            <% } %>
+                          </div>
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <p class="font-medium text-white"><%= channel.channel_name %></p>
+                              <% if (channel.is_default) { %>
+                                <span class="px-2 py-0.5 bg-blue-600/20 text-blue-600 text-xs rounded-sm">Default</span>
+                              <% } %>
+                            </div>
+                            <p class="text-xs text-gray-400"><%= Number(channel.subscriber_count || 0).toLocaleString() %> subscribers</p>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                          <% if (!channel.is_default) { %>
+                            <button type="button" onclick="setDefaultChannel('<%= channel.id %>')"
+                              class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm" title="Set as default">
+                              <i class="ti ti-star"></i>
+                            </button>
+                          <% } %>
+                          <button type="button" onclick="disconnectChannel('<%= channel.id %>', '<%= channel.channel_name %>')"
+                            class="px-3 py-1.5 bg-gray-600 hover:bg-red-600 text-white rounded-lg transition-colors text-sm" title="Disconnect">
+                            <i class="ti ti-unlink"></i>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  <% }); %>
+                <% } else { %>
+                  <div id="no-channels-message" class="bg-dark-900 rounded-lg p-6 border border-gray-700 text-center">
+                    <div class="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center mx-auto mb-4">
+                      <i class="ti ti-brand-youtube text-gray-400 text-3xl"></i>
+                    </div>
+                    <p class="font-medium text-gray-300 mb-2">No YouTube channels connected</p>
+                    <p class="text-sm text-gray-500">Click "Add Channel" to connect your first YouTube channel</p>
+                  </div>
+                <% } %>
+              </div>
+              
+              <% if (typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 1) { %>
+              <div class="pt-2">
+                <button type="button" id="disconnect-all-youtube"
+                  class="px-4 py-2 bg-gray-700 hover:bg-red-600 text-white rounded-lg transition-colors text-sm">
+                  <i class="ti ti-trash mr-1"></i>Disconnect All Channels
+                </button>
+              </div>
+              <% } %>
+              
+              <% if (typeof hasYoutubeCredentials === 'undefined' || !hasYoutubeCredentials) { %>
+              <div class="bg-yellow-900/20 border border-yellow-700/50 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                  <i class="ti ti-alert-triangle text-yellow-400 text-xl flex-shrink-0 mt-0.5"></i>
+                  <div class="text-sm">
+                    <p class="text-yellow-400 font-medium mb-2">Please save your API credentials before connecting your YouTube account</p>
+                    <p class="text-gray-400 mb-3">To get your YouTube API credentials:</p>
+                    <ol class="text-gray-400 list-decimal list-inside space-y-1 mb-3">
+                      <li>Go to <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">Google Cloud Console</a></li>
+                      <li>Enable the YouTube Data API v3</li>
+                      <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:underline">Credentials</a> and create OAuth 2.0 Client ID</li>
+                      <li>Add the Redirect URI shown above to your OAuth credentials</li>
+                      <li>Copy the Client ID and Client Secret to the form on the left</li>
+                    </ol>
+                    <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener noreferrer" 
+                      class="inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors text-xs">
+                      <i class="ti ti-external-link"></i>
+                      Open Google Cloud Console
+                    </a>
+                    <a href="https://youtu.be/K_tHNRaSO0E" target="_blank" rel="noopener noreferrer" 
+                      class="inline-flex items-center gap-2 px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-xs">
+                      <i class="ti ti-brand-youtube-filled"></i>
+                      Tutorial
+                    </a>
+                  </div>
+                </div>
+              </div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="logs-tab" class="settings-content hidden h-[calc(100vh-220px)]">
-      <div class="p-6 h-full flex flex-col">
+      <div class="bg-gray-800 rounded-lg p-6 h-full flex flex-col">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4 flex-shrink-0">
           <h3 class="text-lg font-semibold">Application Logs</h3>
           <div class="flex flex-wrap items-center gap-2">
@@ -192,6 +485,55 @@
       </div>
     </div>
 
+    <div id="about-tab" class="settings-content hidden">
+      <div class="bg-gray-800 rounded-lg p-6 max-w-3xl">
+        <h3 class="text-lg font-semibold mb-6">About StreamFlow</h3>
+        <div class="prose text-sm prose-invert prose-sm max-w-none text-gray-300 space-y-4">
+          <p>
+            StreamFlow is a free and open-source live streaming application designed to help content creators 
+            broadcast to multiple platforms simultaneously. Built with simplicity and performance in mind, 
+            StreamFlow runs on your own server, giving you full control over your streaming infrastructure.
+          </p>
+          <p>
+            With StreamFlow, you can stream pre-recorded videos to platforms like YouTube, Facebook, and any 
+            RTMP-compatible service. The application supports scheduled streaming, allowing you to plan your 
+            broadcasts in advance and let the system handle the rest automatically.
+          </p>
+          <p>
+            StreamFlow is built using Node.js and leverages FFmpeg for video processing. It uses SQLite for 
+            data storage, making it lightweight and easy to deploy on minimal hardware. The application requires 
+            only 1 CPU core and 1GB of RAM to run effectively.
+          </p>
+          <h4 class="text-white font-medium pt-4">Version</h4>
+          <p>StreamFlow v<%= typeof appVersion !== 'undefined' ? appVersion : '2.1.0' %></p>
+          <h4 class="text-white font-medium pt-4">License</h4>
+          <p>
+            StreamFlow is released under the MIT License. You are free to use, modify, and distribute this 
+            software for personal or commercial purposes. See the 
+            <a href="https://github.com/bangtutorial/streamflow/blob/main/LICENSE.md" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">LICENSE</a> 
+            file for more details.
+          </p>
+          <h4 class="text-white font-medium pt-4">Contributors</h4>
+          <p>
+            StreamFlow is made possible by the contributions of the open-source community. We thank all 
+            contributors who have helped improve this project.
+          </p>
+          <div id="contributors-container" class="py-2 flex flex-wrap gap-2">
+            <div class="text-gray-500 text-sm">Loading contributors...</div>
+          </div>
+          <h4 class="text-white font-medium pt-4">Links</h4>
+          <ul class="list-disc list-inside space-y-1">
+            <li><a href="https://github.com/bangtutorial/streamflow" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">GitHub Repository</a></li>
+            <li><a href="https://github.com/bangtutorial/streamflow/issues" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Report Issues</a></li>
+            <li><a href="https://youtube.com/bangtutorial" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">YouTube Channel</a></li>
+          </ul>
+          <div class="border-t border-gray-700 pt-6 mt-6">
+            <p class="text-gray-500 text-sm">© 2026 Bang Tutorial. All rights reserved.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
   
   <style>
@@ -221,16 +563,36 @@
     <span id="toast-message"></span>
   </div>
   <script>
+    function showToast(type, message) {
+      const toast = document.getElementById('toast');
+      const toastIcon = document.getElementById('toast-icon');
+      const toastMessage = document.getElementById('toast-message');
+      if (type === 'success') {
+        toastIcon.className = 'ti ti-check text-green-400 text-xl mr-2 font-loaded';
+        toast.classList.add('border-l-4', 'border-green-400');
+        toast.classList.remove('border-l-4', 'border-red-400');
+      } else if (type === 'error') {
+        toastIcon.className = 'ti ti-x text-red-400 text-xl mr-2 font-loaded';
+        toast.classList.add('border-l-4', 'border-red-400');
+        toast.classList.remove('border-l-4', 'border-green-400');
+      }
+      toastMessage.textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3000);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       const tabs = document.querySelectorAll('.settings-tab');
       const tabContents = document.querySelectorAll('.settings-content');
       function activateTab(tabName) {
-        tabs.forEach(tab => tab.classList.remove('active', 'text-primary', 'border-primary'));
+        tabs.forEach(tab => tab.classList.remove('active', 'text-blue-600', 'border-blue-600'));
         tabs.forEach(tab => tab.classList.add('text-gray-400', 'border-transparent'));
         tabContents.forEach(content => content.classList.add('hidden'));
         const selectedTab = document.querySelector(`.settings-tab[data-tab="${tabName}"]`);
         if (selectedTab) {
-          selectedTab.classList.add('active', 'text-primary', 'border-primary');
+          selectedTab.classList.add('active', 'text-blue-600', 'border-blue-600');
           selectedTab.classList.remove('text-gray-400', 'border-transparent');
           const selectedContent = document.getElementById(`${tabName}-tab`);
           if (selectedContent) {
@@ -242,20 +604,41 @@
         tab.addEventListener('click', () => {
           const tabName = tab.getAttribute('data-tab');
           activateTab(tabName);
+          window.location.hash = tabName;
         });
       });
+      const hashTab = window.location.hash.replace('#', '');
+      const validTabs = ['profile', 'security', 'integration', 'logs', 'about'];
+      if (hashTab && validTabs.includes(hashTab)) {
+        activateTab(hashTab);
+      } else {
     <% if (typeof activeTab !== 'undefined' && activeTab) { %>
         activateTab('<%= activeTab %>');
     <% } else { %>
         activateTab('profile');
     <% } %>
+      }
     const profileUpload = document.getElementById('profile-upload');
       const profilePreview = document.getElementById('profile-preview');
+      const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      const allowedImageExts = ['.jpg', '.jpeg', '.png', '.gif'];
+      
+      function isValidImageFile(file) {
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        return allowedImageTypes.includes(file.type) || allowedImageExts.includes(ext);
+      }
+      
       profileUpload.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (file) {
+          if (!isValidImageFile(file)) {
+            showToast('error', 'Only .jpg, .jpeg, .png, and .gif formats are allowed.');
+            e.target.value = '';
+            return;
+          }
           if (file.size > 2 * 1024 * 1024) {
             showToast('error', 'Image too large. Maximum size is 2MB.');
+            e.target.value = '';
             return;
           }
           const reader = new FileReader();
@@ -270,6 +653,11 @@
         const fileInput = document.getElementById('profile-upload');
         if (fileInput.files.length > 0) {
           const file = fileInput.files[0];
+          if (!isValidImageFile(file)) {
+            e.preventDefault();
+            showToast('error', 'Only .jpg, .jpeg, .png, and .gif formats are allowed.');
+            return false;
+          }
           if (file.size > 2 * 1024 * 1024) {
             e.preventDefault();
             showToast('error', 'Image too large. Maximum size is 2MB.');
@@ -311,25 +699,147 @@
         }
       });
 
-      function showToast(type, message) {
-        const toast = document.getElementById('toast');
-        const toastIcon = document.getElementById('toast-icon');
-        const toastMessage = document.getElementById('toast-message');
-        if (type === 'success') {
-          toastIcon.className = 'ti ti-check text-green-400 text-xl mr-2 font-loaded';
-          toast.classList.add('border-l-4', 'border-green-400');
-          toast.classList.remove('border-l-4', 'border-red-400');
-        } else if (type === 'error') {
-          toastIcon.className = 'ti ti-x text-red-400 text-xl mr-2 font-loaded';
-          toast.classList.add('border-l-4', 'border-red-400');
-          toast.classList.remove('border-l-4', 'border-green-400');
-        }
-        toastMessage.textContent = message;
-        toast.classList.remove('hidden');
-        setTimeout(() => {
-          toast.classList.add('hidden');
-        }, 3000);
+      const toggleRecaptchaSecret = document.getElementById('toggle-recaptcha-secret');
+      const recaptchaSecretField = document.getElementById('recaptcha-secret-key');
+      if (toggleRecaptchaSecret && recaptchaSecretField) {
+        toggleRecaptchaSecret.addEventListener('click', () => {
+          if (recaptchaSecretField.type === 'password') {
+            recaptchaSecretField.type = 'text';
+            toggleRecaptchaSecret.innerHTML = '<i class="ti ti-eye-off"></i>';
+          } else {
+            recaptchaSecretField.type = 'password';
+            toggleRecaptchaSecret.innerHTML = '<i class="ti ti-eye"></i>';
+          }
+        });
       }
+
+      const recaptchaForm = document.getElementById('recaptcha-form');
+      const saveRecaptchaBtn = recaptchaForm ? recaptchaForm.querySelector('button[type="submit"]') : null;
+      const hasExistingRecaptchaKeys = <%= typeof hasRecaptchaKeys !== 'undefined' && hasRecaptchaKeys ? 'true' : 'false' %>;
+      
+      if (recaptchaForm && saveRecaptchaBtn) {
+        recaptchaForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const siteKey = document.getElementById('recaptcha-site-key').value.trim();
+          const secretKey = document.getElementById('recaptcha-secret-key').value.trim();
+          const enabled = document.getElementById('recaptcha-enabled').checked;
+          
+          if (!siteKey) {
+            showToast('error', 'Please enter reCAPTCHA Site Key.');
+            return false;
+          }
+          
+          const isMaskedSecret = secretKey === '••••••••••••••••';
+          
+          if (!hasExistingRecaptchaKeys && (!secretKey || isMaskedSecret)) {
+            showToast('error', 'Please enter reCAPTCHA Secret Key.');
+            return false;
+          }
+          
+          const originalBtnText = saveRecaptchaBtn.innerHTML;
+          saveRecaptchaBtn.disabled = true;
+          saveRecaptchaBtn.innerHTML = '<i class="ti ti-loader animate-spin mr-2"></i>Validating...';
+          
+          try {
+            const payload = { siteKey, enabled };
+            if (!isMaskedSecret && secretKey) {
+              payload.secretKey = secretKey;
+            }
+            
+            const response = await fetch('/api/settings/recaptcha', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '<%= csrfToken %>'
+              },
+              body: JSON.stringify(payload)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              saveRecaptchaBtn.innerHTML = '<i class="ti ti-check mr-2"></i>Saved!';
+              showToast('success', 'reCAPTCHA settings saved successfully');
+              setTimeout(() => {
+                window.location.hash = 'security';
+                window.location.reload();
+              }, 1000);
+            } else {
+              saveRecaptchaBtn.disabled = false;
+              saveRecaptchaBtn.innerHTML = originalBtnText;
+              showToast('error', data.error || 'Failed to save reCAPTCHA settings');
+            }
+          } catch (error) {
+            saveRecaptchaBtn.disabled = false;
+            saveRecaptchaBtn.innerHTML = originalBtnText;
+            showToast('error', 'Failed to save reCAPTCHA settings');
+          }
+        });
+      }
+
+      const recaptchaEnabledToggle = document.getElementById('recaptcha-enabled');
+      if (recaptchaEnabledToggle && !recaptchaEnabledToggle.disabled) {
+        recaptchaEnabledToggle.addEventListener('change', async () => {
+          const enabled = recaptchaEnabledToggle.checked;
+          
+          try {
+            const response = await fetch('/api/settings/recaptcha/toggle', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '<%= csrfToken %>'
+              },
+              body: JSON.stringify({ enabled })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              showToast('success', data.message);
+            } else {
+              recaptchaEnabledToggle.checked = !enabled;
+              showToast('error', data.error || 'Failed to update reCAPTCHA status');
+            }
+          } catch (error) {
+            recaptchaEnabledToggle.checked = !enabled;
+            showToast('error', 'Failed to update reCAPTCHA status');
+          }
+        });
+      }
+
+      const removeRecaptchaBtn = document.getElementById('remove-recaptcha');
+      if (removeRecaptchaBtn) {
+        removeRecaptchaBtn.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to remove reCAPTCHA keys? This will disable reCAPTCHA protection.')) return;
+          
+          try {
+            const response = await fetch('/api/settings/recaptcha', {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '<%= csrfToken %>'
+              }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              showToast('success', 'reCAPTCHA keys removed successfully');
+              setTimeout(() => {
+                window.location.hash = 'security';
+                window.location.reload();
+              }, 1000);
+            } else {
+              showToast('error', data.error || 'Failed to remove reCAPTCHA keys');
+            }
+          } catch (error) {
+            showToast('error', 'Failed to remove reCAPTCHA keys');
+          }
+        });
+      }
+
+
     <% if (typeof success !== 'undefined' && success) { %>
         showToast('success', '<%= success %>');
     <% } %>
@@ -359,9 +869,9 @@
         }
         
         const timestampRegex = /(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)/g;
-        line = line.replace(timestampRegex, '<span class="text-purple-400">$1</span>');
+        line = line.replace(timestampRegex, '<span class="text-blue-400">$1</span>');
         
-        return `<div class="${colorClass} py-0.5 border-b border-gray-800 hover:bg-gray-800/50">${escapeHtml(line).replace(/&lt;span class="text-purple-400"&gt;/g, '<span class="text-purple-400">').replace(/&lt;\/span&gt;/g, '</span>')}</div>`;
+        return `<div class="${colorClass} py-0.5 border-b border-gray-800 hover:bg-gray-800/50">${escapeHtml(line).replace(/&lt;span class="text-blue-400"&gt;/g, '<span class="text-blue-400">').replace(/&lt;\/span&gt;/g, '</span>')}</div>`;
       }
 
       function escapeHtml(text) {
@@ -443,5 +953,227 @@
       logsTab.addEventListener('click', () => {
         setTimeout(loadLogs, 100);
       });
+
+      const redirectUriInput = document.getElementById('redirect-uri');
+      const copyRedirectUriBtn = document.getElementById('copy-redirect-uri');
+      const youtubeCredentialsForm = document.getElementById('youtube-credentials-form');
+      const youtubeClientIdInput = document.getElementById('youtube-client-id');
+      const youtubeClientSecretInput = document.getElementById('youtube-client-secret');
+      const connectYoutubeBtn = document.getElementById('connect-youtube');
+      const disconnectYoutubeBtn = document.getElementById('disconnect-youtube');
+
+      function generateRedirectUri() {
+        const protocol = window.location.protocol;
+        const host = window.location.host;
+        return `${protocol}//${host}/auth/youtube/callback`;
+      }
+      
+      if (redirectUriInput) {
+        redirectUriInput.value = generateRedirectUri();
+      }
+
+      if (copyRedirectUriBtn) {
+        copyRedirectUriBtn.addEventListener('click', async () => {
+          try {
+            if (navigator.clipboard && window.isSecureContext) {
+              await navigator.clipboard.writeText(redirectUriInput.value);
+            } else {
+              redirectUriInput.removeAttribute('readonly');
+              redirectUriInput.select();
+              redirectUriInput.setSelectionRange(0, 99999);
+              
+              const successful = document.execCommand('copy');
+              if (!successful) throw new Error('execCommand failed');
+              
+              redirectUriInput.setAttribute('readonly', 'readonly');
+              window.getSelection().removeAllRanges();
+            }
+            
+            showToast('success', 'Redirect URI copied to clipboard');
+            copyRedirectUriBtn.innerHTML = '<i class="ti ti-check text-green-400"></i>';
+            setTimeout(() => {
+              copyRedirectUriBtn.innerHTML = '<i class="ti ti-copy"></i>';
+            }, 2000);
+          } catch (err) {
+            console.error('Copy failed:', err);
+            redirectUriInput.setAttribute('readonly', 'readonly');
+            showToast('error', 'Failed to copy to clipboard');
+          }
+        });
+      }
+
+      const hasStoredCredentials = <%= typeof hasYoutubeCredentials !== 'undefined' && hasYoutubeCredentials ? 'true' : 'false' %>;
+      const originalClientSecret = youtubeClientSecretInput ? youtubeClientSecretInput.value : '';
+      
+      if (youtubeCredentialsForm) {
+        youtubeCredentialsForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const clientId = youtubeClientIdInput.value.trim();
+          const clientSecret = youtubeClientSecretInput.value.trim();
+          
+          if (!clientId) {
+            showToast('error', 'Please enter Client ID');
+            return;
+          }
+          
+          const isMaskedSecret = clientSecret === '••••••••••••••••';
+          if (!clientSecret || (isMaskedSecret && !originalClientSecret)) {
+            showToast('error', 'Please enter Client Secret');
+            return;
+          }
+          
+          if (isMaskedSecret) {
+            showToast('error', 'Please enter a new Client Secret to update credentials');
+            return;
+          }
+          
+          try {
+            const response = await fetch('/api/settings/youtube-credentials', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '<%= csrfToken %>'
+              },
+              body: JSON.stringify({ clientId, clientSecret })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              showToast('success', 'YouTube API credentials saved successfully');
+              youtubeClientSecretInput.value = '••••••••••••••••';
+              if (connectYoutubeBtn) {
+                connectYoutubeBtn.disabled = false;
+              }
+              setTimeout(() => window.location.reload(), 1500);
+            } else {
+              showToast('error', data.error || 'Failed to save credentials');
+            }
+          } catch (error) {
+            showToast('error', 'Failed to save credentials');
+          }
+        });
+      }
+
+      if (connectYoutubeBtn) {
+        connectYoutubeBtn.addEventListener('click', () => {
+          window.location.href = '/auth/youtube';
+        });
+      }
+
+      const disconnectAllBtn = document.getElementById('disconnect-all-youtube');
+      if (disconnectAllBtn) {
+        disconnectAllBtn.addEventListener('click', async () => {
+          if (!confirm('Are you sure you want to disconnect ALL YouTube channels?')) return;
+          
+          try {
+            const response = await fetch('/api/settings/youtube-disconnect', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': '<%= csrfToken %>'
+              }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              showToast('success', 'All YouTube channels disconnected');
+              setTimeout(() => {
+                window.location.hash = 'integration';
+                window.location.reload();
+              }, 1000);
+            } else {
+              showToast('error', data.error || 'Failed to disconnect');
+            }
+          } catch (error) {
+            showToast('error', 'Failed to disconnect YouTube channels');
+          }
+        });
+      }
   });
+
+  async function setDefaultChannel(channelId) {
+    try {
+      const response = await fetch(`/api/settings/youtube-channel/${channelId}/default`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': '<%= csrfToken %>'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showToast('success', 'Default channel updated');
+        setTimeout(() => {
+          window.location.hash = 'integration';
+          window.location.reload();
+        }, 1000);
+      } else {
+        showToast('error', data.error || 'Failed to update default channel');
+      }
+    } catch (error) {
+      showToast('error', 'Failed to update default channel');
+    }
+  }
+
+  async function disconnectChannel(channelId, channelName) {
+    if (!confirm(`Are you sure you want to disconnect "${channelName}"?`)) return;
+    
+    try {
+      const response = await fetch(`/api/settings/youtube-channel/${channelId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': '<%= csrfToken %>'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showToast('success', 'Channel disconnected successfully');
+        setTimeout(() => {
+          window.location.hash = 'integration';
+          window.location.reload();
+        }, 1000);
+      } else {
+        showToast('error', data.error || 'Failed to disconnect channel');
+      }
+    } catch (error) {
+      showToast('error', 'Failed to disconnect channel');
+    }
+  }
+
+  async function loadContributors() {
+    const container = document.getElementById('contributors-container');
+    try {
+      const response = await fetch('https://api.github.com/repos/bangtutorial/streamflow/contributors');
+      if (!response.ok) throw new Error('Failed to fetch');
+      const contributors = await response.json();
+      container.innerHTML = contributors.map(c => `
+        <a href="${c.html_url}" target="_blank" rel="noopener noreferrer" title="${c.login}" class="block">
+          <img src="${c.avatar_url}&s=40" alt="${c.login}" class="w-10 h-10 rounded-full hover:ring-2 hover:ring-primary transition-all">
+        </a>
+      `).join('');
+    } catch (error) {
+      container.innerHTML = '<a href="https://github.com/bangtutorial/streamflow/graphs/contributors" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline text-sm">View contributors on GitHub</a>';
+    }
+  }
+
+  const aboutTab = document.querySelector('.settings-tab[data-tab="about"]');
+  if (aboutTab) {
+    aboutTab.addEventListener('click', () => {
+      const container = document.getElementById('contributors-container');
+      if (container && container.textContent.includes('Loading')) {
+        loadContributors();
+      }
+    });
+  }
+  if (window.location.hash === '#about') {
+    loadContributors();
+  }
   </script>

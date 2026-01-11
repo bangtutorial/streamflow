@@ -1,4 +1,4 @@
-# Gunakan image Node.js versi 18 (atau 16+)
+# Gunakan image Node.js versi 18+ (minimal v18)
 FROM node:18-slim
 
 # Install ffmpeg

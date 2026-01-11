@@ -1,11 +1,17 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const fs = require('fs');
+const dbDir = path.join(__dirname, 'db');
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
 require('./services/logger.js');
 const express = require('express');
-const path = require('path');
 const engine = require('ejs-mate');
 const os = require('os');
 const multer = require('multer');
-const fs = require('fs');
 const csrf = require('csrf');
 const { v4: uuidv4 } = require('uuid');
 const session = require('express-session');
@@ -16,9 +22,11 @@ const rateLimit = require('express-rate-limit');
 const User = require('./models/User');
 const { db, checkIfUsersExist, initializeDatabase } = require('./db/database');
 const systemMonitor = require('./services/systemMonitor');
-const { uploadVideo, upload } = require('./middleware/uploadMiddleware');
+const { uploadVideo, upload, uploadThumbnail, uploadAudio } = require('./middleware/uploadMiddleware');
+const chunkUploadService = require('./services/chunkUploadService');
+const audioConverter = require('./services/audioConverter');
 const { ensureDirectories } = require('./utils/storage');
-const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
+const { getVideoInfo, generateThumbnail, generateImageThumbnail } = require('./utils/videoProcessor');
 const Video = require('./models/Video');
 const Playlist = require('./models/Playlist');
 const Stream = require('./models/Stream');
@@ -26,6 +34,7 @@ const ffmpeg = require('fluent-ffmpeg');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
 const streamingService = require('./services/streamingService');
 const schedulerService = require('./services/schedulerService');
+const packageJson = require('./package.json');
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 process.on('unhandledRejection', (reason, promise) => {
   console.error('-----------------------------------');
@@ -42,7 +51,7 @@ const app = express();
 app.set("trust proxy", 1);
 const port = process.env.PORT || 7575;
 const tokens = new csrf();
-ensureDirectories();
+
 ensureDirectories();
 app.locals.helpers = {
   getUsername: function (req) {
@@ -110,7 +119,7 @@ app.locals.helpers = {
 app.use(session({
   store: new SQLiteStore({
     db: 'sessions.db',
-    dir: './db/',
+    dir: path.join(__dirname, 'db'),
     table: 'sessions'
   }),
   secret: process.env.SESSION_SECRET,
@@ -143,6 +152,7 @@ app.use(async (req, res, next) => {
     }
   }
   res.locals.req = req;
+  res.locals.appVersion = packageJson.version;
   next();
 });
 app.use(function (req, res, next) {
@@ -155,7 +165,16 @@ app.use(function (req, res, next) {
 app.engine('ejs', engine);
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1d',
+  etag: true,
+  lastModified: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.svg') || filePath.endsWith('.ico') || filePath.endsWith('.png')) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+    }
+  }
+}));
 
 app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
@@ -169,8 +188,8 @@ app.use('/uploads', function (req, res, next) {
   res.header('Expires', '0');
   next();
 });
-app.use(express.urlencoded({ extended: true, limit: '10gb' }));
-app.use(express.json({ limit: '10gb' }));
+app.use(express.urlencoded({ extended: true, limit: '50gb' }));
+app.use(express.json({ limit: '50gb' }));
 
 const csrfProtection = function (req, res, next) {
   if ((req.path === '/login' && req.method === 'POST') ||
@@ -218,8 +237,12 @@ app.use('/uploads', function (req, res, next) {
   next();
 });
 app.use('/uploads/avatars', (req, res, next) => {
-  const file = path.join(__dirname, 'public', 'uploads', 'avatars', path.basename(req.path));
-  if (fs.existsSync(file)) {
+  const filename = path.basename(req.path);
+  if (!filename || filename === 'avatars') {
+    return res.status(403).send('Access denied');
+  }
+  const file = path.join(__dirname, 'public', 'uploads', 'avatars', filename);
+  if (fs.existsSync(file) && fs.statSync(file).isFile()) {
     const ext = path.extname(file).toLowerCase();
     let contentType = 'application/octet-stream';
     if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
@@ -260,40 +283,82 @@ app.get('/login', async (req, res) => {
     if (!usersExist) {
       return res.redirect('/setup-account');
     }
+    
+    const AppSettings = require('./models/AppSettings');
+    const recaptchaSettings = await AppSettings.getRecaptchaSettings();
+    
     res.render('login', {
       title: 'Login',
-      error: null
+      error: null,
+      recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
     });
   } catch (error) {
     console.error('Error checking for users:', error);
     res.render('login', {
       title: 'Login',
-      error: 'System error. Please try again.'
+      error: 'System error. Please try again.',
+      recaptchaSiteKey: null
     });
   }
 });
 app.post('/login', loginDelayMiddleware, loginLimiter, async (req, res) => {
   const { username, password } = req.body;
+  const recaptchaResponse = req.body['g-recaptcha-response'];
+  
   try {
+    const AppSettings = require('./models/AppSettings');
+    const recaptchaSettings = await AppSettings.getRecaptchaSettings();
+    
+    if (recaptchaSettings.hasKeys && recaptchaSettings.enabled) {
+      if (!recaptchaResponse) {
+        return res.render('login', {
+          title: 'Login',
+          error: 'Please complete the reCAPTCHA verification',
+          recaptchaSiteKey: recaptchaSettings.siteKey
+        });
+      }
+      
+      const { decrypt } = require('./utils/encryption');
+      const secretKey = decrypt(recaptchaSettings.secretKey);
+      
+      const axios = require('axios');
+      const verifyResponse = await axios.post(
+        'https://www.google.com/recaptcha/api/siteverify',
+        `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(recaptchaResponse)}`,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      
+      if (!verifyResponse.data.success) {
+        return res.render('login', {
+          title: 'Login',
+          error: 'reCAPTCHA verification failed. Please try again.',
+          recaptchaSiteKey: recaptchaSettings.siteKey
+        });
+      }
+    }
+    
     const user = await User.findByUsername(username);
     if (!user) {
       return res.render('login', {
         title: 'Login',
-        error: 'Invalid username or password'
+        error: 'Invalid username or password',
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     }
     const passwordMatch = await User.verifyPassword(password, user.password);
     if (!passwordMatch) {
       return res.render('login', {
         title: 'Login',
-        error: 'Invalid username or password'
+        error: 'Invalid username or password',
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     }
     
     if (user.status !== 'active') {
       return res.render('login', {
         title: 'Login',
-        error: 'Your account is not active. Please contact administrator for activation.'
+        error: 'Your account is not active. Please contact administrator for activation.',
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     }
     
@@ -306,7 +371,8 @@ app.post('/login', loginDelayMiddleware, loginLimiter, async (req, res) => {
     console.error('Login error:', error);
     res.render('login', {
       title: 'Login',
-      error: 'An error occurred during login. Please try again.'
+      error: 'An error occurred during login. Please try again.',
+      recaptchaSiteKey: null
     });
   }
 });
@@ -324,30 +390,71 @@ app.get('/signup', async (req, res) => {
     if (!usersExist) {
       return res.redirect('/setup-account');
     }
+    
+    const AppSettings = require('./models/AppSettings');
+    const recaptchaSettings = await AppSettings.getRecaptchaSettings();
+    
     res.render('signup', {
       title: 'Sign Up',
       error: null,
-      success: null
+      success: null,
+      recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
     });
   } catch (error) {
     console.error('Error loading signup page:', error);
     res.render('signup', {
       title: 'Sign Up',
       error: 'System error. Please try again.',
-      success: null
+      success: null,
+      recaptchaSiteKey: null
     });
   }
 });
 
 app.post('/signup', upload.single('avatar'), async (req, res) => {
   const { username, password, confirmPassword, user_role, status } = req.body;
+  const recaptchaResponse = req.body['g-recaptcha-response'];
   
   try {
+    const AppSettings = require('./models/AppSettings');
+    const recaptchaSettings = await AppSettings.getRecaptchaSettings();
+    
+    if (recaptchaSettings.hasKeys && recaptchaSettings.enabled) {
+      if (!recaptchaResponse) {
+        return res.render('signup', {
+          title: 'Sign Up',
+          error: 'Please complete the reCAPTCHA verification',
+          success: null,
+          recaptchaSiteKey: recaptchaSettings.siteKey
+        });
+      }
+      
+      const { decrypt } = require('./utils/encryption');
+      const secretKey = decrypt(recaptchaSettings.secretKey);
+      
+      const axios = require('axios');
+      const verifyResponse = await axios.post(
+        'https://www.google.com/recaptcha/api/siteverify',
+        `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(recaptchaResponse)}`,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      
+      if (!verifyResponse.data.success) {
+        return res.render('signup', {
+          title: 'Sign Up',
+          error: 'reCAPTCHA verification failed. Please try again.',
+          success: null,
+          recaptchaSiteKey: recaptchaSettings.siteKey
+        });
+      }
+    }
+    
     if (!username || !password) {
       return res.render('signup', {
         title: 'Sign Up',
         error: 'Username and password are required',
-        success: null
+        success: null,
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     }
 
@@ -355,7 +462,8 @@ app.post('/signup', upload.single('avatar'), async (req, res) => {
       return res.render('signup', {
         title: 'Sign Up',
         error: 'Passwords do not match',
-        success: null
+        success: null,
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     }
 
@@ -363,7 +471,8 @@ app.post('/signup', upload.single('avatar'), async (req, res) => {
       return res.render('signup', {
         title: 'Sign Up',
         error: 'Password must be at least 6 characters long',
-        success: null
+        success: null,
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     }
 
@@ -372,7 +481,8 @@ app.post('/signup', upload.single('avatar'), async (req, res) => {
       return res.render('signup', {
         title: 'Sign Up',
         error: 'Username already exists',
-        success: null
+        success: null,
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     }
 
@@ -393,13 +503,15 @@ app.post('/signup', upload.single('avatar'), async (req, res) => {
       return res.render('signup', {
         title: 'Sign Up',
         error: null,
-        success: 'Account created successfully! Please wait for admin approval to activate your account.'
+        success: 'Account created successfully! Please wait for admin approval to activate your account.',
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     } else {
       return res.render('signup', {
         title: 'Sign Up',
         error: 'Failed to create account. Please try again.',
-        success: null
+        success: null,
+        recaptchaSiteKey: recaptchaSettings.hasKeys && recaptchaSettings.enabled ? recaptchaSettings.siteKey : null
       });
     }
   } catch (error) {
@@ -407,7 +519,8 @@ app.post('/signup', upload.single('avatar'), async (req, res) => {
     return res.render('signup', {
       title: 'Sign Up',
       error: 'An error occurred during registration. Please try again.',
-      success: null
+      success: null,
+      recaptchaSiteKey: null
     });
   }
 });
@@ -488,7 +601,7 @@ app.post('/setup-account', upload.single('avatar'), [
         }
         console.log('Setup account - Using user ID from database:', user.id);
         console.log('Setup account - Session userId set to:', req.session.userId);
-        return res.redirect('/dashboard');
+        return res.redirect('/welcome');
       } catch (error) {
         console.error('User creation error:', error);
         return res.render('setup-account', {
@@ -521,13 +634,71 @@ app.post('/setup-account', upload.single('avatar'), [
 app.get('/', (req, res) => {
   res.redirect('/dashboard');
 });
+app.get('/welcome', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user || user.welcome_shown === 1) {
+      return res.redirect('/dashboard');
+    }
+    res.render('welcome', {
+      title: 'Welcome'
+    });
+  } catch (error) {
+    console.error('Welcome page error:', error);
+    res.redirect('/dashboard');
+  }
+});
+
+app.get('/welcome-bypass', (req, res) => {
+  res.render('welcome', {
+    title: 'Welcome'
+  });
+});
+app.get('/welcome/continue', isAuthenticated, async (req, res) => {
+  try {
+    await new Promise((resolve, reject) => {
+      db.run('UPDATE users SET welcome_shown = 1 WHERE id = ?', [req.session.userId], function(err) {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    res.redirect('/dashboard');
+  } catch (error) {
+    console.error('Welcome continue error:', error);
+    res.redirect('/dashboard');
+  }
+});
 app.get('/dashboard', isAuthenticated, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId);
+    if (!user) {
+      req.session.destroy();
+      return res.redirect('/login');
+    }
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    const youtubeChannels = await YoutubeChannel.findAll(req.session.userId);
+    const hasYoutubeCredentials = !!(user.youtube_client_id && user.youtube_client_secret);
+    const isYoutubeConnected = youtubeChannels.length > 0;
+    const defaultChannel = youtubeChannels.find(c => c.is_default) || youtubeChannels[0];
+    
+    const initialStreamsData = await Stream.findAllPaginated(req.session.userId, {
+      page: 1,
+      limit: 10,
+      search: ''
+    });
+    
     res.render('dashboard', {
       title: 'Dashboard',
       active: 'dashboard',
-      user: user
+      user: user,
+      youtubeConnected: isYoutubeConnected,
+      youtubeChannels: youtubeChannels,
+      youtubeChannelName: defaultChannel?.channel_name || '',
+      youtubeChannelThumbnail: defaultChannel?.channel_thumbnail || '',
+      youtubeSubscriberCount: defaultChannel?.subscriber_count || '0',
+      hasYoutubeCredentials: hasYoutubeCredentials,
+      initialStreams: JSON.stringify(initialStreamsData.streams),
+      initialPagination: JSON.stringify(initialStreamsData.pagination)
     });
   } catch (error) {
     console.error('Dashboard error:', error);
@@ -555,10 +726,37 @@ app.get('/settings', isAuthenticated, async (req, res) => {
       req.session.destroy();
       return res.redirect('/login');
     }
+    
+    const { decrypt } = require('./utils/encryption');
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    const AppSettings = require('./models/AppSettings');
+    const hasYoutubeCredentials = !!(user.youtube_client_id && user.youtube_client_secret);
+    const youtubeChannels = await YoutubeChannel.findAll(req.session.userId);
+    const isYoutubeConnected = youtubeChannels.length > 0;
+    const defaultChannel = youtubeChannels.find(c => c.is_default) || youtubeChannels[0];
+    
+    const recaptchaSettings = await AppSettings.getRecaptchaSettings();
+    
     res.render('settings', {
       title: 'Settings',
       active: 'settings',
-      user: user
+      user: user,
+      appVersion: packageJson.version,
+      youtubeClientId: user.youtube_client_id || '',
+      youtubeClientSecret: user.youtube_client_secret ? '••••••••••••••••' : '',
+      youtubeConnected: isYoutubeConnected,
+      youtubeChannels: youtubeChannels,
+      youtubeChannelName: defaultChannel?.channel_name || '',
+      youtubeChannelThumbnail: defaultChannel?.channel_thumbnail || '',
+      youtubeSubscriberCount: defaultChannel?.subscriber_count || '0',
+      hasYoutubeCredentials: hasYoutubeCredentials,
+      recaptchaSiteKey: recaptchaSettings.siteKey || '',
+      recaptchaSecretKey: recaptchaSettings.secretKey ? '••••••••••••••••' : '',
+      hasRecaptchaKeys: recaptchaSettings.hasKeys,
+      recaptchaEnabled: recaptchaSettings.enabled,
+      success: req.query.success || null,
+      error: req.query.error || null,
+      activeTab: req.query.activeTab || null
     });
   } catch (error) {
     console.error('Settings error:', error);
@@ -878,7 +1076,7 @@ app.post('/api/users/delete', isAdmin, async (req, res) => {
 
 app.post('/api/users/update', isAdmin, upload.single('avatar'), async (req, res) => {
   try {
-    const { userId, username, role, status, password } = req.body;
+    const { userId, username, role, status, password, diskLimit } = req.body;
     
     if (!userId) {
       return res.status(400).json({
@@ -904,7 +1102,8 @@ app.post('/api/users/update', isAdmin, upload.single('avatar'), async (req, res)
       username: username || user.username,
       user_role: role || user.user_role,
       status: status || user.status,
-      avatar_path: avatarPath
+      avatar_path: avatarPath,
+      disk_limit: diskLimit !== undefined && diskLimit !== '' ? parseInt(diskLimit) : user.disk_limit
     };
 
     if (password && password.trim() !== '') {
@@ -929,7 +1128,7 @@ app.post('/api/users/update', isAdmin, upload.single('avatar'), async (req, res)
 
 app.post('/api/users/create', isAdmin, upload.single('avatar'), async (req, res) => {
   try {
-    const { username, role, status, password } = req.body;
+    const { username, role, status, password, diskLimit } = req.body;
     
     if (!username || !password) {
       return res.status(400).json({
@@ -956,7 +1155,8 @@ app.post('/api/users/create', isAdmin, upload.single('avatar'), async (req, res)
       password: password,
       user_role: role || 'user',
       status: status || 'active',
-      avatar_path: avatarPath
+      avatar_path: avatarPath,
+      disk_limit: diskLimit ? parseInt(diskLimit) : 0
     };
 
     const result = await User.create(userData);
@@ -997,6 +1197,21 @@ app.get('/api/users/:id/streams', isAdmin, async (req, res) => {
   }
 });
 
+app.get('/api/user/disk-usage', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    const diskUsage = await User.getDiskUsage(req.session.userId);
+    res.json({
+      success: true,
+      diskUsage: diskUsage,
+      diskLimit: user.disk_limit || 0
+    });
+  } catch (error) {
+    console.error('Get disk usage error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get disk usage' });
+  }
+});
+
 app.get('/api/system-stats', isAuthenticated, async (req, res) => {
   try {
     const stats = await systemMonitor.getSystemStats();
@@ -1017,7 +1232,16 @@ function getLocalIpAddresses() {
   });
   return addresses.length > 0 ? addresses : ['localhost'];
 }
-app.post('/settings/profile', isAuthenticated, upload.single('avatar'), [
+app.post('/settings/profile', isAuthenticated, (req, res, next) => {
+  upload.single('avatar')(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      return res.redirect('/settings?error=' + encodeURIComponent(err.message) + '&activeTab=profile#profile');
+    } else if (err) {
+      return res.redirect('/settings?error=' + encodeURIComponent(err.message) + '&activeTab=profile#profile');
+    }
+    next();
+  });
+}, [
   body('username')
     .trim()
     .isLength({ min: 3, max: 20 })
@@ -1130,23 +1354,6 @@ app.post('/settings/password', isAuthenticated, [
       error: 'An error occurred while changing your password',
       activeTab: 'security'
     });
-  }
-});
-app.get('/settings', isAuthenticated, async (req, res) => {
-  try {
-    const user = await User.findById(req.session.userId);
-    if (!user) {
-      req.session.destroy();
-      return res.redirect('/login');
-    }
-    res.render('settings', {
-      title: 'Settings',
-      active: 'settings',
-      user: user
-    });
-  } catch (error) {
-    console.error('Settings error:', error);
-    res.redirect('/dashboard');
   }
 });
 
@@ -1297,7 +1504,7 @@ app.post('/api/videos/upload', isAuthenticated, (req, res, next) => {
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(413).json({ 
           success: false, 
-          error: 'File too large. Maximum size is 10GB.' 
+          error: 'File too large. Maximum size is 50GB.' 
         });
       }
       if (err.code === 'LIMIT_UNEXPECTED_FILE') {
@@ -1321,6 +1528,24 @@ app.post('/api/videos/upload', isAuthenticated, (req, res, next) => {
         error: 'No video file provided' 
       });
     }
+
+    const user = await User.findById(req.session.userId);
+    if (user.disk_limit > 0) {
+      const currentUsage = await User.getDiskUsage(req.session.userId);
+      const newTotal = currentUsage + req.file.size;
+      if (newTotal > user.disk_limit) {
+        const fs = require('fs');
+        const fullFilePath = path.join(__dirname, 'public', 'uploads', 'videos', req.file.filename);
+        if (fs.existsSync(fullFilePath)) {
+          fs.unlinkSync(fullFilePath);
+        }
+        return res.status(400).json({
+          success: false,
+          error: 'Disk limit exceeded. Please delete some files or contact admin.'
+        });
+      }
+    }
+
     let title = path.parse(req.file.originalname).name;
     const filePath = `/uploads/videos/${req.file.filename}`;
     const fullFilePath = path.join(__dirname, 'public', filePath);
@@ -1399,11 +1624,285 @@ app.post('/api/videos/upload', isAuthenticated, (req, res, next) => {
 });
 app.get('/api/videos', isAuthenticated, async (req, res) => {
   try {
-    const videos = await Video.findAll(req.session.userId);
-    res.json({ success: true, videos });
+    const allVideos = await Video.findAll(req.session.userId);
+    const videos = allVideos.filter(video => {
+      const filepath = (video.filepath || '').toLowerCase();
+      if (filepath.includes('/audio/')) return false;
+      if (filepath.endsWith('.m4a') || filepath.endsWith('.aac') || filepath.endsWith('.mp3')) return false;
+      return true;
+    });
+    const playlists = await Playlist.findAll(req.session.userId);
+    res.json({ success: true, videos, playlists });
   } catch (error) {
     console.error('Error fetching videos:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch videos' });
+  }
+});
+
+app.post('/api/audio/upload', isAuthenticated, (req, res, next) => {
+  uploadAudio.single('audio')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ 
+          success: false, 
+          error: 'File too large. Maximum size is 50GB.' 
+        });
+      }
+      return res.status(400).json({ 
+        success: false, 
+        error: err.message 
+      });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No audio file provided' 
+      });
+    }
+
+    const user = await User.findById(req.session.userId);
+    if (user.disk_limit > 0) {
+      const currentUsage = await User.getDiskUsage(req.session.userId);
+      const newTotal = currentUsage + req.file.size;
+      if (newTotal > user.disk_limit) {
+        const uploadedPath = path.join(__dirname, 'public', 'uploads', 'audio', req.file.filename);
+        if (fs.existsSync(uploadedPath)) {
+          fs.unlinkSync(uploadedPath);
+        }
+        return res.status(400).json({
+          success: false,
+          error: 'Disk limit exceeded. Please delete some files or contact admin.'
+        });
+      }
+    }
+
+    let title = path.parse(req.file.originalname).name;
+    const uploadedPath = path.join(__dirname, 'public', 'uploads', 'audio', req.file.filename);
+    const result = await audioConverter.processAudioFile(uploadedPath, req.file.originalname);
+    const finalFilename = path.basename(result.filepath);
+    const filePath = `/uploads/audio/${finalFilename}`;
+    const fullFilePath = result.filepath;
+    const audioInfo = await audioConverter.getAudioInfo(fullFilePath);
+    const stats = fs.statSync(fullFilePath);
+    const thumbnailPath = '/images/audio-thumbnail.png';
+    const videoData = {
+      title,
+      filepath: filePath,
+      thumbnail_path: thumbnailPath,
+      file_size: stats.size,
+      duration: audioInfo.duration,
+      format: 'aac',
+      resolution: null,
+      bitrate: audioInfo.bitrate,
+      fps: null,
+      user_id: req.session.userId
+    };
+    const video = await Video.create(videoData);
+    res.json({
+      success: true,
+      message: result.converted ? 'Audio converted to AAC and uploaded successfully' : 'Audio uploaded successfully',
+      video,
+      converted: result.converted
+    });
+  } catch (error) {
+    console.error('Audio upload error:', error);
+    res.status(500).json({ 
+      error: 'Failed to upload audio',
+      details: error.message 
+    });
+  }
+});
+
+app.post('/api/videos/chunk/init', isAuthenticated, async (req, res) => {
+  try {
+    const { filename, fileSize, totalChunks } = req.body;
+    if (!filename || !fileSize || !totalChunks) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+    const allowedExts = ['.mp4', '.avi', '.mov'];
+    const ext = path.extname(filename).toLowerCase();
+    if (!allowedExts.includes(ext)) {
+      return res.status(400).json({ success: false, error: 'Only .mp4, .avi, and .mov formats are allowed' });
+    }
+
+    const user = await User.findById(req.session.userId);
+    if (user.disk_limit > 0) {
+      const currentUsage = await User.getDiskUsage(req.session.userId);
+      const newTotal = currentUsage + parseInt(fileSize);
+      if (newTotal > user.disk_limit) {
+        return res.status(400).json({
+          success: false,
+          error: 'Disk limit exceeded. Please delete some files or contact admin.'
+        });
+      }
+    }
+
+    const info = await chunkUploadService.initUpload(filename, fileSize, totalChunks, req.session.userId);
+    res.json({ 
+      success: true, 
+      uploadId: info.uploadId, 
+      chunkSize: chunkUploadService.CHUNK_SIZE,
+      uploadedChunks: info.uploadedChunks || [],
+      resumed: (info.uploadedChunks || []).length > 0
+    });
+  } catch (error) {
+    console.error('Chunk init error:', error);
+    res.status(500).json({ success: false, error: 'Failed to initialize upload' });
+  }
+});
+
+app.post('/api/videos/chunk/upload', isAuthenticated, express.raw({ type: 'application/octet-stream', limit: '60mb' }), async (req, res) => {
+  try {
+    const uploadId = req.headers['x-upload-id'];
+    const chunkIndex = parseInt(req.headers['x-chunk-index'], 10);
+    if (!uploadId || isNaN(chunkIndex)) {
+      return res.status(400).json({ success: false, error: 'Missing upload ID or chunk index' });
+    }
+    const info = await chunkUploadService.getUploadInfo(uploadId);
+    if (!info) {
+      return res.status(404).json({ success: false, error: 'Upload session not found' });
+    }
+    if (info.userId !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    const result = await chunkUploadService.saveChunk(uploadId, chunkIndex, req.body);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error('Chunk upload error:', error);
+    res.status(500).json({ success: false, error: 'Failed to upload chunk' });
+  }
+});
+
+app.get('/api/videos/chunk/status/:uploadId', isAuthenticated, async (req, res) => {
+  try {
+    const info = await chunkUploadService.getUploadInfo(req.params.uploadId);
+    if (!info) {
+      return res.status(404).json({ success: false, error: 'Upload session not found' });
+    }
+    if (info.userId !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    res.json({
+      success: true,
+      uploadedChunks: info.uploadedChunks,
+      totalChunks: info.totalChunks,
+      status: info.status
+    });
+  } catch (error) {
+    console.error('Chunk status error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get upload status' });
+  }
+});
+
+app.post('/api/videos/chunk/complete', isAuthenticated, async (req, res) => {
+  try {
+    const { uploadId } = req.body;
+    if (!uploadId) {
+      return res.status(400).json({ success: false, error: 'Missing upload ID' });
+    }
+    const info = await chunkUploadService.getUploadInfo(uploadId);
+    if (!info) {
+      return res.status(404).json({ success: false, error: 'Upload session not found' });
+    }
+    if (info.userId !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    const result = await chunkUploadService.mergeChunks(uploadId);
+    const title = path.parse(info.filename).name;
+    const fullFilePath = result.fullPath;
+    const videoData = await new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(fullFilePath, (err, metadata) => {
+        if (err) {
+          console.error('Error extracting metadata:', err);
+          return reject(err);
+        }
+        const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
+        const duration = metadata.format.duration || 0;
+        const format = metadata.format.format_name || '';
+        const resolution = videoStream ? `${videoStream.width}x${videoStream.height}` : '';
+        const bitrate = metadata.format.bit_rate ? Math.round(parseInt(metadata.format.bit_rate) / 1000) : null;
+        let fps = null;
+        if (videoStream && videoStream.avg_frame_rate) {
+          const fpsRatio = videoStream.avg_frame_rate.split('/');
+          if (fpsRatio.length === 2 && parseInt(fpsRatio[1]) !== 0) {
+            fps = Math.round((parseInt(fpsRatio[0]) / parseInt(fpsRatio[1]) * 100)) / 100;
+          } else {
+            fps = parseInt(fpsRatio[0]) || null;
+          }
+        }
+        const thumbnailFilename = `thumb-${path.parse(result.filename).name}.jpg`;
+        const thumbnailPath = `/uploads/thumbnails/${thumbnailFilename}`;
+        ffmpeg(fullFilePath)
+          .screenshots({
+            timestamps: ['10%'],
+            filename: thumbnailFilename,
+            folder: path.join(__dirname, 'public', 'uploads', 'thumbnails'),
+            size: '854x480'
+          })
+          .on('end', async () => {
+            resolve({
+              title,
+              filepath: result.filepath,
+              thumbnail_path: thumbnailPath,
+              file_size: result.fileSize,
+              duration,
+              format,
+              resolution,
+              bitrate,
+              fps,
+              user_id: req.session.userId
+            });
+          })
+          .on('error', (err) => {
+            console.error('Error creating thumbnail:', err);
+            reject(err);
+          });
+      });
+    });
+    const video = await Video.create(videoData);
+    await chunkUploadService.cleanupUpload(uploadId);
+    res.json({ success: true, message: 'Video uploaded successfully', video });
+  } catch (error) {
+    console.error('Chunk complete error:', error);
+    res.status(500).json({ success: false, error: 'Failed to complete upload', details: error.message });
+  }
+});
+
+app.post('/api/videos/chunk/pause', isAuthenticated, async (req, res) => {
+  try {
+    const { uploadId } = req.body;
+    if (!uploadId) {
+      return res.status(400).json({ success: false, error: 'Missing upload ID' });
+    }
+    const info = await chunkUploadService.getUploadInfo(uploadId);
+    if (!info) {
+      return res.status(404).json({ success: false, error: 'Upload session not found' });
+    }
+    if (info.userId !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    await chunkUploadService.pauseUpload(uploadId);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Chunk pause error:', error);
+    res.status(500).json({ success: false, error: 'Failed to pause upload' });
+  }
+});
+
+app.delete('/api/videos/chunk/:uploadId', isAuthenticated, async (req, res) => {
+  try {
+    const info = await chunkUploadService.getUploadInfo(req.params.uploadId);
+    if (info && info.userId === req.session.userId) {
+      await chunkUploadService.cleanupUpload(req.params.uploadId);
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Chunk cleanup error:', error);
+    res.status(500).json({ success: false, error: 'Failed to cleanup upload' });
   }
 });
 app.delete('/api/videos/:id', isAuthenticated, async (req, res) => {
@@ -1535,6 +2034,386 @@ app.post('/api/settings/gdrive-api-key', isAuthenticated, [
     });
   }
 });
+
+const { encrypt, decrypt } = require('./utils/encryption');
+
+app.post('/api/settings/youtube-credentials', isAuthenticated, [
+  body('clientId').notEmpty().withMessage('Client ID is required'),
+  body('clientSecret').notEmpty().withMessage('Client Secret is required'),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        error: errors.array()[0].msg
+      });
+    }
+
+    const { clientId, clientSecret } = req.body;
+    
+    const encryptedSecret = encrypt(clientSecret);
+    
+    await User.update(req.session.userId, {
+      youtube_client_id: clientId,
+      youtube_client_secret: encryptedSecret
+    });
+
+    return res.json({
+      success: true,
+      message: 'YouTube API credentials saved successfully!'
+    });
+  } catch (error) {
+    console.error('Error saving YouTube credentials:', error);
+    res.status(500).json({
+      success: false,
+      error: 'An error occurred while saving your YouTube credentials'
+    });
+  }
+});
+
+app.get('/api/settings/youtube-status', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    
+    const hasCredentials = !!(user.youtube_client_id && user.youtube_client_secret);
+    const isConnected = !!(user.youtube_access_token && user.youtube_refresh_token);
+    
+    res.json({
+      success: true,
+      hasCredentials,
+      isConnected,
+      channelName: user.youtube_channel_name || null,
+      channelId: user.youtube_channel_id || null
+    });
+  } catch (error) {
+    console.error('Error checking YouTube status:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to check YouTube status' 
+    });
+  }
+});
+
+app.post('/api/settings/youtube-disconnect', isAuthenticated, async (req, res) => {
+  try {
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    await YoutubeChannel.deleteAll(req.session.userId);
+
+    return res.json({
+      success: true,
+      message: 'All YouTube channels disconnected successfully'
+    });
+  } catch (error) {
+    console.error('Error disconnecting YouTube:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to disconnect YouTube accounts'
+    });
+  }
+});
+
+app.post('/api/settings/recaptcha', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (user.user_role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Only admin can manage reCAPTCHA settings'
+      });
+    }
+
+    const { siteKey, secretKey, enabled } = req.body;
+    
+    if (!siteKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'Site Key is required'
+      });
+    }
+
+    const AppSettings = require('./models/AppSettings');
+    const existingSettings = await AppSettings.getRecaptchaSettings();
+    
+    if (secretKey) {
+      const axios = require('axios');
+      const verifyResponse = await axios.post(
+        'https://www.google.com/recaptcha/api/siteverify',
+        `secret=${encodeURIComponent(secretKey)}&response=test`,
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+      );
+      const verifyData = verifyResponse.data;
+      
+      if (verifyData['error-codes'] && verifyData['error-codes'].includes('invalid-input-secret')) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid reCAPTCHA Secret Key. Please check your credentials.'
+        });
+      }
+
+      const encryptedSecretKey = encrypt(secretKey);
+      await AppSettings.setRecaptchaSettings(siteKey, encryptedSecretKey, enabled);
+    } else if (existingSettings.hasKeys) {
+      await AppSettings.set('recaptcha_site_key', siteKey);
+      await AppSettings.set('recaptcha_enabled', enabled ? '1' : '0');
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Secret Key is required'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'reCAPTCHA settings saved successfully!'
+    });
+  } catch (error) {
+    console.error('Error saving reCAPTCHA settings:', error);
+    res.status(500).json({
+      success: false,
+      error: 'An error occurred while saving reCAPTCHA settings'
+    });
+  }
+});
+
+app.post('/api/settings/recaptcha/toggle', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (user.user_role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Only admin can manage reCAPTCHA settings'
+      });
+    }
+
+    const { enabled } = req.body;
+    const AppSettings = require('./models/AppSettings');
+    const recaptchaSettings = await AppSettings.getRecaptchaSettings();
+    
+    if (!recaptchaSettings.hasKeys) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please save reCAPTCHA keys first before enabling'
+      });
+    }
+    
+    await AppSettings.set('recaptcha_enabled', enabled ? '1' : '0');
+
+    return res.json({
+      success: true,
+      message: enabled ? 'reCAPTCHA enabled' : 'reCAPTCHA disabled'
+    });
+  } catch (error) {
+    console.error('Error toggling reCAPTCHA:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update reCAPTCHA status'
+    });
+  }
+});
+
+app.delete('/api/settings/recaptcha', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (user.user_role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Only admin can manage reCAPTCHA settings'
+      });
+    }
+
+    const AppSettings = require('./models/AppSettings');
+    await AppSettings.deleteRecaptchaSettings();
+
+    return res.json({
+      success: true,
+      message: 'reCAPTCHA keys removed successfully'
+    });
+  } catch (error) {
+    console.error('Error removing reCAPTCHA keys:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to remove reCAPTCHA keys'
+    });
+  }
+});
+
+app.get('/api/settings/youtube-channels', isAuthenticated, async (req, res) => {
+  try {
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    const channels = await YoutubeChannel.findAll(req.session.userId);
+    res.json({ success: true, channels });
+  } catch (error) {
+    console.error('Error fetching YouTube channels:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch channels' });
+  }
+});
+
+app.post('/api/settings/youtube-channel/:id/default', isAuthenticated, async (req, res) => {
+  try {
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    await YoutubeChannel.setDefault(req.session.userId, req.params.id);
+    res.json({ success: true, message: 'Default channel updated' });
+  } catch (error) {
+    console.error('Error setting default channel:', error);
+    res.status(500).json({ success: false, error: 'Failed to set default channel' });
+  }
+});
+
+app.delete('/api/settings/youtube-channel/:id', isAuthenticated, async (req, res) => {
+  try {
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    const channel = await YoutubeChannel.findById(req.params.id);
+    
+    if (!channel || channel.user_id !== req.session.userId) {
+      return res.status(404).json({ success: false, error: 'Channel not found' });
+    }
+    
+    await YoutubeChannel.delete(req.params.id, req.session.userId);
+    
+    if (channel.is_default) {
+      const channels = await YoutubeChannel.findAll(req.session.userId);
+      if (channels.length > 0) {
+        await YoutubeChannel.setDefault(req.session.userId, channels[0].id);
+      }
+    }
+    
+    res.json({ success: true, message: 'Channel disconnected successfully' });
+  } catch (error) {
+    console.error('Error disconnecting channel:', error);
+    res.status(500).json({ success: false, error: 'Failed to disconnect channel' });
+  }
+});
+
+const { google } = require('googleapis');
+
+function getYouTubeOAuth2Client(clientId, clientSecret, redirectUri) {
+  return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+}
+
+app.get('/auth/youtube', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    
+    if (!user.youtube_client_id || !user.youtube_client_secret) {
+      return res.redirect('/settings?error=Please save your YouTube API credentials first&activeTab=integration');
+    }
+    
+    const clientSecret = decrypt(user.youtube_client_secret);
+    if (!clientSecret) {
+      return res.redirect('/settings?error=Failed to decrypt credentials&activeTab=integration');
+    }
+    
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    const redirectUri = `${protocol}://${host}/auth/youtube/callback`;
+    
+    const oauth2Client = getYouTubeOAuth2Client(user.youtube_client_id, clientSecret, redirectUri);
+    
+    const scopes = [
+      'https://www.googleapis.com/auth/youtube.readonly',
+      'https://www.googleapis.com/auth/youtube.force-ssl',
+      'https://www.googleapis.com/auth/youtube'
+    ];
+    
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: scopes,
+      prompt: 'consent',
+      state: req.session.userId
+    });
+    
+    res.redirect(authUrl);
+  } catch (error) {
+    console.error('YouTube OAuth error:', error);
+    res.redirect('/settings?error=Failed to initiate YouTube authentication&activeTab=integration');
+  }
+});
+
+app.get('/auth/youtube/callback', isAuthenticated, async (req, res) => {
+  try {
+    const { code, error, state } = req.query;
+    
+    if (error) {
+      console.error('YouTube OAuth error:', error);
+      return res.redirect(`/settings?error=${encodeURIComponent(error)}&activeTab=integration`);
+    }
+    
+    if (!code) {
+      return res.redirect('/settings?error=No authorization code received&activeTab=integration');
+    }
+    
+    const user = await User.findById(req.session.userId);
+    
+    if (!user.youtube_client_id || !user.youtube_client_secret) {
+      return res.redirect('/settings?error=YouTube credentials not found&activeTab=integration');
+    }
+    
+    const clientSecret = decrypt(user.youtube_client_secret);
+    if (!clientSecret) {
+      return res.redirect('/settings?error=Failed to decrypt credentials&activeTab=integration');
+    }
+    
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.get('host');
+    const redirectUri = `${protocol}://${host}/auth/youtube/callback`;
+    
+    const oauth2Client = getYouTubeOAuth2Client(user.youtube_client_id, clientSecret, redirectUri);
+    
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+    
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+    const channelResponse = await youtube.channels.list({
+      part: 'snippet,statistics',
+      mine: true
+    });
+    
+    if (!channelResponse.data.items || channelResponse.data.items.length === 0) {
+      return res.redirect('/settings?error=No YouTube channel found for this account&activeTab=integration');
+    }
+    
+    const channel = channelResponse.data.items[0];
+    const channelId = channel.id;
+    const channelName = channel.snippet.title;
+    const channelThumbnail = channel.snippet.thumbnails?.default?.url || channel.snippet.thumbnails?.medium?.url || '';
+    const subscriberCount = channel.statistics?.subscriberCount || '0';
+    
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    const existingChannel = await YoutubeChannel.findByChannelId(req.session.userId, channelId);
+    
+    if (existingChannel) {
+      await YoutubeChannel.update(existingChannel.id, {
+        access_token: encrypt(tokens.access_token),
+        refresh_token: tokens.refresh_token ? encrypt(tokens.refresh_token) : existingChannel.refresh_token,
+        channel_name: channelName,
+        channel_thumbnail: channelThumbnail,
+        subscriber_count: subscriberCount
+      });
+    } else {
+      await YoutubeChannel.create({
+        user_id: req.session.userId,
+        channel_id: channelId,
+        channel_name: channelName,
+        channel_thumbnail: channelThumbnail,
+        subscriber_count: subscriberCount,
+        access_token: encrypt(tokens.access_token),
+        refresh_token: tokens.refresh_token ? encrypt(tokens.refresh_token) : null
+      });
+    }
+    
+    await User.update(req.session.userId, {
+      youtube_redirect_uri: redirectUri
+    });
+    
+    res.redirect('/settings?success=YouTube channel connected successfully&activeTab=integration');
+  } catch (error) {
+    console.error('YouTube OAuth callback error:', error);
+    const errorMessage = error.message || 'Failed to connect YouTube account';
+    res.redirect(`/settings?error=${encodeURIComponent(errorMessage)}&activeTab=integration`);
+  }
+});
+
 app.post('/api/videos/import-drive', isAuthenticated, [
   body('driveUrl').notEmpty().withMessage('Google Drive URL is required')
 ], async (req, res) => {
@@ -1590,7 +2469,169 @@ async function processGoogleDriveImport(jobId, fileId, userId) {
   };
   
   try {
-    const result = await downloadFile(fileId, (progress) => {
+    let result;
+    try {
+      result = await downloadFile(fileId, (progress) => {
+        importJobs[jobId] = {
+          status: 'downloading',
+          progress: progress.progress,
+          message: `Downloading ${progress.filename}: ${progress.progress}%`
+        };
+      });
+    } catch (downloadError) {
+      importJobs[jobId] = {
+        status: 'failed',
+        progress: 0,
+        message: downloadError.message || 'Failed to download file'
+      };
+      setTimeout(() => { delete importJobs[jobId]; }, 5 * 60 * 1000);
+      return;
+    }
+    
+    if (!result || !result.localFilePath) {
+      importJobs[jobId] = {
+        status: 'failed',
+        progress: 0,
+        message: 'Download completed but file path is missing'
+      };
+      setTimeout(() => { delete importJobs[jobId]; }, 5 * 60 * 1000);
+      return;
+    }
+    
+    importJobs[jobId] = {
+      status: 'processing',
+      progress: 100,
+      message: 'Processing video...'
+    };
+    
+    let videoInfo;
+    try {
+      videoInfo = await getVideoInfo(result.localFilePath);
+    } catch (infoError) {
+      videoInfo = { duration: 0 };
+    }
+    
+    let resolution = '';
+    let bitrate = null;
+    
+    try {
+      const metadata = await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('ffprobe timeout')), 30000);
+        ffmpeg.ffprobe(result.localFilePath, (err, metadata) => {
+          clearTimeout(timeout);
+          if (err) return reject(err);
+          resolve(metadata);
+        });
+      });
+      
+      const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
+      if (videoStream) {
+        resolution = `${videoStream.width}x${videoStream.height}`;
+      }
+      
+      if (metadata.format && metadata.format.bit_rate) {
+        bitrate = Math.round(parseInt(metadata.format.bit_rate) / 1000);
+      }
+    } catch (probeError) {
+      console.log('ffprobe error (non-fatal):', probeError.message);
+    }
+    
+    const thumbnailBaseName = path.basename(result.filename, path.extname(result.filename));
+    const thumbnailName = thumbnailBaseName + '.jpg';
+    let thumbnailRelativePath = null;
+    
+    try {
+      await generateThumbnail(result.localFilePath, thumbnailName);
+      thumbnailRelativePath = `/uploads/thumbnails/${thumbnailName}`;
+    } catch (thumbError) {
+      console.log('Thumbnail generation failed (non-fatal):', thumbError.message);
+    }
+    
+    let format = path.extname(result.filename).toLowerCase().replace('.', '');
+    if (!format) format = 'mp4';
+    
+    const videoData = {
+      title: path.basename(result.filename, path.extname(result.filename)),
+      filepath: `/uploads/videos/${result.filename}`,
+      thumbnail_path: thumbnailRelativePath,
+      file_size: result.fileSize,
+      duration: videoInfo.duration || 0,
+      format: format,
+      resolution: resolution,
+      bitrate: bitrate,
+      user_id: userId
+    };
+    
+    const video = await Video.create(videoData);
+    
+    importJobs[jobId] = {
+      status: 'complete',
+      progress: 100,
+      message: 'Video imported successfully',
+      videoId: video.id
+    };
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 5 * 60 * 1000);
+  } catch (error) {
+    console.error('Error processing Google Drive import:', error.message);
+    importJobs[jobId] = {
+      status: 'failed',
+      progress: 0,
+      message: error.message || 'Failed to import video'
+    };
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 5 * 60 * 1000);
+  }
+}
+
+app.post('/api/videos/import-mediafire', isAuthenticated, [
+  body('mediafireUrl').notEmpty().withMessage('Mediafire URL is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: errors.array()[0].msg });
+    }
+    const { mediafireUrl } = req.body;
+    const { extractFileKey } = require('./utils/mediafireService');
+    try {
+      const fileKey = extractFileKey(mediafireUrl);
+      const jobId = uuidv4();
+      processMediafireImport(jobId, fileKey, req.session.userId)
+        .catch(err => console.error('Mediafire import failed:', err));
+      return res.json({
+        success: true,
+        message: 'Video import started',
+        jobId: jobId
+      });
+    } catch (error) {
+      console.error('Mediafire URL parsing error:', error);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Mediafire URL format'
+      });
+    }
+  } catch (error) {
+    console.error('Error importing from Mediafire:', error);
+    res.status(500).json({ success: false, error: 'Failed to import video' });
+  }
+});
+
+async function processMediafireImport(jobId, fileKey, userId) {
+  const { downloadFile } = require('./utils/mediafireService');
+  const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
+  const ffmpeg = require('fluent-ffmpeg');
+  
+  importJobs[jobId] = {
+    status: 'downloading',
+    progress: 0,
+    message: 'Starting download...'
+  };
+  
+  try {
+    const result = await downloadFile(fileKey, (progress) => {
       importJobs[jobId] = {
         status: 'downloading',
         progress: progress.progress,
@@ -1625,7 +2666,8 @@ async function processGoogleDriveImport(jobId, fileId, userId) {
       bitrate = Math.round(parseInt(metadata.format.bit_rate) / 1000);
     }
     
-    const thumbnailName = path.basename(result.filename, path.extname(result.filename)) + '.jpg';
+    const thumbnailBaseName = path.basename(result.filename, path.extname(result.filename));
+    const thumbnailName = thumbnailBaseName + '.jpg';
     const thumbnailRelativePath = await generateThumbnail(result.localFilePath, thumbnailName)
       .then(() => `/uploads/thumbnails/${thumbnailName}`)
       .catch(() => null);
@@ -1634,7 +2676,7 @@ async function processGoogleDriveImport(jobId, fileId, userId) {
     if (!format) format = 'mp4';
     
     const videoData = {
-      title: path.basename(result.originalFilename, path.extname(result.originalFilename)),
+      title: path.basename(result.filename, path.extname(result.filename)),
       filepath: `/uploads/videos/${result.filename}`,
       thumbnail_path: thumbnailRelativePath,
       file_size: result.fileSize,
@@ -1657,7 +2699,7 @@ async function processGoogleDriveImport(jobId, fileId, userId) {
       delete importJobs[jobId];
     }, 5 * 60 * 1000);
   } catch (error) {
-    console.error('Error processing Google Drive import:', error);
+    console.error('Error processing Mediafire import:', error);
     importJobs[jobId] = {
       status: 'failed',
       progress: 0,
@@ -1668,9 +2710,258 @@ async function processGoogleDriveImport(jobId, fileId, userId) {
     }, 5 * 60 * 1000);
   }
 }
+
+app.post('/api/videos/import-dropbox', isAuthenticated, [
+  body('dropboxUrl').notEmpty().withMessage('Dropbox URL is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: errors.array()[0].msg });
+    }
+    const { dropboxUrl } = req.body;
+    if (!dropboxUrl.includes('dropbox.com')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid Dropbox URL format'
+      });
+    }
+    const jobId = uuidv4();
+    processDropboxImport(jobId, dropboxUrl, req.session.userId)
+      .catch(err => console.error('Dropbox import failed:', err));
+    return res.json({
+      success: true,
+      message: 'Video import started',
+      jobId: jobId
+    });
+  } catch (error) {
+    console.error('Error importing from Dropbox:', error);
+    res.status(500).json({ success: false, error: 'Failed to import video' });
+  }
+});
+
+async function processDropboxImport(jobId, dropboxUrl, userId) {
+  const { downloadFile } = require('./utils/dropboxService');
+  const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
+  const ffmpeg = require('fluent-ffmpeg');
+  
+  importJobs[jobId] = {
+    status: 'downloading',
+    progress: 0,
+    message: 'Starting download...'
+  };
+  
+  try {
+    const result = await downloadFile(dropboxUrl, (progress) => {
+      importJobs[jobId] = {
+        status: 'downloading',
+        progress: progress.progress,
+        message: `Downloading ${progress.filename}: ${progress.progress}%`
+      };
+    });
+    
+    importJobs[jobId] = {
+      status: 'processing',
+      progress: 100,
+      message: 'Processing video...'
+    };
+    
+    const videoInfo = await getVideoInfo(result.localFilePath);
+    
+    const metadata = await new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(result.localFilePath, (err, metadata) => {
+        if (err) return reject(err);
+        resolve(metadata);
+      });
+    });
+    
+    let resolution = '';
+    let bitrate = null;
+    
+    const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
+    if (videoStream) {
+      resolution = `${videoStream.width}x${videoStream.height}`;
+    }
+    
+    if (metadata.format && metadata.format.bit_rate) {
+      bitrate = Math.round(parseInt(metadata.format.bit_rate) / 1000);
+    }
+    
+    const thumbnailBaseName = path.basename(result.filename, path.extname(result.filename));
+    const thumbnailName = thumbnailBaseName + '.jpg';
+    const thumbnailRelativePath = await generateThumbnail(result.localFilePath, thumbnailName)
+      .then(() => `/uploads/thumbnails/${thumbnailName}`)
+      .catch(() => null);
+    
+    let format = path.extname(result.filename).toLowerCase().replace('.', '');
+    if (!format) format = 'mp4';
+    
+    const videoData = {
+      title: path.basename(result.filename, path.extname(result.filename)),
+      filepath: `/uploads/videos/${result.filename}`,
+      thumbnail_path: thumbnailRelativePath,
+      file_size: result.fileSize,
+      duration: videoInfo.duration,
+      format: format,
+      resolution: resolution,
+      bitrate: bitrate,
+      user_id: userId
+    };
+    
+    const video = await Video.create(videoData);
+    
+    importJobs[jobId] = {
+      status: 'complete',
+      progress: 100,
+      message: 'Video imported successfully',
+      videoId: video.id
+    };
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 5 * 60 * 1000);
+  } catch (error) {
+    console.error('Error processing Dropbox import:', error);
+    importJobs[jobId] = {
+      status: 'failed',
+      progress: 0,
+      message: error.message || 'Failed to import video'
+    };
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 5 * 60 * 1000);
+  }
+}
+
+app.post('/api/videos/import-mega', isAuthenticated, [
+  body('megaUrl').notEmpty().withMessage('MEGA URL is required')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: errors.array()[0].msg });
+    }
+    const { megaUrl } = req.body;
+    if (!megaUrl.includes('mega.nz') && !megaUrl.includes('mega.co.nz')) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid MEGA URL format'
+      });
+    }
+    const jobId = uuidv4();
+    processMegaImport(jobId, megaUrl, req.session.userId)
+      .catch(err => console.error('MEGA import failed:', err));
+    return res.json({
+      success: true,
+      message: 'Video import started',
+      jobId: jobId
+    });
+  } catch (error) {
+    console.error('Error importing from MEGA:', error);
+    res.status(500).json({ success: false, error: 'Failed to import video' });
+  }
+});
+
+async function processMegaImport(jobId, megaUrl, userId) {
+  const { downloadFile } = require('./utils/megaService');
+  const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
+  const ffmpeg = require('fluent-ffmpeg');
+  
+  importJobs[jobId] = {
+    status: 'downloading',
+    progress: 0,
+    message: 'Starting download...'
+  };
+  
+  try {
+    const result = await downloadFile(megaUrl, (progress) => {
+      importJobs[jobId] = {
+        status: 'downloading',
+        progress: progress.progress,
+        message: `Downloading ${progress.filename}: ${progress.progress}%`
+      };
+    });
+    
+    importJobs[jobId] = {
+      status: 'processing',
+      progress: 100,
+      message: 'Processing video...'
+    };
+    
+    const videoInfo = await getVideoInfo(result.localFilePath);
+    
+    const metadata = await new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(result.localFilePath, (err, metadata) => {
+        if (err) return reject(err);
+        resolve(metadata);
+      });
+    });
+    
+    let resolution = '';
+    let bitrate = null;
+    
+    const videoStream = metadata.streams.find(stream => stream.codec_type === 'video');
+    if (videoStream) {
+      resolution = `${videoStream.width}x${videoStream.height}`;
+    }
+    
+    if (metadata.format && metadata.format.bit_rate) {
+      bitrate = Math.round(parseInt(metadata.format.bit_rate) / 1000);
+    }
+    
+    const thumbnailBaseName = path.basename(result.filename, path.extname(result.filename));
+    const thumbnailName = thumbnailBaseName + '.jpg';
+    const thumbnailRelativePath = await generateThumbnail(result.localFilePath, thumbnailName)
+      .then(() => `/uploads/thumbnails/${thumbnailName}`)
+      .catch(() => null);
+    
+    let format = path.extname(result.filename).toLowerCase().replace('.', '');
+    if (!format) format = 'mp4';
+    
+    const videoData = {
+      title: path.basename(result.filename, path.extname(result.filename)),
+      filepath: `/uploads/videos/${result.filename}`,
+      thumbnail_path: thumbnailRelativePath,
+      file_size: result.fileSize,
+      duration: videoInfo.duration,
+      format: format,
+      resolution: resolution,
+      bitrate: bitrate,
+      user_id: userId
+    };
+    
+    const video = await Video.create(videoData);
+    
+    importJobs[jobId] = {
+      status: 'complete',
+      progress: 100,
+      message: 'Video imported successfully',
+      videoId: video.id
+    };
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 5 * 60 * 1000);
+  } catch (error) {
+    console.error('Error processing MEGA import:', error);
+    importJobs[jobId] = {
+      status: 'failed',
+      progress: 0,
+      message: error.message || 'Failed to import video'
+    };
+    setTimeout(() => {
+      delete importJobs[jobId];
+    }, 5 * 60 * 1000);
+  }
+}
+
 app.get('/api/stream/videos', isAuthenticated, async (req, res) => {
   try {
-    const videos = await Video.findAll(req.session.userId);
+    const allVideos = await Video.findAll(req.session.userId);
+    const videos = allVideos.filter(video => {
+      const filepath = (video.filepath || '').toLowerCase();
+      if (filepath.includes('/audio/')) return false;
+      if (filepath.endsWith('.m4a') || filepath.endsWith('.aac') || filepath.endsWith('.mp3')) return false;
+      return true;
+    });
     const formattedVideos = videos.map(video => {
       const duration = video.duration ? Math.floor(video.duration) : 0;
       const minutes = Math.floor(duration / 60);
@@ -1695,7 +2986,13 @@ app.get('/api/stream/videos', isAuthenticated, async (req, res) => {
 
 app.get('/api/stream/content', isAuthenticated, async (req, res) => {
   try {
-    const videos = await Video.findAll(req.session.userId);
+    const allVideos = await Video.findAll(req.session.userId);
+    const videos = allVideos.filter(video => {
+      const filepath = (video.filepath || '').toLowerCase();
+      if (filepath.includes('/audio/')) return false;
+      if (filepath.endsWith('.m4a') || filepath.endsWith('.aac') || filepath.endsWith('.mp3')) return false;
+      return true;
+    });
     const formattedVideos = videos.map(video => {
       const duration = video.duration ? Math.floor(video.duration) : 0;
       const minutes = Math.floor(duration / 60);
@@ -1720,6 +3017,8 @@ app.get('/api/stream/content', isAuthenticated, async (req, res) => {
         thumbnail: '/images/playlist-thumbnail.svg',
         resolution: 'Playlist',
         duration: `${playlist.video_count || 0} videos`,
+        videoCount: playlist.video_count || 0,
+        audioCount: playlist.audio_count || 0,
         url: `/playlist/${playlist.id}`,
         type: 'playlist',
         description: playlist.description,
@@ -1739,8 +3038,21 @@ app.get('/api/stream/content', isAuthenticated, async (req, res) => {
 app.get('/api/streams', isAuthenticated, async (req, res) => {
   try {
     const filter = req.query.filter;
-    const streams = await Stream.findAll(req.session.userId, filter);
-    res.json({ success: true, streams });
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    if (req.query.page || req.query.limit) {
+      const result = await Stream.findAllPaginated(req.session.userId, {
+        page,
+        limit,
+        filter,
+        search
+      });
+      res.json({ success: true, ...result });
+    } else {
+      const streams = await Stream.findAll(req.session.userId, filter);
+      res.json({ success: true, streams });
+    }
   } catch (error) {
     console.error('Error fetching streams:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch streams' });
@@ -1841,6 +3153,122 @@ app.post('/api/streams', isAuthenticated, [
     res.status(500).json({ success: false, error: 'Failed to create stream' });
   }
 });
+
+app.post('/api/streams/youtube', isAuthenticated, uploadThumbnail.single('thumbnail'), async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    
+    if (!user.youtube_client_id || !user.youtube_client_secret) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'YouTube API credentials not configured.' 
+      });
+    }
+    
+    const { videoId, title, description, privacy, category, tags, loopVideo, scheduleStartTime, scheduleEndTime, repeat, ytChannelId } = req.body;
+    
+    let selectedChannel;
+    if (ytChannelId) {
+      selectedChannel = await YoutubeChannel.findById(ytChannelId);
+      if (!selectedChannel || selectedChannel.user_id !== req.session.userId) {
+        return res.status(400).json({ success: false, error: 'Invalid channel selected' });
+      }
+    } else {
+      selectedChannel = await YoutubeChannel.findDefault(req.session.userId);
+      if (!selectedChannel) {
+        const channels = await YoutubeChannel.findAll(req.session.userId);
+        selectedChannel = channels[0];
+      }
+    }
+    
+    if (!selectedChannel || !selectedChannel.access_token || !selectedChannel.refresh_token) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'YouTube account not connected. Please connect your YouTube account in Settings.' 
+      });
+    }
+    
+    if (!videoId) {
+      return res.status(400).json({ success: false, error: 'Video is required' });
+    }
+    
+    if (!title) {
+      return res.status(400).json({ success: false, error: 'Stream title is required' });
+    }
+    
+    let localThumbnailPath = null;
+    if (req.file) {
+      try {
+        const originalFilename = req.file.filename;
+        const thumbFilename = `thumb-${path.parse(originalFilename).name}.jpg`;
+        await generateImageThumbnail(req.file.path, thumbFilename);
+        localThumbnailPath = `/uploads/thumbnails/${thumbFilename}`;
+      } catch (thumbError) {
+        console.log('Note: Could not process thumbnail:', thumbError.message);
+      }
+    }
+    
+    const streamData = {
+      title: title,
+      video_id: videoId,
+      rtmp_url: '',
+      stream_key: '',
+      platform: 'YouTube',
+      platform_icon: 'ti-brand-youtube',
+      bitrate: 4000,
+      resolution: '1920x1080',
+      fps: 30,
+      orientation: 'horizontal',
+      loop_video: loopVideo === 'true' || loopVideo === true,
+      use_advanced_settings: false,
+      user_id: req.session.userId,
+      youtube_broadcast_id: null,
+      youtube_stream_id: null,
+      youtube_description: description || '',
+      youtube_privacy: privacy || 'unlisted',
+      youtube_category: category || '22',
+      youtube_tags: tags || '',
+      youtube_thumbnail: localThumbnailPath,
+      youtube_channel_id: selectedChannel.id,
+      is_youtube_api: true
+    };
+    
+    if (scheduleStartTime) {
+      const [datePart, timePart] = scheduleStartTime.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hours, minutes] = timePart.split(':').map(Number);
+      const scheduleDate = new Date(year, month - 1, day, hours, minutes);
+      streamData.schedule_time = scheduleDate.toISOString();
+      streamData.status = 'scheduled';
+    } else {
+      streamData.status = 'offline';
+    }
+    
+    if (scheduleEndTime) {
+      const [datePart, timePart] = scheduleEndTime.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hours, minutes] = timePart.split(':').map(Number);
+      const endDate = new Date(year, month - 1, day, hours, minutes);
+      streamData.end_time = endDate.toISOString();
+    }
+    
+    const stream = await Stream.create(streamData);
+    
+    res.json({ 
+      success: true, 
+      stream,
+      message: 'Stream created. YouTube broadcast will be created when stream starts.'
+    });
+  } catch (error) {
+    console.error('Error creating YouTube stream:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to create YouTube stream' 
+    });
+  }
+});
+
 app.get('/api/streams/:id', isAuthenticated, async (req, res) => {
   try {
     const stream = await Stream.getStreamWithVideo(req.params.id);
@@ -1850,13 +3278,49 @@ app.get('/api/streams/:id', isAuthenticated, async (req, res) => {
     if (stream.user_id !== req.session.userId) {
       return res.status(403).json({ success: false, error: 'Not authorized to access this stream' });
     }
+    
+    if (stream.youtube_broadcast_id) {
+      try {
+        const user = await User.findById(req.session.userId);
+        if (user.youtube_access_token && user.youtube_client_id && user.youtube_client_secret) {
+          const clientSecret = decrypt(user.youtube_client_secret);
+          const accessToken = decrypt(user.youtube_access_token);
+          const refreshToken = decrypt(user.youtube_refresh_token);
+          
+          const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+          const host = req.headers['x-forwarded-host'] || req.get('host');
+          const redirectUri = `${protocol}://${host}/auth/youtube/callback`;
+          
+          const oauth2Client = getYouTubeOAuth2Client(user.youtube_client_id, clientSecret, redirectUri);
+          oauth2Client.setCredentials({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+          
+          const videoResponse = await youtube.videos.list({
+            part: 'snippet',
+            id: stream.youtube_broadcast_id
+          });
+          
+          if (videoResponse.data.items && videoResponse.data.items.length > 0) {
+            const thumbnails = videoResponse.data.items[0].snippet.thumbnails;
+            stream.youtube_thumbnail = thumbnails.maxres?.url || thumbnails.high?.url || thumbnails.medium?.url || thumbnails.default?.url;
+          }
+        }
+      } catch (ytError) {
+        console.log('Note: Could not fetch YouTube thumbnail:', ytError.message);
+      }
+    }
+    
     res.json({ success: true, stream });
   } catch (error) {
     console.error('Error fetching stream:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch stream' });
   }
 });
-app.put('/api/streams/:id', isAuthenticated, async (req, res) => {
+app.put('/api/streams/:id', isAuthenticated, uploadThumbnail.single('thumbnail'), async (req, res) => {
   try {
     const stream = await Stream.findById(req.params.id);
     if (!stream) {
@@ -1866,6 +3330,168 @@ app.put('/api/streams/:id', isAuthenticated, async (req, res) => {
       return res.status(403).json({ success: false, error: 'Not authorized to update this stream' });
     }
     const updateData = {};
+    
+    function parseScheduleDateTime(dateTimeString) {
+      const [datePart, timePart] = dateTimeString.split('T');
+      const [year, month, day] = datePart.split('-').map(Number);
+      const [hours, minutes] = timePart.split(':').map(Number);
+      return new Date(year, month - 1, day, hours, minutes);
+    }
+    
+    if (req.body.streamMode === 'youtube') {
+      if (req.body.title) updateData.title = req.body.title;
+      if (req.body.videoId) updateData.video_id = req.body.videoId;
+      if (req.body.description !== undefined) updateData.youtube_description = req.body.description;
+      if (req.body.privacy) updateData.youtube_privacy = req.body.privacy;
+      if (req.body.category) updateData.youtube_category = req.body.category;
+      if (req.body.tags !== undefined) updateData.youtube_tags = req.body.tags;
+      if (req.body.loopVideo !== undefined) {
+        updateData.loop_video = req.body.loopVideo === 'true' || req.body.loopVideo === true;
+      }
+      
+      if (req.body.scheduleStartTime) {
+        const scheduleStartDate = parseScheduleDateTime(req.body.scheduleStartTime);
+        updateData.schedule_time = scheduleStartDate.toISOString();
+        updateData.status = 'scheduled';
+        
+        if (req.body.scheduleEndTime) {
+          const scheduleEndDate = parseScheduleDateTime(req.body.scheduleEndTime);
+          updateData.end_time = scheduleEndDate.toISOString();
+        } else if ('scheduleEndTime' in req.body && !req.body.scheduleEndTime) {
+          updateData.end_time = null;
+        }
+      } else if ('scheduleStartTime' in req.body && !req.body.scheduleStartTime) {
+        updateData.schedule_time = null;
+        if ('scheduleEndTime' in req.body && !req.body.scheduleEndTime) {
+          updateData.end_time = null;
+        } else if (req.body.scheduleEndTime) {
+          const scheduleEndDate = parseScheduleDateTime(req.body.scheduleEndTime);
+          updateData.end_time = scheduleEndDate.toISOString();
+        }
+      }
+      
+      if (req.file) {
+        try {
+          const originalFilename = req.file.filename;
+          const thumbFilename = `thumb-${path.parse(originalFilename).name}.jpg`;
+          await generateImageThumbnail(req.file.path, thumbFilename);
+          updateData.youtube_thumbnail = `/uploads/thumbnails/${thumbFilename}`;
+        } catch (thumbError) {
+          console.log('Note: Could not process thumbnail:', thumbError.message);
+        }
+      }
+      
+      if (stream.youtube_broadcast_id) {
+        try {
+          const user = await User.findById(req.session.userId);
+          if (user.youtube_client_id && user.youtube_client_secret) {
+            const YoutubeChannel = require('./models/YoutubeChannel');
+            let selectedChannel = await YoutubeChannel.findById(stream.youtube_channel_id);
+            if (!selectedChannel) {
+              selectedChannel = await YoutubeChannel.findDefault(req.session.userId);
+            }
+            
+            if (selectedChannel && selectedChannel.access_token) {
+              const clientSecret = decrypt(user.youtube_client_secret);
+              const accessToken = decrypt(selectedChannel.access_token);
+              const refreshToken = decrypt(selectedChannel.refresh_token);
+              
+              const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+              const host = req.headers['x-forwarded-host'] || req.get('host');
+              const redirectUri = `${protocol}://${host}/auth/youtube/callback`;
+              
+              const oauth2Client = getYouTubeOAuth2Client(user.youtube_client_id, clientSecret, redirectUri);
+              oauth2Client.setCredentials({
+                access_token: accessToken,
+                refresh_token: refreshToken
+              });
+              
+              const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+              
+              const broadcastUpdateData = {
+                id: stream.youtube_broadcast_id,
+                snippet: {
+                  title: req.body.title || stream.title,
+                  description: req.body.description !== undefined ? req.body.description : (stream.youtube_description || ''),
+                  scheduledStartTime: req.body.scheduleStartTime 
+                    ? new Date(req.body.scheduleStartTime).toISOString() 
+                    : (stream.schedule_time || new Date().toISOString())
+                }
+              };
+              
+              const privacyUpdateData = {
+                id: stream.youtube_broadcast_id,
+                status: {
+                  privacyStatus: req.body.privacy || stream.youtube_privacy || 'unlisted'
+                }
+              };
+              
+              try {
+                await youtube.liveBroadcasts.update({
+                  part: 'snippet',
+                  requestBody: broadcastUpdateData
+                });
+              } catch (snippetError) {
+                console.log('Note: Could not update broadcast snippet:', snippetError.message);
+              }
+              
+              try {
+                await youtube.liveBroadcasts.update({
+                  part: 'status',
+                  requestBody: privacyUpdateData
+                });
+              } catch (statusError) {
+                console.log('Note: Could not update broadcast status:', statusError.message);
+              }
+              
+              const tagsArray = req.body.tags ? req.body.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+              if (tagsArray.length > 0 || req.body.category) {
+                try {
+                  await youtube.videos.update({
+                    part: 'snippet',
+                    requestBody: {
+                      id: stream.youtube_broadcast_id,
+                      snippet: {
+                        title: req.body.title || stream.title,
+                        description: req.body.description !== undefined ? req.body.description : (stream.youtube_description || ''),
+                        categoryId: req.body.category || stream.youtube_category || '22',
+                        tags: tagsArray.length > 0 ? tagsArray : undefined
+                      }
+                    }
+                  });
+                } catch (videoUpdateError) {
+                  console.log('Note: Could not update video metadata:', videoUpdateError.message);
+                }
+              }
+              
+              if (req.file && updateData.youtube_thumbnail) {
+                try {
+                  const thumbnailPath = path.join(__dirname, 'public', updateData.youtube_thumbnail);
+                  if (fs.existsSync(thumbnailPath)) {
+                    const thumbnailStream = fs.createReadStream(thumbnailPath);
+                    await youtube.thumbnails.set({
+                      videoId: stream.youtube_broadcast_id,
+                      media: {
+                        mimeType: 'image/jpeg',
+                        body: thumbnailStream
+                      }
+                    });
+                  }
+                } catch (thumbError) {
+                  console.log('Note: Could not upload thumbnail to YouTube:', thumbError.message);
+                }
+              }
+            }
+          }
+        } catch (youtubeError) {
+          console.log('Note: Could not update YouTube metadata:', youtubeError.message);
+        }
+      }
+      
+      await Stream.update(req.params.id, updateData);
+      return res.json({ success: true, message: 'Stream updated successfully' });
+    }
+    
     if (req.body.streamTitle) updateData.title = req.body.streamTitle;
     if (req.body.videoId) updateData.video_id = req.body.videoId;
     
@@ -2018,7 +3644,10 @@ app.post('/api/streams/:id/status', isAuthenticated, [
           stream
         });
       }
-      const result = await streamingService.startStream(streamId);
+      const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+      const host = req.headers['x-forwarded-host'] || req.get('host');
+      const baseUrl = `${protocol}://${host}`;
+      const result = await streamingService.startStream(streamId, false, baseUrl);
       if (result.success) {
         const updatedStream = await Stream.getStreamWithVideo(streamId);
         return res.json({
@@ -2038,16 +3667,12 @@ app.post('/api/streams/:id/status', isAuthenticated, [
         if (!result.success) {
           console.warn('Failed to stop FFmpeg process:', result.error);
         }
-        await Stream.update(streamId, {
-          schedule_time: null
-        });
-        console.log(`Reset schedule_time for stopped stream ${streamId}`);
       } else if (stream.status === 'scheduled') {
         await Stream.update(streamId, {
           schedule_time: null,
+          end_time: null,
           status: 'offline'
         });
-        console.log(`Scheduled stream ${streamId} was cancelled`);
       }
       const result = await Stream.updateStatus(streamId, 'offline', req.session.userId);
       if (!result.updated) {
@@ -2122,13 +3747,24 @@ app.get('/api/streams/:id/logs', isAuthenticated, async (req, res) => {
 app.get('/playlist', isAuthenticated, async (req, res) => {
   try {
     const playlists = await Playlist.findAll(req.session.userId);
-    const videos = await Video.findAll(req.session.userId);
+    const allVideos = await Video.findAll(req.session.userId);
+    const videos = allVideos.filter(video => {
+      const filepath = (video.filepath || '').toLowerCase();
+      if (filepath.includes('/audio/')) return false;
+      if (filepath.endsWith('.m4a') || filepath.endsWith('.aac') || filepath.endsWith('.mp3')) return false;
+      return true;
+    });
+    const audios = allVideos.filter(video => {
+      const filepath = (video.filepath || '').toLowerCase();
+      return filepath.includes('/audio/') || filepath.endsWith('.m4a') || filepath.endsWith('.aac') || filepath.endsWith('.mp3');
+    });
     res.render('playlist', {
       title: 'Playlist',
       active: 'playlist',
       user: await User.findById(req.session.userId),
       playlists: playlists,
-      videos: videos
+      videos: videos,
+      audios: audios
     });
   } catch (error) {
     console.error('Playlist error:', error);
@@ -2172,6 +3808,12 @@ app.post('/api/playlists', isAuthenticated, [
     if (req.body.videos && Array.isArray(req.body.videos) && req.body.videos.length > 0) {
       for (let i = 0; i < req.body.videos.length; i++) {
         await Playlist.addVideo(playlist.id, req.body.videos[i], i + 1);
+      }
+    }
+
+    if (req.body.audios && Array.isArray(req.body.audios) && req.body.audios.length > 0) {
+      for (let i = 0; i < req.body.audios.length; i++) {
+        await Playlist.addAudio(playlist.id, req.body.audios[i], i + 1);
       }
     }
     
@@ -2236,6 +3878,13 @@ app.put('/api/playlists/:id', isAuthenticated, [
       
       for (let i = 0; i < req.body.videos.length; i++) {
         await Playlist.addVideo(req.params.id, req.body.videos[i], i + 1);
+      }
+    }
+
+    if (req.body.audios && Array.isArray(req.body.audios)) {
+      await Playlist.clearAudios(req.params.id);
+      for (let i = 0; i < req.body.audios.length; i++) {
+        await Playlist.addAudio(req.params.id, req.body.audios[i], i + 1);
       }
     }
     
@@ -2339,6 +3988,19 @@ app.put('/api/playlists/:id/videos/reorder', isAuthenticated, [
   }
 });
 
+app.get('/api/donators', async (req, res) => {
+  try {
+    const axios = require('axios');
+    const response = await axios.get('https://donate.youtube101.id/api/donators', {
+      params: { limit: 20 }
+    });
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error fetching donators:', error.message);
+    res.json([]);
+  }
+});
+
 app.get('/api/server-time', (req, res) => {
   const now = new Date();
   const day = String(now.getDate()).padStart(2, '0');
@@ -2349,11 +4011,295 @@ app.get('/api/server-time', (req, res) => {
   const minutes = String(now.getMinutes()).padStart(2, '0');
   const seconds = String(now.getSeconds()).padStart(2, '0');
   const formattedTime = `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
+  const serverTimezoneOffset = now.getTimezoneOffset();
   res.json({
     serverTime: now.toISOString(),
-    formattedTime: formattedTime
+    formattedTime: formattedTime,
+    timezoneOffset: serverTimezoneOffset
   });
 });
+
+const Rotation = require('./models/Rotation');
+const rotationService = require('./services/rotationService');
+
+app.get('/rotations', isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    const allVideos = await Video.findAll(req.session.userId);
+    const videos = allVideos.filter(video => {
+      const filepath = (video.filepath || '').toLowerCase();
+      if (filepath.includes('/audio/')) return false;
+      if (filepath.endsWith('.m4a') || filepath.endsWith('.aac') || filepath.endsWith('.mp3')) return false;
+      return true;
+    });
+    const playlists = await Playlist.findAll(req.session.userId);
+    const rotations = await Rotation.findAll(req.session.userId);
+    const YoutubeChannel = require('./models/YoutubeChannel');
+    const youtubeChannels = await YoutubeChannel.findAll(req.session.userId);
+    const isYoutubeConnected = youtubeChannels.length > 0;
+    const defaultChannel = youtubeChannels.find(c => c.is_default) || youtubeChannels[0];
+    
+    res.render('rotations', {
+      title: 'Stream Rotations',
+      active: 'rotations',
+      user: user,
+      videos: videos,
+      playlists: playlists,
+      rotations: rotations,
+      youtubeConnected: isYoutubeConnected,
+      youtubeChannels: youtubeChannels,
+      youtubeChannelName: defaultChannel?.channel_name || '',
+      youtubeChannelThumbnail: defaultChannel?.channel_thumbnail || '',
+      youtubeSubscriberCount: defaultChannel?.subscriber_count || '0'
+    });
+  } catch (error) {
+    console.error('Rotations page error:', error);
+    res.redirect('/dashboard');
+  }
+});
+
+app.get('/api/rotations', isAuthenticated, async (req, res) => {
+  try {
+    const rotations = await Rotation.findAll(req.session.userId);
+    res.json({ success: true, rotations });
+  } catch (error) {
+    console.error('Error fetching rotations:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch rotations' });
+  }
+});
+
+app.get('/api/rotations/:id', isAuthenticated, async (req, res) => {
+  try {
+    const rotation = await Rotation.findByIdWithItems(req.params.id);
+    if (!rotation) {
+      return res.status(404).json({ success: false, error: 'Rotation not found' });
+    }
+    if (rotation.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    res.json({ success: true, rotation });
+  } catch (error) {
+    console.error('Error fetching rotation:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch rotation' });
+  }
+});
+
+app.post('/api/rotations', isAuthenticated, uploadThumbnail.array('thumbnails'), async (req, res) => {
+  try {
+    const { name, repeat_mode, start_time, end_time, items, youtube_channel_id } = req.body;
+    
+    const parsedItems = typeof items === 'string' ? JSON.parse(items) : items;
+    
+    if (!name || !parsedItems || parsedItems.length === 0) {
+      return res.status(400).json({ success: false, error: 'Name and at least one item are required' });
+    }
+    
+    if (!start_time || !end_time) {
+      return res.status(400).json({ success: false, error: 'Start time and end time are required' });
+    }
+    
+    const rotation = await Rotation.create({
+      user_id: req.session.userId,
+      name,
+      is_loop: true,
+      start_time,
+      end_time,
+      repeat_mode: repeat_mode || 'daily',
+      youtube_channel_id: youtube_channel_id || null
+    });
+    
+    const uploadedFiles = req.files || [];
+    
+    for (let i = 0; i < parsedItems.length; i++) {
+      const item = parsedItems[i];
+      const thumbnailFile = uploadedFiles[i];
+      
+      let thumbnailPath = null;
+      let originalThumbnailPath = null;
+      if (thumbnailFile && thumbnailFile.size > 0) {
+        const originalFilename = thumbnailFile.filename;
+        const thumbFilename = `thumb-${path.parse(originalFilename).name}.jpg`;
+        
+        originalThumbnailPath = originalFilename;
+        
+        try {
+          await generateImageThumbnail(thumbnailFile.path, thumbFilename);
+          thumbnailPath = thumbFilename;
+        } catch (thumbErr) {
+          console.error('Error generating rotation thumbnail:', thumbErr);
+          thumbnailPath = originalFilename;
+        }
+      }
+      
+      await Rotation.addItem({
+        rotation_id: rotation.id,
+        order_index: item.order_index,
+        video_id: item.video_id,
+        title: item.title,
+        description: item.description || '',
+        tags: item.tags || '',
+        thumbnail_path: thumbnailPath,
+        original_thumbnail_path: originalThumbnailPath,
+        privacy: item.privacy || 'unlisted',
+        category: item.category || '22'
+      });
+    }
+    
+    res.json({ success: true, rotation });
+  } catch (error) {
+    console.error('Error creating rotation:', error);
+    res.status(500).json({ success: false, error: 'Failed to create rotation' });
+  }
+});
+
+app.put('/api/rotations/:id', isAuthenticated, uploadThumbnail.array('thumbnails'), async (req, res) => {
+  try {
+    const rotation = await Rotation.findById(req.params.id);
+    if (!rotation) {
+      return res.status(404).json({ success: false, error: 'Rotation not found' });
+    }
+    if (rotation.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    
+    const { name, repeat_mode, start_time, end_time, items, youtube_channel_id } = req.body;
+    
+    const parsedItems = typeof items === 'string' ? JSON.parse(items) : items;
+    
+    await Rotation.update(req.params.id, {
+      name,
+      is_loop: true,
+      start_time,
+      end_time,
+      repeat_mode: repeat_mode || 'daily',
+      youtube_channel_id: youtube_channel_id || null
+    });
+    
+    const existingItems = await Rotation.getItemsByRotationId(req.params.id);
+    for (const item of existingItems) {
+      await Rotation.deleteItem(item.id);
+    }
+    
+    const uploadedFiles = req.files || [];
+    
+    for (let i = 0; i < parsedItems.length; i++) {
+      const item = parsedItems[i];
+      const thumbnailFile = uploadedFiles[i];
+      
+      let thumbnailPath = item.thumbnail_path || null;
+      let originalThumbnailPath = item.original_thumbnail_path || null;
+      if (thumbnailFile && thumbnailFile.size > 0) {
+        const originalFilename = thumbnailFile.filename;
+        const thumbFilename = `thumb-${path.parse(originalFilename).name}.jpg`;
+        
+        originalThumbnailPath = originalFilename;
+        
+        try {
+          await generateImageThumbnail(thumbnailFile.path, thumbFilename);
+          thumbnailPath = thumbFilename;
+        } catch (thumbErr) {
+          console.error('Error generating rotation thumbnail:', thumbErr);
+          thumbnailPath = originalFilename;
+        }
+      }
+      
+      await Rotation.addItem({
+        rotation_id: req.params.id,
+        order_index: item.order_index,
+        video_id: item.video_id,
+        title: item.title,
+        description: item.description || '',
+        tags: item.tags || '',
+        thumbnail_path: thumbnailPath,
+        original_thumbnail_path: originalThumbnailPath,
+        privacy: item.privacy || 'unlisted',
+        category: item.category || '22'
+      });
+    }
+    
+    res.json({ success: true, message: 'Rotation updated' });
+  } catch (error) {
+    console.error('Error updating rotation:', error);
+    res.status(500).json({ success: false, error: 'Failed to update rotation' });
+  }
+});
+
+app.delete('/api/rotations/:id', isAuthenticated, async (req, res) => {
+  try {
+    const rotation = await Rotation.findById(req.params.id);
+    if (!rotation) {
+      return res.status(404).json({ success: false, error: 'Rotation not found' });
+    }
+    if (rotation.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    
+    if (rotation.status === 'active') {
+      await rotationService.stopRotation(req.params.id);
+    }
+    
+    await Rotation.delete(req.params.id, req.session.userId);
+    res.json({ success: true, message: 'Rotation deleted' });
+  } catch (error) {
+    console.error('Error deleting rotation:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete rotation' });
+  }
+});
+
+app.post('/api/rotations/:id/activate', isAuthenticated, async (req, res) => {
+  try {
+    const rotation = await Rotation.findById(req.params.id);
+    if (!rotation) {
+      return res.status(404).json({ success: false, error: 'Rotation not found' });
+    }
+    if (rotation.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    
+    const result = await rotationService.activateRotation(req.params.id);
+    res.json(result);
+  } catch (error) {
+    console.error('Error activating rotation:', error);
+    res.status(500).json({ success: false, error: 'Failed to activate rotation' });
+  }
+});
+
+app.post('/api/rotations/:id/pause', isAuthenticated, async (req, res) => {
+  try {
+    const rotation = await Rotation.findById(req.params.id);
+    if (!rotation) {
+      return res.status(404).json({ success: false, error: 'Rotation not found' });
+    }
+    if (rotation.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    
+    const result = await rotationService.pauseRotation(req.params.id);
+    res.json(result);
+  } catch (error) {
+    console.error('Error pausing rotation:', error);
+    res.status(500).json({ success: false, error: 'Failed to pause rotation' });
+  }
+});
+
+app.post('/api/rotations/:id/stop', isAuthenticated, async (req, res) => {
+  try {
+    const rotation = await Rotation.findById(req.params.id);
+    if (!rotation) {
+      return res.status(404).json({ success: false, error: 'Rotation not found' });
+    }
+    if (rotation.user_id !== req.session.userId) {
+      return res.status(403).json({ success: false, error: 'Not authorized' });
+    }
+    
+    const result = await rotationService.stopRotation(req.params.id);
+    res.json(result);
+  } catch (error) {
+    console.error('Error stopping rotation:', error);
+    res.status(500).json({ success: false, error: 'Failed to stop rotation' });
+  }
+});
+
 const server = app.listen(port, '0.0.0.0', async () => {
   try {
     await initializeDatabase();
@@ -2383,6 +4329,7 @@ const server = app.listen(port, '0.0.0.0', async () => {
     console.error('Error resetting stream statuses:', error);
   }
   schedulerService.init(streamingService);
+  rotationService.init();
   try {
     await streamingService.syncStreamStatuses();
   } catch (error) {
@@ -2393,3 +4340,41 @@ const server = app.listen(port, '0.0.0.0', async () => {
 server.timeout = 30 * 60 * 1000;
 server.keepAliveTimeout = 30 * 60 * 1000;
 server.headersTimeout = 30 * 60 * 1000;
+
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  schedulerService.shutdown();
+  await streamingService.gracefulShutdown();
+  rotationService.shutdown();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  schedulerService.shutdown();
+  await streamingService.gracefulShutdown();
+  rotationService.shutdown();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('uncaughtException', async (error) => {
+  console.error('Uncaught Exception:', error);
+  schedulerService.shutdown();
+  await streamingService.gracefulShutdown();
+  rotationService.shutdown();
+  process.exit(1);
+});
+
+process.on('unhandledRejection', async (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  schedulerService.shutdown();
+  await streamingService.gracefulShutdown();
+  rotationService.shutdown();
+  process.exit(1);
+});

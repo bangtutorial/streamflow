@@ -1,7 +1,6 @@
 <div align="center">
 
-![logo](https://github.com/user-attachments/assets/50231124-d546-43cb-9cf4-7a06a1dad5bd)
-
+![logo](https://github.com/user-attachments/assets/83d95886-2fbb-45c7-986a-e6c4d053bc55)
 
 ## StreamFlow: Web-Based Multi-Platform Streaming
 
@@ -15,7 +14,9 @@
 
 [🚀 Installation](#-quick-installation) • [📖 Documentation](#-manual-installation) • [🐳 Docker](#-docker-deployment) • [🪛 Troubleshooting](#-troubleshooting) • [💬 Community](https://github.com/bangtutorial/streamflow/discussions)
 
-![Untitled-2](https://github.com/user-attachments/assets/3d7bb367-a1b2-43a5-839b-b6aa8dd5de90)
+![screenshot](https://github.com/user-attachments/assets/fef1c0a5-04f6-41ae-8ea1-5eb1fff13a22)
+
+
 
 </div>
 
@@ -315,4 +316,5 @@ pm2 restart streamflow
 
 ---
 © 2026 - [Bang Tutorial](https://youtube.com/bangtutorial)
+
 

@@ -1,6 +1,6 @@
 # Contributing to StreamFlow
 
-Terima kasih sudah tertarik untuk berkontribusi ke projek StreamFlow!
+Terima kasih sudah tertarik untuk berkontribusi ke projek StreamFlow
 
 ## Cara Berkontribusi
 

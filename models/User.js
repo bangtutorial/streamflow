@@ -39,15 +39,15 @@ class User {
       const userId = uuidv4();
       return new Promise((resolve, reject) => {
         db.run(
-          'INSERT INTO users (id, username, password, avatar_path, user_role, status) VALUES (?, ?, ?, ?, ?, ?)',
-          [userId, userData.username, hashedPassword, userData.avatar_path || null, userData.user_role || 'admin', userData.status || 'active'],
+          'INSERT INTO users (id, username, password, avatar_path, user_role, status, disk_limit) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [userId, userData.username, hashedPassword, userData.avatar_path || null, userData.user_role || 'admin', userData.status || 'active', userData.disk_limit || 0],
           function (err) {
             if (err) {
               console.error("DB error during user creation:", err);
               return reject(err);
             }
             console.log("User created successfully with ID:", userId);
-            resolve({ id: userId, username: userData.username, user_role: userData.user_role || 'admin', status: userData.status || 'active' });
+            resolve({ id: userId, username: userData.username, user_role: userData.user_role || 'admin', status: userData.status || 'active', disk_limit: userData.disk_limit || 0 });
           }
         );
       });
@@ -196,6 +196,11 @@ class User {
         fields.push('password = ?');
         values.push(updateData.password);
       }
+
+      if (updateData.disk_limit !== undefined) {
+        fields.push('disk_limit = ?');
+        values.push(updateData.disk_limit);
+      }
       
       if (fields.length === 0) {
         return resolve({ id: userId, message: 'No fields to update' });
@@ -213,6 +218,22 @@ class User {
         }
         resolve({ id: userId, changes: this.changes });
       });
+    });
+  }
+
+  static getDiskUsage(userId) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        'SELECT COALESCE(SUM(file_size), 0) as total_size FROM videos WHERE user_id = ?',
+        [userId],
+        (err, row) => {
+          if (err) {
+            console.error('Database error in getDiskUsage:', err);
+            return reject(err);
+          }
+          resolve(row ? row.total_size : 0);
+        }
+      );
     });
   }
 }

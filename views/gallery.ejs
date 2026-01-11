@@ -1,1502 +1,1286 @@
 <% layout('layout') -%>
-  <% function formatFileSize(bytes) { if (bytes < 1024) return bytes + ' B' ; else if (bytes < 1048576) return (bytes /
-    1024).toFixed(1) + ' KB' ; else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB' ; else return
-    (bytes / 1073741824).toFixed(1) + ' GB' ; } function formatDate(dateString) { const date=new Date(dateString); const
-    options={ day: 'numeric' , month: 'short' , year: 'numeric' }; return date.toLocaleDateString('en-US', options); }
-    function formatDuration(seconds) { if (!seconds) return '00:00' ; const minutes=Math.floor(seconds / 60); const
-    remainingSeconds=Math.floor(seconds % 60); return `${minutes.toString().padStart(2, '0'
-    )}:${remainingSeconds.toString().padStart(2, '0' )}`; } %>
+<% function formatFileSize(bytes) { 
+  if (!bytes || bytes === 0) return '0 B';
+  bytes = Number(bytes);
+  if (isNaN(bytes)) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+  else if (bytes < 1099511627776) return (bytes / 1073741824).toFixed(2) + ' GB';
+  else return (bytes / 1099511627776).toFixed(2) + ' TB';
+} 
+function formatDuration(seconds) { 
+  if (!seconds) return '0:00'; 
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  if (hours > 0) return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  return `${minutes}:${secs.toString().padStart(2, '0')}`;
+} %>
 
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-      <div>
-        <h2 class="text-2xl font-bold">Video Gallery</h2>
-        <p class="text-gray-400 text-sm mt-1">Manage your videos for streaming</p>
-      </div>
-      <div class="flex flex-wrap gap-3">
-        <button onclick="openUploadModal()"
-          class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
-          <i class="ti ti-upload"></i>
-          <span>Upload Video</span>
+<div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+  <div>
+    <h2 class="text-2xl font-bold">Media Gallery</h2>
+    <p class="text-gray-400 text-sm mt-1">
+      <span>Manage your videos and audio for streaming</span>
+      <span id="diskUsageInfoDesktop" class="hidden">
+        <span class="text-gray-500 mx-1">•</span>
+        <i class="ti ti-database text-xs"></i>
+        <span id="diskUsageTextDesktop" class="text-gray-400"></span>
+      </span>
+    </p>
+    <p id="diskUsageInfoMobile" class="hidden text-gray-400 text-sm mt-1">
+      <i class="ti ti-database text-xs mr-1"></i>
+      <span id="diskUsageTextMobile"></span>
+    </p>
+  </div>
+  <div class="flex gap-3">
+    <button onclick="openUploadModal()" class="flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+      <i class="ti ti-upload"></i>
+      <span>Upload Media</span>
+    </button>
+    <div class="relative">
+      <button onclick="toggleCloudDropdown()" class="flex items-center gap-2 bg-dark-700 border border-gray-600 hover:bg-dark-600 text-white px-4 py-2 rounded-lg transition-colors">
+        <i class="ti ti-cloud-download"></i>
+        <span>Import from Cloud</span>
+        <i class="ti ti-chevron-down text-sm"></i>
+      </button>
+      <div id="cloudDropdown" class="hidden absolute right-0 mt-2 w-48 bg-dark-800 border border-gray-700 rounded-lg shadow-xl z-50">
+        <button onclick="openCloudModal('gdrive')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors rounded-t-lg">
+          <img src="/images/google drive.png" alt="Google Drive" class="w-5 h-5">
+          <span>Google Drive</span>
         </button>
-        <button onclick="openGDriveModal()"
-          class="flex items-center gap-2 bg-[#4285F4]/20 border border-[#4285F4]/50 hover:bg-[#4285F4]/30 text-white px-4 py-2 rounded-lg transition-colors">
-          <i class="ti ti-brand-google-drive text-[#4285F4]"></i>
-          <span>Import from Drive</span>
+        <button onclick="openCloudModal('mediafire')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors">
+          <img src="/images/mediafire.png" alt="Mediafire" class="w-5 h-5">
+          <span>Mediafire</span>
+        </button>
+        <button onclick="openCloudModal('dropbox')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors">
+          <img src="/images/dropbox.png" alt="Dropbox" class="w-5 h-5">
+          <span>Dropbox</span>
+        </button>
+        <button onclick="openCloudModal('mega')" class="w-full flex items-center gap-3 px-4 py-3 hover:bg-dark-700 transition-colors rounded-b-lg">
+          <img src="/images/mega.png" alt="MEGA" class="w-5 h-5">
+          <span>MEGA</span>
         </button>
       </div>
     </div>
+  </div>
+</div>
 
-    <div class="bg-gray-800 rounded-lg p-4 mb-6">
-      <div class="flex flex-row items-center gap-3">
-
-        <div class="relative w-full sm:w-80 md:w-96">
-          <input type="text" placeholder="Search videos..."
-            class="w-full bg-dark-700 text-white pl-9 pr-4 py-2.5 border border-gray-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
-          <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-        </div>
-
-        <div class="w-32">
-          <select
-            class="w-full bg-dark-700 border border-gray-600 text-white px-3 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
-            <option selected>Newest</option>
-            <option>Oldest</option>
-          </select>
-        </div>
+<div class="bg-gray-800 rounded-lg shadow-md overflow-hidden">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-700 gap-4">
+    <div class="flex items-center gap-3">
+      <div class="relative w-full sm:w-64">
+        <input type="text" id="searchInput" placeholder="Search videos..."
+          class="w-full bg-dark-700 border border-gray-600 text-white pl-9 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+        <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+      </div>
+      <select id="typeFilter" class="bg-dark-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+        <option value="all">All Media</option>
+        <option value="video">Video</option>
+        <option value="audio">Audio</option>
+      </select>
+      <select id="sortSelect" class="bg-dark-700 border border-gray-600 text-white px-3 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="name">Name</option>
+        <option value="size">Size</option>
+      </select>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="flex items-center bg-dark-700 border border-gray-600 rounded-lg overflow-hidden">
+        <button id="gridViewBtn" class="px-3 py-2 bg-primary text-white" title="Grid view">
+          <i class="ti ti-layout-grid"></i>
+        </button>
+        <button id="listViewBtn" class="px-3 py-2 text-gray-400 hover:text-white transition-colors" title="List view">
+          <i class="ti ti-list"></i>
+        </button>
       </div>
     </div>
+  </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-      <% if (videos && videos.length> 0) { %>
-        <% videos.forEach(function(video) { %>
-          <div class="bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-            <div class="aspect-video relative group">
-
-              <img src="<%= video.thumbnail_path %>" alt="<%= video.title %>" class="w-full h-full object-cover">
-
-              <div
-                class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  class="play-button bg-black/50 hover:bg-primary/80 w-12 h-12 rounded-full flex items-center justify-center transition-colors transform hover:scale-110"
-                  data-video-id="<%= video.id %>" data-video-title="<%= video.title %>"
-                  onclick="playVideo('<%= video.id %>', '<%= video.title %>')">
-                  <i class="ti ti-player-play-filled text-2xl text-white"></i>
-                </button>
-              </div>
-
-              <span class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
-                <%= typeof formatDuration==='function' ? formatDuration(video.duration) : (video.duration ?
-                  Math.floor(video.duration / 60) + ':' + String(Math.floor(video.duration % 60)).padStart(2, '0' )
-                  : '0:00' ) %>
-              </span>
-            </div>
-
-            <div class="p-3">
-              <h3 class="font-medium truncate mb-0.5">
-                <%= video.title %>
-              </h3>
-              <div class="flex items-center justify-between">
-                <div class="text-xs text-gray-400 flex items-center">
-                  <span>
-                    <%= new Date(video.upload_date).toLocaleDateString() %>
-                  </span>
-                  <span class="mx-1">•</span>
-                  <span>
-                    <%= typeof formatFileSize==='function' ? formatFileSize(video.file_size) : (video.file_size / (1024
-                      * 1024)).toFixed(1) + ' MB' %>
-                  </span>
-                </div>
-
-                <div class="flex">
-                  <button class="text-gray-400 hover:text-white p-1"
-                    onclick="showRenameDialog('<%= video.id %>', '<%= video.title %>')">
-                    <i class="ti ti-pencil text-sm"></i>
-                  </button>
-                  <button class="text-gray-400 hover:text-red-400 p-1 ml-1"
-                    onclick="showDeleteDialog('<%= video.id %>', '<%= video.title %>')">
-                    <i class="ti ti-trash text-sm"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-          <% }); %>
-            <% } else { %>
-              <div class="col-span-full text-center py-12">
-                <div class="text-gray-500 mb-3">
-                  <i class="ti ti-file-video text-6xl"></i>
-                </div>
-                <h3 class="text-xl font-medium text-gray-300 mb-1">No videos yet</h3>
-                <p class="text-gray-500 mb-4">Upload your first video to get started</p>
-              </div>
-              <% } %>
-    </div>
-
+  <div class="p-4">
     <% if (videos && videos.length > 0) { %>
-    <div class="mt-6 flex items-center justify-between">
-      <p class="text-sm text-gray-400">Showing 1-<%= Math.min(videos.length, 4) %> of <%= videos.length %> videos</p>
-      <div class="flex items-center gap-2">
-        <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 text-gray-400">
-          <i class="ti ti-chevron-left"></i>
-        </button>
-        <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white">
-          1
-        </button>
-        <button
-          class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors">
-          2
-        </button>
-        <button
-          class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors">
-          3
-        </button>
-        <button
-          class="w-9 h-9 flex items-center justify-center rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors">
-          <i class="ti ti-chevron-right"></i>
-        </button>
-      </div>
-    </div>
-    <% } %>
-
-
-    <div id="uploadModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity">
-      <div class="flex items-center justify-center min-h-screen p-4">
-        <div
-          class="bg-dark-800 rounded-lg shadow-xl w-full max-w-lg border border-gray-600/50 transform transition-all opacity-0 scale-95"
-          id="uploadModalContent">
-
-          <div class="flex items-center justify-between p-4 border-b border-gray-600/50">
-            <div class="flex items-center">
-              <h3 class="text-lg font-medium">Upload Video</h3>
+    <div id="gridView" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <% videos.forEach(function(video) { 
+        const isAudio = video.filepath && (video.filepath.includes('/audio/') || video.filepath.endsWith('.m4a') || video.filepath.endsWith('.aac') || video.filepath.endsWith('.mp3'));
+        const mediaType = isAudio ? 'audio' : 'video';
+      %>
+      <div class="file-item group bg-dark-700 rounded-lg overflow-hidden border border-transparent hover:border-gray-600 hover:bg-dark-600 transition-all cursor-pointer"
+        data-id="<%= video.id %>" data-title="<%= video.title %>" data-date="<%= video.upload_date %>" data-size="<%= video.file_size %>" data-type="<%= mediaType %>"
+        onclick="playMedia('<%= video.id %>', '<%= video.title %>', '<%= mediaType %>')">
+        <div class="aspect-video relative overflow-hidden bg-dark-900">
+          <% if (isAudio) { %>
+          <div class="w-full h-full flex items-center justify-center bg-[#181818]">
+            <div class="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
+              <i class="ti ti-music text-3xl text-primary"></i>
             </div>
-            <button onclick="closeUploadModal()"
-              class="rounded-full w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors">
-              <i class="ti ti-x"></i>
-            </button>
           </div>
-          <div class="p-6">
-            <form id="videoUploadForm" enctype="multipart/form-data">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-              <div id="uploadDropzone"
-                class="border-2 border-dashed border-gray-600 hover:border-primary/70 rounded-lg py-8 px-6 text-center transition-all cursor-pointer min-h-[200px]"
-                data-state="idle">
-                <div class="flex flex-col items-center justify-center h-full space-y-3">
-                  <div class="transition-all hidden" id="dropzoneIconContainer">
-                    <i class="ti ti-upload text-3xl text-gray-500"></i>
-                  </div>
-                  <div class="space-y-1">
-                    <p class="text-gray-300">Drag and drop video files here</p>
-                    <p class="text-gray-500 text-sm">Or click to browse</p>
-                  </div>
-                  <label
-                    class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors inline-block cursor-pointer">
-                    <span>Select files</span>
-                    <input type="file" name="video" accept="video/mp4,video/avi,video/quicktime" multiple class="hidden"
-                      id="videoFileInput">
-                  </label>
-                  <p class="text-gray-500 text-xs">Supported formats: MP4, AVI, MOV</p>
-                </div>
-              </div>
-
-              <div id="selectedFileInfo" class="hidden">
-                <div class="bg-dark-700/50 p-4 rounded-lg border border-gray-600/50">
-                  <div class="flex items-start justify-between mb-3">
-                    <div class="flex items-center">
-                      <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mr-3 shrink-0">
-                        <i class="ti ti-file-video text-blue-400 font-loaded"></i>
-                      </div>
-                      <div>
-                        <p class="font-medium">Selected Files</p>
-                        <p id="selectedFileCount" class="text-xs text-gray-400"></p>
-                      </div>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                      <button type="button" id="addMoreFilesButton" 
-                        class="text-blue-400 hover:text-blue-300 shrink-0 flex items-center text-sm"
-                        onclick="document.getElementById('videoFileInput').click()">
-                        <i class="ti ti-plus mr-1"></i>
-                        <span>Add More</span>
-                      </button>
-                      <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white shrink-0">
-                        <i class="ti ti-x"></i>
-                      </button>
-                    </div>
-                  </div>
-                  <div id="selectedFilesList" class="p-2 space-y-1 max-h-60 overflow-y-auto">
-                  </div>
-                </div>
-              </div>
-
-              <div class="mt-6 hidden" id="uploadProgress">
-                <div class="flex justify-between items-start text-sm mb-1.5">
-                  <span id="uploadProgressStatus" class="break-words mr-2 flex-1 min-w-0">Uploading files...</span>
-                  <span id="uploadProgressPercent" class="text-blue-400 ml-2 shrink-0">0%</span>
-                </div>
-                <div class="w-full bg-dark-700 rounded-full h-2.5 overflow-hidden mb-3">
-                  <div id="uploadProgressBar" class="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
-                    style="width: 0%"></div>
-                </div>
-                <div id="uploadFilesList" class="p-2 space-y-1 max-h-60 overflow-y-auto">
-                </div>
-              </div>
-            </form>
-          </div>
-          <div class="flex justify-end p-4 border-t border-gray-600/50">
-            <button onclick="closeUploadModal()"
-              class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors flex items-center mr-3">
-              <i class="ti ti-x mr-1.5"></i>
-              <span>Cancel</span>
-            </button>
-            <button id="uploadButton"
-              class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center disabled:bg-gray-600 disabled:cursor-not-allowed"
-              disabled>
-              <i class="ti ti-upload mr-1.5"></i>
-              <span>Upload</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="toast"
-      class="fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden flex items-center">
-      <i id="toast-icon" class="mr-2"></i>
-      <span id="toast-message"></span>
-    </div>
-
-    <div id="gDriveModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden transition-opacity">
-      <div class="flex items-center justify-center min-h-screen p-4">
-        <div id="gdriveModalContent"
-          class="bg-dark-800 rounded-lg shadow-xl w-full max-w-md border border-gray-600/50 transform transition-all opacity-0 scale-95">
-
-          <div class="flex items-center justify-between p-4 border-b border-gray-600/50">
-            <h3 class="text-lg font-medium">Google Drive Import</h3>
-            <button id="closeGDriveBtn"
-              class="rounded-full w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700/50 transition-colors">
-              <i class="ti ti-x"></i>
-            </button>
-          </div>
-
-          <div id="gdriveModalBody"></div>
-        </div>
-      </div>
-    </div>
-
-    <div id="videoPreviewModal" class="fixed inset-0 bg-black bg-opacity-80 z-50 hidden">
-      <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl">
-
-          <div class="flex items-center justify-between p-4 border-b border-gray-600">
-            <div>
-              <h3 class="text-lg font-semibold video-title">Video Title</h3>
+          <% } else { %>
+          <img src="<%= video.thumbnail_path %>" alt="<%= video.title %>" class="w-full h-full object-cover">
+          <% } %>
+          <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div class="bg-primary/90 w-10 h-10 rounded-full flex items-center justify-center">
+              <i class="ti ti-player-play-filled text-white"></i>
             </div>
-            <div class="flex items-center gap-4">
-              <button onclick="closeVideoPreviewModal()" class="text-gray-400 hover:text-white">
-                <i class="ti ti-x text-xl"></i>
+          </div>
+          <span class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+            <%= formatDuration(video.duration) %>
+          </span>
+          <% if (isAudio) { %>
+          <span class="absolute top-2 left-2 bg-primary/80 text-white text-xs px-1.5 py-0.5 rounded">
+            <i class="ti ti-music text-xs mr-1"></i>Audio
+          </span>
+          <% } %>
+        </div>
+        <div class="p-3">
+          <h3 class="font-medium text-sm truncate mb-1"><%= video.title %></h3>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-gray-400"><%= formatFileSize(video.file_size) %></span>
+            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button class="text-gray-400 hover:text-white p-1" onclick="event.stopPropagation(); showRenameDialog('<%= video.id %>', '<%= video.title %>')">
+                <i class="ti ti-pencil text-sm"></i>
+              </button>
+              <button class="text-gray-400 hover:text-red-400 p-1" onclick="event.stopPropagation(); showDeleteDialog('<%= video.id %>', '<%= video.title %>')">
+                <i class="ti ti-trash text-sm"></i>
               </button>
             </div>
           </div>
+        </div>
+      </div>
+      <% }); %>
+    </div>
 
-          <div class="relative bg-black aspect-video">
-            <video id="previewPlayer" class="w-full h-full" controls>
-              <source src="" type="video/mp4" id="videoSource">
-              Your browser does not support the video tag.
+    <div id="listView" class="hidden">
+      <div class="overflow-x-auto">
+        <table class="min-w-full">
+          <thead class="bg-gray-700">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Name</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-24">Duration</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-28">Size</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider w-32">Modified</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider w-24">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700">
+            <% videos.forEach(function(video) { 
+              const isAudio = video.filepath && (video.filepath.includes('/audio/') || video.filepath.endsWith('.m4a') || video.filepath.endsWith('.aac') || video.filepath.endsWith('.mp3'));
+              const mediaType = isAudio ? 'audio' : 'video';
+            %>
+            <tr class="file-item-row group hover:bg-dark-700 transition-colors cursor-pointer"
+              data-id="<%= video.id %>" data-title="<%= video.title %>" data-date="<%= video.upload_date %>" data-size="<%= video.file_size %>" data-type="<%= mediaType %>"
+              onclick="playMedia('<%= video.id %>', '<%= video.title %>', '<%= mediaType %>')">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-12 h-8 rounded overflow-hidden bg-[#181818] flex-shrink-0 relative flex items-center justify-center">
+                    <% if (isAudio) { %>
+                    <i class="ti ti-music text-primary"></i>
+                    <% } else { %>
+                    <img src="<%= video.thumbnail_path %>" alt="" class="w-full h-full object-cover">
+                    <% } %>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-sm truncate max-w-xs"><%= video.title %></span>
+                  </div>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-sm text-gray-400"><%= formatDuration(video.duration) %></td>
+              <td class="px-4 py-3 text-sm text-gray-400"><%= formatFileSize(video.file_size) %></td>
+              <td class="px-4 py-3 text-sm text-gray-400"><%= new Date(video.upload_date).toLocaleDateString() %></td>
+              <td class="px-4 py-3 text-right">
+                <div class="flex items-center justify-end gap-1">
+                  <button class="p-1.5 hover:bg-dark-600 rounded text-gray-400 hover:text-white transition-colors"
+                    onclick="event.stopPropagation(); showRenameDialog('<%= video.id %>', '<%= video.title %>')">
+                    <i class="ti ti-pencil text-sm"></i>
+                  </button>
+                  <button class="p-1.5 hover:bg-dark-600 rounded text-gray-400 hover:text-red-400 transition-colors"
+                    onclick="event.stopPropagation(); showDeleteDialog('<%= video.id %>', '<%= video.title %>')">
+                    <i class="ti ti-trash text-sm"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="text-center py-12">
+      <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mx-auto mb-4">
+        <i class="ti ti-video text-gray-500 text-2xl"></i>
+      </div>
+      <h3 class="text-lg font-medium text-gray-300 mb-2">No videos yet</h3>
+      <p class="text-gray-500 text-sm mb-4">Upload your first video to get started</p>
+      <button onclick="openUploadModal()" class="inline-flex items-center gap-2 bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+        <i class="ti ti-upload"></i>
+        <span>Upload Video</span>
+      </button>
+    </div>
+    <% } %>
+  </div>
+
+  <% if (videos && videos.length > 0) { %>
+  <div class="px-4 py-3 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+    <p id="paginationInfo" class="text-sm text-gray-400">Showing 1-<%= Math.min(videos.length, 24) %> of <%= videos.length %> videos</p>
+    <div id="paginationControls" class="flex items-center gap-2"></div>
+  </div>
+  <% } %>
+</div>
+
+<div id="uploadModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden modal-overlay overflow-y-auto">
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-lg" id="uploadModalContent">
+      <div class="flex items-center justify-between p-4 border-b border-gray-700">
+        <h3 class="text-lg font-semibold">Upload Media</h3>
+        <button onclick="closeUploadModal()" class="text-gray-400 hover:text-white">
+          <i class="ti ti-x text-xl"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div class="flex gap-2 mb-4">
+          <button type="button" id="tabVideo" class="flex-1 py-2 px-4 rounded-lg bg-primary text-white transition-colors" onclick="switchUploadTab('video')">
+            <i class="ti ti-video mr-2"></i>Video
+          </button>
+          <button type="button" id="tabAudio" class="flex-1 py-2 px-4 rounded-lg bg-dark-700 text-gray-400 hover:text-white transition-colors" onclick="switchUploadTab('audio')">
+            <i class="ti ti-music mr-2"></i>Audio
+          </button>
+        </div>
+        <form id="videoUploadForm" enctype="multipart/form-data">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="uploadType" id="uploadType" value="video">
+          <div id="uploadDropzone" class="border-2 border-dashed border-gray-600 hover:border-primary rounded-lg py-10 px-6 text-center transition-all cursor-pointer" data-state="idle">
+            <div class="flex flex-col items-center justify-center space-y-3">
+              <div class="w-14 h-14 rounded-full bg-dark-700 flex items-center justify-center">
+                <i id="dropzoneIcon" class="ti ti-cloud-upload text-2xl text-gray-400"></i>
+              </div>
+              <div>
+                <p id="dropzoneText" class="text-gray-300">Drag and drop video files here</p>
+                <p class="text-gray-500 text-sm">Or click to browse</p>
+              </div>
+              <label class="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors inline-block cursor-pointer">
+                <span>Select files</span>
+                <input type="file" name="media" accept="video/mp4,video/avi,video/quicktime" multiple class="hidden" id="mediaFileInput">
+              </label>
+              <p id="dropzoneFormats" class="text-gray-500 text-xs">Supported formats: MP4, AVI, MOV (max 50GB)</p>
+            </div>
+          </div>
+          <div id="selectedFileInfo" class="hidden">
+            <div class="bg-dark-700 p-4 rounded-lg">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <i class="ti ti-files text-primary"></i>
+                  </div>
+                  <div>
+                    <p class="font-medium text-sm">Selected files</p>
+                    <p id="selectedFileCount" class="text-xs text-gray-400"></p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button type="button" class="text-primary hover:text-blue-400 text-sm" onclick="document.getElementById('mediaFileInput').click()">Add more</button>
+                  <button type="button" id="clearFileButton" class="text-gray-400 hover:text-white p-1">
+                    <i class="ti ti-x"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="selectedFilesList" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            </div>
+          </div>
+          <div class="mt-4 hidden" id="uploadProgress">
+            <div class="flex justify-between items-center text-sm mb-2">
+              <span id="uploadProgressStatus" class="text-gray-400 truncate mr-2">Uploading...</span>
+              <span id="uploadProgressPercent" class="text-primary font-medium">0%</span>
+            </div>
+            <div class="w-full bg-dark-700 rounded-full h-2.5">
+              <div id="uploadProgressBar" class="bg-primary h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+            <div id="uploadFilesList" class="mt-3 space-y-2 max-h-48 overflow-y-auto"></div>
+          </div>
+        </form>
+      </div>
+      <div class="flex justify-end gap-3 p-4 border-t border-gray-700">
+        <button onclick="closeUploadModal()" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors">Cancel</button>
+        <button id="uploadButton" class="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-lg transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>
+          <i class="ti ti-upload mr-1.5"></i>Upload
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="cloudImportModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden modal-overlay overflow-y-auto">
+  <div class="flex min-h-screen items-center justify-center p-4">
+    <div id="cloudModalContent" class="bg-dark-800 rounded-lg shadow-xl w-full max-w-md">
+      <div class="flex items-center justify-between p-4 border-b border-gray-700">
+        <h3 id="cloudModalTitle" class="text-lg font-semibold">Import from Cloud</h3>
+        <button id="closeCloudBtn" class="text-gray-400 hover:text-white">
+          <i class="ti ti-x text-xl"></i>
+        </button>
+      </div>
+      <div id="cloudModalBody"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="fixed top-16 right-4 bg-dark-800 text-white px-4 py-3 rounded-lg shadow-lg z-50 hidden flex items-center">
+  <i id="toast-icon" class="mr-2"></i>
+  <span id="toast-message"></span>
+</div>
+
+
+<script>
+let currentView = 'grid';
+let currentUploadType = 'video';
+let userDiskUsage = 0;
+let userDiskLimit = 0;
+
+async function loadDiskUsage() {
+  try {
+    const response = await fetch('/api/user/disk-usage');
+    const data = await response.json();
+    if (data.success) {
+      userDiskUsage = data.diskUsage;
+      userDiskLimit = data.diskLimit;
+      updateDiskUsageDisplay();
+    }
+  } catch (error) {
+    console.error('Error loading disk usage:', error);
+  }
+}
+
+function updateDiskUsageDisplay() {
+  const infoDesktop = document.getElementById('diskUsageInfoDesktop');
+  const textDesktop = document.getElementById('diskUsageTextDesktop');
+  const infoMobile = document.getElementById('diskUsageInfoMobile');
+  const textMobile = document.getElementById('diskUsageTextMobile');
+  
+  if (userDiskLimit > 0) {
+    const usedText = formatFileSize(userDiskUsage);
+    const limitText = formatFileSize(userDiskLimit);
+    const displayText = `${usedText} / ${limitText}`;
+    
+    textDesktop.textContent = displayText;
+    textMobile.textContent = displayText;
+    
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      infoDesktop.classList.add('hidden');
+      infoMobile.classList.remove('hidden');
+    } else {
+      infoDesktop.classList.remove('hidden');
+      infoMobile.classList.add('hidden');
+    }
+  } else {
+    infoDesktop.classList.add('hidden');
+    infoMobile.classList.add('hidden');
+  }
+}
+
+window.addEventListener('resize', updateDiskUsageDisplay);
+
+function checkDiskLimit(fileSize) {
+  if (userDiskLimit === 0) return true;
+  return (userDiskUsage + fileSize) <= userDiskLimit;
+}
+
+function getRemainingSpace() {
+  if (userDiskLimit === 0) return Infinity;
+  return Math.max(0, userDiskLimit - userDiskUsage);
+}
+
+loadDiskUsage();
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function switchUploadTab(type) {
+  currentUploadType = type;
+  document.getElementById('uploadType').value = type;
+  const tabVideo = document.getElementById('tabVideo');
+  const tabAudio = document.getElementById('tabAudio');
+  const dropzoneIcon = document.getElementById('dropzoneIcon');
+  const dropzoneText = document.getElementById('dropzoneText');
+  const dropzoneFormats = document.getElementById('dropzoneFormats');
+  const mediaFileInput = document.getElementById('mediaFileInput');
+  
+  if (type === 'video') {
+    tabVideo.className = 'flex-1 py-2 px-4 rounded-lg bg-primary text-white transition-colors';
+    tabAudio.className = 'flex-1 py-2 px-4 rounded-lg bg-dark-700 text-gray-400 hover:text-white transition-colors';
+    dropzoneIcon.className = 'ti ti-video text-2xl text-gray-400';
+    dropzoneText.textContent = 'Drag and drop video files here';
+    dropzoneFormats.textContent = 'Supported formats: MP4, AVI, MOV (max 50GB)';
+    mediaFileInput.accept = 'video/mp4,video/avi,video/quicktime';
+  } else {
+    tabVideo.className = 'flex-1 py-2 px-4 rounded-lg bg-dark-700 text-gray-400 hover:text-white transition-colors';
+    tabAudio.className = 'flex-1 py-2 px-4 rounded-lg bg-primary text-white transition-colors';
+    dropzoneIcon.className = 'ti ti-music text-2xl text-gray-400';
+    dropzoneText.textContent = 'Drag and drop audio files here';
+    dropzoneFormats.textContent = 'Supported formats: MP3, WAV';
+    mediaFileInput.accept = 'audio/mpeg,audio/mp3,audio/wav,audio/aac,audio/mp4,audio/x-m4a,audio/ogg,audio/flac';
+  }
+  resetUploadForm();
+}
+
+function showToast(type, message) {
+  const toast = document.getElementById('toast');
+  const toastIcon = document.getElementById('toast-icon');
+  const toastMessage = document.getElementById('toast-message');
+  if (type === 'success') {
+    toastIcon.className = 'ti ti-check text-green-400 text-xl mr-2 font-loaded';
+    toast.classList.add('border-l-4', 'border-green-400');
+    toast.classList.remove('border-l-4', 'border-red-400', 'border-yellow-400');
+  } else if (type === 'error') {
+    toastIcon.className = 'ti ti-x text-red-400 text-xl mr-2 font-loaded';
+    toast.classList.add('border-l-4', 'border-red-400');
+    toast.classList.remove('border-l-4', 'border-green-400', 'border-yellow-400');
+  } else if (type === 'warning') {
+    toastIcon.className = 'ti ti-alert-triangle text-yellow-400 text-xl mr-2 font-loaded';
+    toast.classList.add('border-l-4', 'border-yellow-400');
+    toast.classList.remove('border-l-4', 'border-green-400', 'border-red-400');
+  }
+  toastMessage.textContent = message;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+document.getElementById('gridViewBtn').addEventListener('click', function() {
+  currentView = 'grid';
+  document.getElementById('gridView').classList.remove('hidden');
+  document.getElementById('listView').classList.add('hidden');
+  this.classList.add('bg-primary', 'text-white');
+  this.classList.remove('text-gray-400');
+  document.getElementById('listViewBtn').classList.remove('bg-primary', 'text-white');
+  document.getElementById('listViewBtn').classList.add('text-gray-400');
+});
+
+document.getElementById('listViewBtn').addEventListener('click', function() {
+  currentView = 'list';
+  document.getElementById('listView').classList.remove('hidden');
+  document.getElementById('gridView').classList.add('hidden');
+  this.classList.add('bg-primary', 'text-white');
+  this.classList.remove('text-gray-400');
+  document.getElementById('gridViewBtn').classList.remove('bg-primary', 'text-white');
+  document.getElementById('gridViewBtn').classList.add('text-gray-400');
+});
+
+function playMedia(mediaId, mediaTitle, mediaType) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4';
+  modal.id = 'media-player-modal';
+  
+  if (mediaType === 'audio') {
+    modal.innerHTML = `
+      <div class="relative w-full max-w-lg mx-auto">
+        <div class="bg-dark-800 rounded-lg overflow-hidden shadow-xl">
+          <div class="flex items-center justify-between p-4 border-b border-gray-700">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <i class="ti ti-music text-primary"></i>
+              </div>
+              <h3 class="text-lg font-medium truncate pr-4">${mediaTitle || 'Now Playing'}</h3>
+            </div>
+            <button id="close-player-btn" class="text-gray-400 hover:text-white">
+              <i class="ti ti-x text-xl"></i>
+            </button>
+          </div>
+          <div class="p-6">
+            <audio id="audio-player" class="w-full" controls autoplay>
+              <source src="/stream/${mediaId}" type="audio/mp4">
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    modal.innerHTML = `
+      <div class="relative w-full max-w-4xl mx-auto">
+        <div class="bg-dark-800 rounded-lg overflow-hidden shadow-xl">
+          <div class="flex items-center justify-between p-4 border-b border-gray-700">
+            <h3 class="text-lg font-medium truncate pr-4">${mediaTitle || 'Now Playing'}</h3>
+            <button id="close-player-btn" class="text-gray-400 hover:text-white">
+              <i class="ti ti-x text-xl"></i>
+            </button>
+          </div>
+          <div class="bg-black aspect-video">
+            <video id="native-player" class="w-full h-full" controls preload="auto" autoplay>
+              <source src="/stream/${mediaId}" type="video/mp4">
             </video>
           </div>
         </div>
       </div>
-    </div>
+    `;
+  }
+  
+  document.body.appendChild(modal);
+  document.body.classList.add('overflow-hidden');
+  
+  const closePlayer = () => {
+    const video = document.getElementById('native-player');
+    const audio = document.getElementById('audio-player');
+    if (video) video.pause();
+    if (audio) audio.pause();
+    modal.remove();
+    document.body.classList.remove('overflow-hidden');
+  };
+  
+  document.getElementById('close-player-btn').addEventListener('click', closePlayer);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closePlayer(); });
+  document.addEventListener('keydown', function handler(e) {
+    if (e.key === 'Escape') { closePlayer(); document.removeEventListener('keydown', handler); }
+  });
+}
 
-    <script>
-      function formatDuration(seconds) {
-        if (!seconds) return '0:00';
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs = Math.floor(seconds % 60);
-        if (hours > 0) {
-          return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-        return `${minutes}:${secs.toString().padStart(2, '0')}`;
-      }
-      function formatDate(dateString) {
-        if (!dateString) return 'Unknown date';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'short',
-          day: 'numeric'
-        });
-      }
-      function formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
-      function showToast(type, message) {
-        const toast = document.getElementById('toast');
-        const toastIcon = document.getElementById('toast-icon');
-        const toastMessage = document.getElementById('toast-message');
-        if (type === 'success') {
-          toastIcon.className = 'ti ti-check text-green-400 text-xl mr-2 font-loaded';
-          toast.classList.add('border-l-4', 'border-green-400');
-          toast.classList.remove('border-l-4', 'border-red-400', 'border-yellow-400');
-        } else if (type === 'error') {
-          toastIcon.className = 'ti ti-x text-red-400 text-xl mr-2 font-loaded';
-          toast.classList.add('border-l-4', 'border-red-400');
-          toast.classList.remove('border-l-4', 'border-green-400', 'border-yellow-400');
-        } else if (type === 'warning') {
-          toastIcon.className = 'ti ti-alert-triangle text-yellow-400 text-xl mr-2 font-loaded';
-          toast.classList.add('border-l-4', 'border-yellow-400');
-          toast.classList.remove('border-l-4', 'border-green-400', 'border-red-400');
-        }
-        toastMessage.textContent = message;
-        toast.classList.remove('hidden');
-        setTimeout(() => {
-          toast.classList.add('hidden');
-        }, 3000);
-      }
-      function openUploadModal() {
-        const modal = document.getElementById('uploadModal');
-        const modalContent = document.getElementById('uploadModalContent');
-        modal.classList.remove('hidden');
-        setTimeout(() => {
-          modalContent.classList.remove('opacity-0', 'scale-95');
-          modalContent.classList.add('opacity-100', 'scale-100');
-        }, 10);
-        document.body.classList.add('overflow-hidden');
-        resetUploadForm();
-      }
-      function closeUploadModal() {
-        const modal = document.getElementById('uploadModal');
-        const modalContent = document.getElementById('uploadModalContent');
-        modalContent.classList.remove('opacity-100', 'scale-100');
-        modalContent.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => {
-          modal.classList.add('hidden');
-          document.body.classList.remove('overflow-hidden');
-        }, 200);
-        resetUploadForm();
-      }
-      function resetUploadForm() {
-        document.getElementById('videoUploadForm').reset();
-        document.getElementById('selectedFileInfo').classList.add('hidden');
-        document.getElementById('uploadDropzone').classList.remove('hidden');
-        document.getElementById('uploadProgress').classList.add('hidden');
-        document.getElementById('uploadButton').disabled = true;
-        document.getElementById('uploadProgressBar').style.width = '0%';
-        const dropzone = document.getElementById('uploadDropzone');
-        dropzone.setAttribute('data-state', 'idle');
-        dropzone.classList.remove('border-primary', 'bg-primary/5');
-        dropzone.classList.add('border-gray-600');
-        document.querySelector('#dropzoneIconContainer i').className = 'ti ti-upload text-4xl text-gray-500';
-      }
-      function openGDriveModal() {
-        const modal = document.getElementById('gDriveModal');
-        const modalContent = document.getElementById('gdriveModalContent');
-        if (!modal || !modalContent) {
-          console.error('GDrive modal elements not found');
-          return;
-        }
-        modal.classList.remove('hidden');
-        void modal.offsetWidth;
-        setTimeout(() => {
-          modalContent.classList.remove('opacity-0', 'scale-95');
-          modalContent.classList.add('opacity-100', 'scale-100');
-        }, 10);
-        document.body.classList.add('overflow-hidden');
-        checkGDriveAPIKey();
-        document.getElementById('closeGDriveBtn').addEventListener('click', closeGDriveModal);
-      }
-      function closeGDriveModal() {
-        const modal = document.getElementById('gDriveModal');
-        const modalContent = document.getElementById('gdriveModalContent');
-        if (!modal || !modalContent) {
-          console.error('GDrive modal elements not found for closing');
-          return;
-        }
-        console.log('Closing GDrive modal');
-        modalContent.classList.remove('opacity-100', 'scale-100');
-        modalContent.classList.add('opacity-0', 'scale-95');
-        setTimeout(() => {
-          modal.classList.add('hidden');
-          document.body.classList.remove('overflow-hidden');
-        }, 200);
-      }
-      function checkGDriveAPIKey() {
-        const modalContent = document.getElementById('gdriveModalBody');
-        modalContent.innerHTML = `
-        <div class="p-6">
-          
-          <div class="text-center mb-5">
-            <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-              <i class="ti ti-brand-google-drive text-3xl text-primary"></i>
-            </div>
-            <h4 class="text-lg font-medium mb-1">Import from Google Drive</h4>
-            <p class="text-gray-400 text-sm">Enter a Google Drive link to your video</p>
-          </div>
-          
-          <div class="relative mb-2">
-            <input 
-              type="text" 
-              id="gdrive-link" 
-              class="bg-dark-700 text-white pl-10 pr-4 py-2.5 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
-              placeholder="https://drive.google.com/file/d/..."
-            >
-            <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-          </div>
-          <p class="text-xs text-gray-500 mb-4">Make sure the file is shared with <strong>Anyone with the link</strong></p>
-          
-          <button id="import-drive-button" class="w-full bg-primary hover:bg-primary/90 text-white py-2.5 px-4 rounded-lg font-medium transition-colors flex items-center justify-center">
-            <i class="ti ti-download mr-2"></i>
-            <span>Import Video</span>
-          </button>
-        </div>
-      `;
-        document.getElementById('import-drive-button').addEventListener('click', async function () {
-          const link = document.getElementById('gdrive-link').value;
-          if (!link) {
-            showToast('error', 'Please enter a Google Drive link');
-            return;
-          }
-          this.disabled = true;
-          this.innerHTML = `
-          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Processing...
-        `;
-          try {
-            const response = await fetch('/api/videos/import-drive', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value
-              },
-              body: JSON.stringify({ driveUrl: link })
-            });
-            const result = await response.json();
-            if (result.success) {
-              showImportProgressModal(result.jobId);
-              closeGDriveModal();
-            } else {
-              showToast('error', result.error || 'Failed to import video');
-              this.disabled = false;
-              this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
-            }
-          } catch (error) {
-            showToast('error', 'An error occurred while importing the video');
-            this.disabled = false;
-            this.innerHTML = `<i class="ti ti-download mr-2"></i><span>Import Video</span>`;
-          }
-        });
-      }
-      function openVideoPreviewModal(title, videoSrc, details) {
-        document.querySelector('#videoPreviewModal .video-title').textContent = title;
-        const videoSource = document.getElementById('videoSource');
-        videoSource.src = videoSrc;
-        const videoPlayer = document.getElementById('previewPlayer');
-        videoPlayer.load();
-        document.getElementById('videoPreviewModal').classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-      }
-      function closeVideoPreviewModal() {
-        const videoPlayer = document.getElementById('previewPlayer');
-        videoPlayer.pause();
-        document.getElementById('videoPreviewModal').classList.add('hidden');
-        document.body.style.overflow = 'auto';
-      }
-
-      function playVideo(videoId, videoTitle) {
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm transition-opacity';
-        modal.id = 'video-player-modal';
-        modal.innerHTML = `
-        <div class="relative w-full max-w-4xl mx-auto">
-          <div class="bg-dark-800 rounded-lg overflow-hidden shadow-xl">
-            
-            <div class="flex items-center justify-between p-4 border-b border-gray-600">
-              <div class="flex items-center">
-                <h3 class="text-lg font-medium">${videoTitle || 'Now Playing'}</h3>
-              </div>
-              <button id="close-player-btn" class="rounded-full w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
-                <i class="ti ti-x"></i>
-              </button>
-            </div>
-            
-            <div class="bg-dark-700 flex justify-center" style="height: 53vh; max-height: 600px;">
-              <video 
-                id="native-player"
-                class="h-full max-h-full max-w-full object-contain"
-                controls 
-                preload="auto"
-                autoplay
-              >
-                <source src="/stream/${videoId}" type="video/mp4">
-                Your browser does not support HTML5 video.
-              </video>
-            </div>
-          </div>
-        </div>
-      `;
-        document.body.appendChild(modal);
-        document.body.classList.add('overflow-hidden');
-        document.getElementById('close-player-btn').addEventListener('click', function () {
-          const videoElement = document.getElementById('native-player');
-          if (videoElement) videoElement.pause();
-          document.getElementById('video-player-modal').remove();
-          document.body.classList.remove('overflow-hidden');
-        });
-        document.addEventListener('keydown', function escapeHandler(e) {
-          if (e.key === 'Escape') {
-            const videoElement = document.getElementById('native-player');
-            if (videoElement) videoElement.pause();
-            document.getElementById('video-player-modal').remove();
-            document.body.classList.remove('overflow-hidden');
-            document.removeEventListener('keydown', escapeHandler);
-          }
-        });
-        modal.addEventListener('click', function (e) {
-          if (e.target === modal) {
-            const videoElement = document.getElementById('native-player');
-            if (videoElement) videoElement.pause();
-            document.getElementById('video-player-modal').remove();
-            document.body.classList.remove('overflow-hidden');
-          }
-        });
-      }
-
-      function deleteVideo(videoId, videoTitle) {
-        if (confirm(`Are you sure you want to delete "${videoTitle}"?`)) {
-          fetch(`/api/videos/${videoId}`, {
-            method: 'DELETE',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                showToast('success', 'Video deleted successfully');
-                setTimeout(() => window.location.reload(), 1000);
-              } else {
-                showToast('error', data.error || 'Failed to delete video');
-              }
-            })
-            .catch(error => {
-              console.error('Error:', error);
-              showToast('error', 'An error occurred while deleting the video');
-            });
-        }
-      }
-      function renameVideo(videoId, currentTitle) {
-        const newTitle = prompt('Enter a new title for the video:', currentTitle);
-        if (newTitle && newTitle !== currentTitle) {
-          fetch(`/api/videos/${videoId}/rename`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ title: newTitle })
-          })
-            .then(response => response.json())
-            .then(data => {
-              if (data.success) {
-                showToast('success', 'Video renamed successfully');
-                setTimeout(() => window.location.reload(), 1000);
-              } else {
-                showToast('error', data.error || 'Failed to rename video');
-              }
-            })
-            .catch(error => {
-              console.error('Error:', error);
-              showToast('error', 'An error occurred while renaming the video');
-            });
-        }
-      }
-      document.addEventListener('DOMContentLoaded', function () {
-        function formatFileSize(bytes) {
-          if (bytes === 0) return '0 Bytes';
-          const k = 1024;
-          const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-          const i = Math.floor(Math.log(bytes) / Math.log(k));
-          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        const videoFileInput = document.getElementById('videoFileInput');
-        const selectedFileInfo = document.getElementById('selectedFileInfo');
-        const selectedFileCount = document.getElementById('selectedFileCount');
-        const selectedFilesList = document.getElementById('selectedFilesList');
-        const clearFileButton = document.getElementById('clearFileButton');
-        const uploadDropzone = document.getElementById('uploadDropzone');
-        const uploadButton = document.getElementById('uploadButton');
-        const uploadProgress = document.getElementById('uploadProgress');
-        const uploadProgressBar = document.getElementById('uploadProgressBar');
-        const uploadProgressPercent = document.getElementById('uploadProgressPercent');
-        const uploadProgressStatus = document.getElementById('uploadProgressStatus');
-        const uploadFilesList = document.getElementById('uploadFilesList');
-        
-        let selectedFiles = [];
-        
-        function removeFile(index) {
-          selectedFiles.splice(index, 1);
-          if (selectedFiles.length > 0) {
-            updateFilesList();
-          } else {
-            resetUploadForm();
-          }
-        }
-        
-        videoFileInput.addEventListener('change', function() {
-          const newFiles = Array.from(this.files);
-          if (newFiles.length > 0) {
-            const maxFileSize = 10 * 1024 * 1024 * 1024;
-            const largeFiles = newFiles.filter(file => file.size > maxFileSize);
-            
-            if (largeFiles.length > 0) {
-              const fileNames = largeFiles.map(f => f.name).join(', ');
-              showToast('error', `File(s) too large: ${fileNames}. Maximum size is 10GB per file.`);
-              this.value = '';
-              return;
-            }
-            
-            const veryLargeFiles = newFiles.filter(file => file.size > 1024 * 1024 * 1024);
-            if (veryLargeFiles.length > 0) {
-              const fileNames = veryLargeFiles.map(f => f.name).join(', ');
-              showToast('warning', `Large file(s) detected: ${fileNames}. Upload may take longer time.`);
-            }
-            
-            if (selectedFiles.length === 0) {
-              selectedFiles = newFiles;
-            } else {
-              newFiles.forEach(newFile => {
-                const isDuplicate = selectedFiles.some(existingFile => 
-                  existingFile.name === newFile.name && existingFile.size === newFile.size
-                );
-                if (!isDuplicate) {
-                  selectedFiles.push(newFile);
-                }
-              });
-            }
-            
-            updateFilesList();
-            uploadDropzone.classList.add('hidden');
-            selectedFileInfo.classList.remove('hidden');
-            uploadButton.disabled = false;
-          }
-          
-          this.value = '';
-        });
-        
-        function updateFilesList() {
-          selectedFileCount.textContent = selectedFiles.length;
-          selectedFilesList.innerHTML = '';
-          
-          selectedFiles.forEach((file, index) => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'flex justify-between items-center p-2 rounded hover:bg-dark-600 transition-colors text-sm';
-            
-            const fileInfo = document.createElement('div');
-            fileInfo.className = 'flex-1 min-w-0';
-            fileInfo.innerHTML = `
-              <div class="truncate">${file.name}</div>
-              <div class="text-gray-400 text-xs">${formatFileSize(file.size)}</div>
-            `;
-            
-            const removeButton = document.createElement('button');
-            removeButton.type = 'button';
-            removeButton.className = 'ml-2 text-red-400 hover:text-red-300';
-            removeButton.innerHTML = `
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            `;
-            
-            removeButton.addEventListener('click', function() {
-              removeFile(index);
-            });
-            
-            fileItem.appendChild(fileInfo);
-            fileItem.appendChild(removeButton);
-            selectedFilesList.appendChild(fileItem);
-          });
-        }
-        uploadButton.addEventListener('click', function () {
-          if (selectedFiles.length === 0) {
-            return;
-          }
-          
-          uploadDropzone.classList.add('hidden');
-          selectedFileInfo.classList.add('hidden');
-          uploadProgress.classList.remove('hidden');
-          uploadButton.disabled = true;
-          
-          let currentFileIndex = 0;
-          let successCount = 0;
-          let failedFiles = [];
-          
-          function uploadNextFile() {
-            if (currentFileIndex >= selectedFiles.length) {
-              if (failedFiles.length === 0) {
-                showToast('success', `All ${successCount} videos uploaded successfully`);
-              } else {
-                showToast('warning', `${successCount} videos uploaded, ${failedFiles.length} failed`);
-              }
-              setTimeout(() => {
-                window.location.reload();
-              }, 2000);
-              return;
-            }
-            
-            const file = selectedFiles[currentFileIndex];
-            const formData = new FormData();
-            formData.append('video', file);
-            
-            const isLargeFile = file.size > 1024 * 1024 * 1024;
-            const fileSizeText = formatFileSize(file.size);
-            
-            uploadProgressStatus.textContent = `Uploading ${currentFileIndex + 1} of ${selectedFiles.length}: ${file.name} (${fileSizeText})`;
-            
-            updateFileProgress(currentFileIndex, 'uploading', 0);
-            
-            const xhr = new XMLHttpRequest();
-            xhr.timeout = 30 * 60 * 1000;
-            
-            let startTime = Date.now();
-            let lastLoaded = 0;
-            let lastTime = startTime;
-            
-            xhr.upload.addEventListener('progress', (event) => {
-              if (event.lengthComputable) {
-                const filePercent = Math.round((event.loaded / event.total) * 100);
-                const overallPercent = Math.round(((currentFileIndex + (event.loaded / event.total)) / selectedFiles.length) * 100);
-                uploadProgressBar.style.width = overallPercent + '%';
-                uploadProgressPercent.textContent = overallPercent + '%';
-                
-                if (isLargeFile && event.loaded > 0) {
-                  const currentTime = Date.now();
-                  const timeDiff = currentTime - lastTime;
-                  const loadedDiff = event.loaded - lastLoaded;
-                  
-                  if (timeDiff > 1000) {
-                    const speed = loadedDiff / (timeDiff / 1000);
-                    const remaining = event.total - event.loaded;
-                    const eta = remaining / speed;
-                    
-                    const etaMinutes = Math.floor(eta / 60);
-                    const etaSeconds = Math.floor(eta % 60);
-                    const etaText = etaMinutes > 0 ? `${etaMinutes}m ${etaSeconds}s` : `${etaSeconds}s`;
-                    
-                    uploadProgressStatus.textContent = `Uploading ${currentFileIndex + 1} of ${selectedFiles.length}: ${file.name} (${fileSizeText}) - ETA: ${etaText}`;
-                    
-                    lastTime = currentTime;
-                    lastLoaded = event.loaded;
-                  }
-                }
-                
-                updateFileProgress(currentFileIndex, 'uploading', filePercent);
-              }
-            });
-            
-            xhr.addEventListener('load', function () {
-              if (xhr.status === 200) {
-                try {
-                  const response = JSON.parse(xhr.responseText);
-                  if (response.success) {
-                    successCount++;
-                    updateFileProgress(currentFileIndex, 'success', 100);
-                  } else {
-                    failedFiles.push(file.name);
-                    updateFileProgress(currentFileIndex, 'error', 0);
-                  }
-                } catch (error) {
-                  failedFiles.push(file.name);
-                  updateFileProgress(currentFileIndex, 'error', 0);
-                }
-              } else if (xhr.status === 413) {
-                failedFiles.push(file.name + ' (File too large)');
-                updateFileProgress(currentFileIndex, 'error', 0);
-              } else {
-                failedFiles.push(file.name);
-                updateFileProgress(currentFileIndex, 'error', 0);
-              }
-              currentFileIndex++;
-              setTimeout(uploadNextFile, 500);
-            });
-            
-            xhr.addEventListener('error', function () {
-              failedFiles.push(file.name + ' (Network error)');
-              updateFileProgress(currentFileIndex, 'error', 0);
-              currentFileIndex++;
-              setTimeout(uploadNextFile, 500);
-            });
-            
-            xhr.addEventListener('timeout', function () {
-              failedFiles.push(file.name + ' (Upload timeout)');
-              updateFileProgress(currentFileIndex, 'error', 0);
-              currentFileIndex++;
-              setTimeout(uploadNextFile, 500);
-            });
-            
-            xhr.open('POST', '/api/videos/upload', true);
-            xhr.send(formData);
-          }
-          
-          function updateFileProgress(index, status, percent) {
-            const fileItems = uploadFilesList.children;
-            if (fileItems[index]) {
-              const statusElement = fileItems[index].querySelector('.file-status');
-              if (statusElement) {
-                if (status === 'uploading') {
-                  statusElement.textContent = `${percent}%`;
-                  statusElement.className = 'file-status text-blue-400';
-                } else if (status === 'success') {
-                  statusElement.textContent = '✓';
-                  statusElement.className = 'file-status text-green-400';
-                } else if (status === 'error') {
-                  statusElement.textContent = '✗';
-                  statusElement.className = 'file-status text-red-400';
-                }
-              }
-            }
-          }
-          
-          uploadFilesList.innerHTML = '';
-          selectedFiles.forEach((file, index) => {
-            const fileItem = document.createElement('div');
-            fileItem.className = 'flex justify-between items-center p-2 rounded hover:bg-dark-600 transition-colors text-sm';
-            fileItem.innerHTML = `
-              <div class="flex-1 min-w-0">
-                <div class="truncate">${file.name}</div>
-                <div class="text-gray-400 text-xs">${formatFileSize(file.size)}</div>
-              </div>
-              <span class="file-status text-gray-400 ml-2">Waiting...</span>
-            `;
-            uploadFilesList.appendChild(fileItem);
-          });
-          
-          uploadNextFile();
-        });
-        clearFileButton.addEventListener('click', function () {
-          resetUploadForm();
-        });
-        document.querySelectorAll('.play-button').forEach(button => {
-          button.addEventListener('click', function () {
-            const videoId = this.dataset.videoId;
-            const videoTitle = this.dataset.videoTitle;
-            playVideo(videoId, videoTitle);
-          });
-        });
+async function showRenameDialog(videoId, currentTitle) {
+  const result = await createModalDialog({
+    type: 'info',
+    icon: 'ti-pencil',
+    title: 'Rename Video',
+    message: 'Enter a new title for your video:',
+    hasInput: true,
+    inputValue: currentTitle,
+    confirmText: 'Save'
+  });
+  if (result.confirmed && result.value && result.value !== currentTitle) {
+    try {
+      const response = await fetch(`/api/videos/${videoId}/rename`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: result.value })
       });
-      function createModalDialog(options) {
-        const dialog = document.createElement('div');
-        dialog.id = 'custom-modal';
-        dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-all duration-300';
-        const themes = {
-          'info': {
-            icon: options.icon || 'ti-info-circle',
-            color: 'text-blue-600',
-            bg: 'bg-blue-600/10',
-            border: 'border-gray-600/50',
-            button: 'bg-blue-600 hover:bg-blue-700',
-            buttonIcon: 'ti-check'
-          },
-          'danger': {
-            icon: options.icon || 'ti-alert-triangle',
-            color: 'text-red-400',
-            bg: 'bg-red-500/10',
-            border: 'border-gray-600/50',
-            button: 'bg-red-500 hover:bg-red-600',
-            buttonIcon: 'ti-trash'
-          },
-          'warning': {
-            icon: options.icon || 'ti-alert-triangle',
-            color: 'text-yellow-400',
-            bg: 'bg-yellow-500/10',
-            border: 'border-yellow-500/50',
-            button: 'bg-yellow-500 hover:bg-yellow-600',
-            buttonIcon: 'ti-alert-circle'
-          },
-          'success': {
-            icon: options.icon || 'ti-check-circle',
-            color: 'text-green-400',
-            bg: 'bg-green-500/10',
-            border: 'border-green-500/50',
-            button: 'bg-green-500 hover:bg-green-600',
-            buttonIcon: 'ti-check'
-          }
-        };
-        const theme = themes[options.type || 'info'];
-        dialog.innerHTML = `
-      <div class="transform transition-all duration-300 opacity-0 scale-95 modal-content max-w-md w-full mx-4">
-        <div class="bg-dark-800 rounded-lg shadow-xl border ${theme.border} overflow-hidden">
-          
-          <div class="px-6 py-5 flex items-center">
-            <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mr-4 shrink-0">
+      const data = await response.json();
+      if (data.success) {
+        showToast('success', 'Video renamed successfully');
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        showToast('error', data.error || 'Failed to rename video');
+      }
+    } catch (error) {
+      showToast('error', 'An error occurred while renaming the video');
+    }
+  }
+}
+
+async function showDeleteDialog(videoId, videoTitle) {
+  const result = await createModalDialog({
+    type: 'danger',
+    icon: 'ti-trash',
+    title: 'Delete Video',
+    message: `Are you sure you want to delete "${videoTitle}"? This action cannot be undone.`,
+    confirmText: 'Delete',
+    confirmClass: 'bg-red-500 hover:bg-red-600'
+  });
+  if (result.confirmed) {
+    try {
+      const response = await fetch(`/api/videos/${videoId}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (data.success) {
+        showToast('success', 'Video deleted successfully');
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        showToast('error', data.error || 'Failed to delete video');
+      }
+    } catch (error) {
+      showToast('error', 'An error occurred while deleting the video');
+    }
+  }
+}
+
+function createModalDialog(options) {
+  const dialog = document.createElement('div');
+  dialog.id = 'custom-modal';
+  dialog.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm modal-overlay';
+  const themes = {
+    'info': { icon: options.icon || 'ti-info-circle', color: 'text-primary', bg: 'bg-primary/10', button: 'bg-primary hover:bg-blue-600' },
+    'danger': { icon: options.icon || 'ti-alert-triangle', color: 'text-red-400', bg: 'bg-red-500/10', button: 'bg-red-500 hover:bg-red-600' }
+  };
+  const theme = themes[options.type || 'info'];
+  dialog.innerHTML = `
+    <div class="max-w-md w-full mx-4">
+      <div class="bg-dark-800 rounded-lg shadow-xl overflow-hidden">
+        <div class="p-6">
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center shrink-0">
               <i class="ti ${theme.icon} ${theme.color} text-2xl"></i>
             </div>
             <div class="flex-1">
-              <h3 class="text-lg font-medium text-white">${options.title}</h3>
+              <h3 class="text-lg font-semibold">${options.title}</h3>
               <p class="text-gray-400 text-sm mt-1">${options.message}</p>
             </div>
           </div>
-          
           ${options.hasInput ? `
-          <div class="px-6 pb-4">
-            <input 
-              type="text" 
-              id="modal-input" 
-              class="bg-dark-900 text-white px-4 py-3 rounded-lg block w-full focus:outline-none focus:ring-1 focus:ring-primary border border-gray-600"
-              value="${options.inputValue || ''}"
-              placeholder="Enter new title..."
-              autofocus
-            >
-          </div>
+          <input type="text" id="modal-input" class="mt-4 w-full bg-dark-700 border border-gray-600 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" value="${options.inputValue || ''}" autofocus>
           ` : ''}
-          
-          <div class="px-6 py-4 flex justify-end space-x-3 border-t border-gray-600/50">
-            <button id="modal-cancel-btn" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors text-sm font-medium flex items-center">
-              <i class="ti ti-x mr-1.5"></i>
-              ${options.cancelText || 'Cancel'}
-            </button>
-            <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2.5 text-white rounded-lg transition-colors text-sm font-medium flex items-center">
-              <i class="ti ${theme.buttonIcon} mr-1.5"></i>
-              ${options.confirmText || 'Confirm'}
-            </button>
-          </div>
+        </div>
+        <div class="flex justify-end gap-3 p-4 border-t border-gray-700">
+          <button id="modal-cancel-btn" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 rounded-lg transition-colors">Cancel</button>
+          <button id="modal-confirm-btn" class="${options.confirmClass || theme.button} px-4 py-2 text-white rounded-lg transition-colors">${options.confirmText || 'Confirm'}</button>
         </div>
       </div>
-    `;
-        document.body.appendChild(dialog);
-        document.body.classList.add('overflow-hidden');
-        setTimeout(() => {
-          const modalContent = dialog.querySelector('.modal-content');
-          if (modalContent) {
-            modalContent.classList.replace('opacity-0', 'opacity-100');
-            modalContent.classList.replace('scale-95', 'scale-100');
-          }
-        }, 10);
-        return new Promise((resolve) => {
-          document.getElementById('modal-confirm-btn').addEventListener('click', () => {
-            const inputValue = options.hasInput ? document.getElementById('modal-input').value : null;
-            resolve({ confirmed: true, value: inputValue, closeNow: false });
-          });
-          document.getElementById('modal-cancel-btn').addEventListener('click', () => {
-            closeModalWithAnimation();
-          });
-          document.addEventListener('keydown', function escapeHandler(e) {
-            if (e.key === 'Escape') {
-              closeModalWithAnimation();
-              document.removeEventListener('keydown', escapeHandler);
-            }
-          });
-          dialog.addEventListener('click', function (e) {
-            if (e.target === dialog) {
-              closeModalWithAnimation();
-            }
-          });
-          if (options.hasInput) {
-            const input = document.getElementById('modal-input');
-            input.focus();
-            input.select();
-            input.addEventListener('keydown', function (e) {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                closeModalWithAnimation(true, input.value);
-              }
-            });
-          }
-          function closeModalWithAnimation(confirmed = false, value = null) {
-            const modalContent = dialog.querySelector('.modal-content');
-            if (modalContent) {
-              modalContent.classList.replace('opacity-100', 'opacity-0');
-              modalContent.classList.replace('scale-100', 'scale-95');
-            }
-            setTimeout(() => {
-              document.body.classList.remove('overflow-hidden');
-              dialog.remove();
-              resolve({ confirmed, value, closeNow: true });
-            }, 200);
-          }
-        });
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  document.body.classList.add('overflow-hidden');
+  
+  return new Promise((resolve) => {
+    const close = (confirmed = false, value = null) => {
+      document.body.classList.remove('overflow-hidden');
+      dialog.remove();
+      resolve({ confirmed, value });
+    };
+    document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+      const value = options.hasInput ? document.getElementById('modal-input').value : null;
+      close(true, value);
+    });
+    document.getElementById('modal-cancel-btn').addEventListener('click', () => close());
+    dialog.addEventListener('click', (e) => { if (e.target === dialog) close(); });
+    if (options.hasInput) {
+      const input = document.getElementById('modal-input');
+      input.focus();
+      input.select();
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') close(true, input.value); });
+    }
+  });
+}
+
+function openUploadModal() {
+  const modal = document.getElementById('uploadModal');
+  modal.classList.remove('hidden');
+  document.body.classList.add('overflow-hidden');
+  resetUploadForm();
+}
+
+function closeUploadModal() {
+  const modal = document.getElementById('uploadModal');
+  modal.classList.add('hidden');
+  document.body.classList.remove('overflow-hidden');
+  resetUploadForm();
+}
+
+function resetUploadForm() {
+  document.getElementById('videoUploadForm').reset();
+  document.getElementById('selectedFileInfo').classList.add('hidden');
+  document.getElementById('uploadDropzone').classList.remove('hidden');
+  document.getElementById('uploadProgress').classList.add('hidden');
+  document.getElementById('uploadButton').disabled = true;
+  document.getElementById('uploadProgressBar').style.width = '0%';
+  document.getElementById('uploadType').value = currentUploadType;
+  selectedFiles = [];
+}
+
+let currentCloudType = '';
+
+function toggleCloudDropdown() {
+  const dropdown = document.getElementById('cloudDropdown');
+  dropdown.classList.toggle('hidden');
+}
+
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('cloudDropdown');
+  const button = e.target.closest('button[onclick="toggleCloudDropdown()"]');
+  if (!button && !e.target.closest('#cloudDropdown')) {
+    dropdown.classList.add('hidden');
+  }
+});
+
+function openCloudModal(type) {
+  currentCloudType = type;
+  document.getElementById('cloudDropdown').classList.add('hidden');
+  const modal = document.getElementById('cloudImportModal');
+  modal.classList.remove('hidden');
+  document.body.classList.add('overflow-hidden');
+  initCloudModal(type);
+}
+
+function closeCloudModal() {
+  const modal = document.getElementById('cloudImportModal');
+  modal.classList.add('hidden');
+  document.body.classList.remove('overflow-hidden');
+}
+
+function openGDriveModal() {
+  openCloudModal('gdrive');
+}
+
+function closeGDriveModal() {
+  closeCloudModal();
+}
+
+function initCloudModal(type) {
+  const configs = {
+    gdrive: {
+      title: 'Import from Google Drive',
+      icon: '/images/google drive.png',
+      placeholder: 'https://drive.google.com/file/d/...',
+      hint: 'Make sure the file is shared with "Anyone with the link"',
+      endpoint: '/api/videos/import-drive',
+      urlField: 'driveUrl'
+    },
+    mediafire: {
+      title: 'Import from Mediafire',
+      icon: '/images/mediafire.png',
+      placeholder: 'https://www.mediafire.com/file/...',
+      hint: 'Paste the Mediafire file link',
+      endpoint: '/api/videos/import-mediafire',
+      urlField: 'mediafireUrl'
+    },
+    dropbox: {
+      title: 'Import from Dropbox',
+      icon: '/images/dropbox.png',
+      placeholder: 'https://www.dropbox.com/...',
+      hint: 'Make sure the file is publicly accessible',
+      endpoint: '/api/videos/import-dropbox',
+      urlField: 'dropboxUrl'
+    },
+    mega: {
+      title: 'Import from MEGA',
+      icon: '/images/mega.png',
+      placeholder: 'https://mega.nz/file/...',
+      hint: 'Paste the MEGA file link (public files only)',
+      endpoint: '/api/videos/import-mega',
+      urlField: 'megaUrl'
+    }
+  };
+  
+  const config = configs[type];
+  document.getElementById('cloudModalTitle').textContent = config.title;
+  
+  document.getElementById('cloudModalBody').innerHTML = `
+    <div class="p-6">
+      <div class="text-center mb-6">
+        <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mx-auto mb-3">
+          <img src="${config.icon}" alt="${config.title}" class="w-10 h-10">
+        </div>
+        <p class="text-gray-400 text-sm">Paste a link to your video</p>
+      </div>
+      <div class="relative mb-3">
+        <input type="text" id="cloud-link" class="w-full bg-dark-700 border border-gray-600 text-white pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary" placeholder="${config.placeholder}">
+        <i class="ti ti-link absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+      </div>
+      <p class="text-xs text-gray-500 mb-4">${config.hint}</p>
+      <button id="import-cloud-button" class="w-full bg-primary hover:bg-blue-600 text-white py-2 rounded-lg transition-colors flex items-center justify-center">
+        <i class="ti ti-download mr-2"></i>
+        Import Video
+      </button>
+    </div>
+  `;
+  
+  document.getElementById('closeCloudBtn').addEventListener('click', closeCloudModal);
+  document.getElementById('import-cloud-button').addEventListener('click', async function() {
+    const link = document.getElementById('cloud-link').value;
+    if (!link) { showToast('error', 'Please enter a link'); return; }
+    this.disabled = true;
+    this.innerHTML = '<svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+    try {
+      const body = {};
+      body[config.urlField] = link;
+      const response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': document.querySelector('input[name="_csrf"]').value },
+        body: JSON.stringify(body)
+      });
+      const result = await response.json();
+      if (result.success) {
+        showImportProgress(result.jobId);
+        closeCloudModal();
+      } else {
+        showToast('error', result.error || 'Failed to import video');
+        this.disabled = false;
+        this.innerHTML = '<i class="ti ti-download mr-2"></i>Import Video';
       }
-      async function showRenameDialog(videoId, currentTitle) {
-        const result = await createModalDialog({
-          type: 'info',
-          icon: 'ti-pencil',
-          title: 'Rename Video',
-          message: 'Enter a new title for your video:',
-          hasInput: true,
-          inputValue: currentTitle,
-          confirmText: 'Save',
-          cancelText: 'Cancel'
-        });
-        if (result.confirmed && result.value && result.value !== currentTitle) {
-          setModalButtonState('modal-confirm-btn', 'loading', 'Saving...');
-          const headerEl = document.querySelector('#custom-modal .flex.items-center');
-          const originalHeader = headerEl.innerHTML;
-          try {
-            const response = await fetch(`/api/videos/${videoId}/rename`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ title: result.value })
-            });
-            const data = await response.json();
-            if (data.success) {
-              setModalButtonState('modal-confirm-btn', 'success', 'Saved!');
-              headerEl.innerHTML = `
-            <div class="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center mr-4 shrink-0 animate-pulse">
-              <i class="ti ti-check text-blue-400 text-2xl"></i>
-            </div>
-            <div class="flex-1">
-              <h3 class="text-lg font-medium text-white">Rename Successful</h3>
-              <p class="text-gray-400 text-sm mt-1">Your video has been renamed</p>
-            </div>`;
-              setTimeout(() => {
-                window.location.reload();
-              }, 1000);
-            } else {
-              setModalButtonState('modal-confirm-btn', 'normal', 'Try Again');
-              showToast('error', data.error || 'Failed to rename video');
-            }
-          } catch (error) {
-            setModalButtonState('modal-confirm-btn', 'normal', 'Try Again');
-            showToast('error', 'An error occurred while renaming the video');
-          }
-          return false;
-        }
-        return true;
+    } catch (error) {
+      showToast('error', 'An error occurred while importing the video');
+      this.disabled = false;
+      this.innerHTML = '<i class="ti ti-download mr-2"></i>Import Video';
+    }
+  });
+}
+
+function showImportProgress(jobId) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm modal-overlay';
+  modal.id = 'import-progress-modal';
+  modal.innerHTML = `
+    <div class="bg-dark-800 rounded-lg p-6 w-full max-w-sm mx-4">
+      <div class="text-center">
+        <div class="w-16 h-16 mb-4 rounded-full bg-primary/10 mx-auto flex items-center justify-center">
+          <i id="progress-icon" class="ti ti-download text-primary text-2xl"></i>
+        </div>
+        <p id="progress-status" class="text-sm text-gray-300 mb-4">Starting download...</p>
+        <div class="w-full bg-dark-700 rounded-full h-2.5 mb-4">
+          <div id="progress-bar" class="bg-primary h-2.5 rounded-full transition-all" style="width: 0%"></div>
+        </div>
+        <button onclick="document.getElementById('import-progress-modal').remove()" class="text-sm text-gray-500 hover:text-white">Close</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  const interval = setInterval(async () => {
+    try {
+      const response = await fetch(`/api/videos/import-status/${jobId}`);
+      const data = await response.json();
+      if (!data.success) { clearInterval(interval); return; }
+      const status = data.status;
+      document.getElementById('progress-bar').style.width = `${status.progress}%`;
+      document.getElementById('progress-status').textContent = status.message;
+      if (status.status === 'complete') {
+        document.getElementById('progress-icon').className = 'ti ti-check text-green-400 text-2xl';
+        showToast('success', 'Video imported successfully');
+        setTimeout(() => window.location.reload(), 1500);
+        clearInterval(interval);
+      } else if (status.status === 'failed') {
+        document.getElementById('progress-icon').className = 'ti ti-x text-red-400 text-2xl';
+        showToast('error', status.message || 'Import failed');
+        clearInterval(interval);
       }
-      async function showDeleteDialog(videoId, videoTitle) {
-        const result = await createModalDialog({
-          type: 'danger',
-          icon: 'ti-alert-triangle',
-          title: 'Delete Video',
-          message: `Are you sure you want to delete "${videoTitle}"? This action cannot be undone.`,
-          confirmText: 'Delete',
-          cancelText: 'Cancel',
-          confirmClass: 'bg-red-500 hover:bg-red-600'
-        });
-        if (result.confirmed) {
-          try {
-            const response = await fetch(`/api/videos/${videoId}`, {
-              method: 'DELETE'
-            });
-            const data = await response.json();
-            if (data.success) {
-              showToast('success', 'Video deleted successfully');
-              setTimeout(() => window.location.reload(), 1000);
-            } else {
-              showToast('error', data.error || 'Failed to delete video');
-            }
-          } catch (error) {
-            showToast('error', 'An error occurred while deleting the video');
-          }
-        }
-      }
-      function setModalButtonState(buttonId, state, text) {
-        const button = document.getElementById(buttonId);
-        if (state === 'loading') {
-          button.disabled = true;
-          button.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg> ${text || 'Processing...'}`;
-        } else if (state === 'success') {
-          button.disabled = false;
-          button.innerHTML = `<i class="ti ti-check mr-1.5"></i> ${text || 'Done'}`;
-          button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-          button.classList.add('bg-blue-600', 'hover:bg-blue-700');
-        } else {
-          button.disabled = false;
-          button.innerHTML = `<i class="ti ti-check mr-1.5"></i> ${text || 'Save'}`;
-        }
-      }
-      const dropzone = document.getElementById('uploadDropzone');
-      const fileInput = document.getElementById('videoFileInput');
-      dropzone.addEventListener('click', (event) => {
-        const labelElement = fileInput.parentElement;
-        if (event.target === fileInput || (labelElement && labelElement.contains(event.target))) {
+    } catch (e) { console.error(e); }
+  }, 1000);
+}
+
+
+let selectedFiles = [];
+const CHUNK_SIZE = 50 * 1024 * 1024;
+
+function isAudioFile(file) {
+  const audioTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/aac', 'audio/mp4', 'audio/x-m4a', 'audio/ogg', 'audio/flac', 'audio/x-flac'];
+  const audioExts = ['.mp3', '.wav', '.aac', '.m4a', '.ogg', '.flac'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  return audioTypes.includes(file.type) || audioExts.includes(ext);
+}
+
+function isVideoFile(file) {
+  const videoTypes = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-msvideo'];
+  const videoExts = ['.mp4', '.avi', '.mov'];
+  const ext = '.' + file.name.split('.').pop().toLowerCase();
+  return videoTypes.includes(file.type) || videoExts.includes(ext);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const mediaFileInput = document.getElementById('mediaFileInput');
+  const selectedFileInfo = document.getElementById('selectedFileInfo');
+  const selectedFileCount = document.getElementById('selectedFileCount');
+  const selectedFilesList = document.getElementById('selectedFilesList');
+  const clearFileButton = document.getElementById('clearFileButton');
+  const uploadDropzone = document.getElementById('uploadDropzone');
+  const uploadButton = document.getElementById('uploadButton');
+  const uploadProgress = document.getElementById('uploadProgress');
+  const uploadProgressBar = document.getElementById('uploadProgressBar');
+  const uploadProgressPercent = document.getElementById('uploadProgressPercent');
+  const uploadProgressStatus = document.getElementById('uploadProgressStatus');
+  const uploadFilesList = document.getElementById('uploadFilesList');
+  const searchInput = document.getElementById('searchInput');
+  const sortSelect = document.getElementById('sortSelect');
+
+  if (mediaFileInput) {
+    mediaFileInput.addEventListener('change', function() {
+      const newFiles = Array.from(this.files);
+      if (newFiles.length > 0) {
+        const maxSize = 50 * 1024 * 1024 * 1024;
+        const large = newFiles.filter(f => f.size > maxSize);
+        if (large.length > 0) {
+          showToast('error', `File too large: ${large.map(f => f.name).join(', ')}`);
+          this.value = '';
           return;
         }
-        fileInput.click();
-      });
-      dropzone.addEventListener('dragenter', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropzone.setAttribute('data-state', 'active');
-        dropzone.classList.remove('border-gray-600');
-        dropzone.classList.add('border-primary', 'bg-primary/5');
-        document.querySelector('#dropzoneIconContainer i').className = 'ti ti-upload text-4xl text-blue-400';
-      });
-      dropzone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (dropzone.getAttribute('data-state') !== 'active') {
-          dropzone.setAttribute('data-state', 'active');
-          dropzone.classList.remove('border-gray-600');
-          dropzone.classList.add('border-primary', 'bg-primary/5');
-          document.querySelector('#dropzoneIconContainer i').className = 'ti ti-upload text-4xl text-blue-400';
+        const totalNewSize = newFiles.reduce((sum, f) => sum + f.size, 0);
+        const totalSelectedSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+        if (userDiskLimit > 0 && (userDiskUsage + totalSelectedSize + totalNewSize) > userDiskLimit) {
+          const remaining = getRemainingSpace() - totalSelectedSize;
+          showToast('error', `Disk limit exceeded. Remaining space: ${formatFileSize(Math.max(0, remaining))}`);
+          this.value = '';
+          return;
         }
-      });
-      dropzone.addEventListener('dragleave', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (e.currentTarget === e.target) {
-          dropzone.setAttribute('data-state', 'idle');
-          dropzone.classList.remove('border-primary', 'bg-primary/5');
-          dropzone.classList.add('border-gray-600');
-          document.querySelector('#dropzoneIconContainer i').className = 'ti ti-upload text-4xl text-gray-500';
-        }
-      });
-      dropzone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        dropzone.setAttribute('data-state', 'idle');
-        dropzone.classList.remove('border-primary', 'bg-primary/5');
-        dropzone.classList.add('border-gray-600');
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files.length > 0) {
-          const file = files[0];
-          const validTypes = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-msvideo'];
-          if (validTypes.includes(file.type)) {
-            fileInput.files = files;
-            const event = new Event('change', { bubbles: true });
-            fileInput.dispatchEvent(event);
-          } else {
-            showToast('error', 'Please upload a valid video file (MP4, AVI, MOV)');
-          }
-        }
-      });
-      function showImportProgressModal(jobId) {
-        const modal = document.createElement('div');
-        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm';
-        modal.id = 'import-progress-modal';
-        modal.innerHTML = `
-      <div class="bg-dark-800 rounded-lg p-6 w-full max-w-md">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-medium">Importing Video</h3>
-          <button id="close-import-progress" class="text-gray-400 hover:text-white">
-            <i class="ti ti-x"></i>
-          </button>
-        </div>
-        <div class="text-center mb-4">
-          <div class="w-16 h-16 mb-4 rounded-full bg-blue-500/10 mx-auto flex items-center justify-center">
-            <i id="progress-icon" class="ti ti-download text-blue-400 text-2xl"></i>
+        newFiles.forEach(f => {
+          if (!selectedFiles.some(e => e.name === f.name && e.size === f.size)) selectedFiles.push(f);
+        });
+        updateFilesList();
+        uploadDropzone.classList.add('hidden');
+        selectedFileInfo.classList.remove('hidden');
+        uploadButton.disabled = false;
+      }
+      this.value = '';
+    });
+  }
+
+  function updateFilesList() {
+    const totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+    selectedFileCount.textContent = `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected (${formatFileSize(totalSize)})`;
+    selectedFilesList.innerHTML = '';
+    selectedFiles.forEach((file, i) => {
+      const isAudio = isAudioFile(file);
+      const icon = isAudio ? 'ti-music' : 'ti-video';
+      const div = document.createElement('div');
+      div.className = 'flex items-center justify-between p-2 rounded-lg hover:bg-dark-600 transition-colors';
+      div.innerHTML = `
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded bg-dark-600 flex items-center justify-center shrink-0">
+            <i class="ti ${icon} text-gray-400 text-sm"></i>
           </div>
-          <p id="progress-status" class="text-sm text-gray-300 mb-2">Starting download...</p>
+          <div class="min-w-0">
+            <p class="text-sm truncate">${file.name}</p>
+            <p class="text-xs text-gray-500">${formatFileSize(file.size)}</p>
+          </div>
         </div>
-        <div class="w-full bg-dark-700 rounded-full h-2 mb-4">
-          <div id="progress-bar" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
-        </div>
-        <p class="text-xs text-gray-500">
-          <i class="ti ti-info-circle mr-1"></i>
-          You can close this window and the import will continue in the background
-        </p>
-      </div>
-    `;
-        document.body.appendChild(modal);
-        document.getElementById('close-import-progress').addEventListener('click', function () {
-          document.getElementById('import-progress-modal').remove();
-        });
-        monitorImportProgress(jobId);
-      }
-      function monitorImportProgress(jobId) {
-        const progressInterval = setInterval(async () => {
-          try {
-            const response = await fetch(`/api/videos/import-status/${jobId}`);
-            if (!response.ok) {
-              clearInterval(progressInterval);
-              return;
-            }
-            const data = await response.json();
-            if (!data.success) {
-              clearInterval(progressInterval);
-              return;
-            }
-            const status = data.status;
-            const progressBar = document.getElementById('progress-bar');
-            const progressStatus = document.getElementById('progress-status');
-            const progressIcon = document.getElementById('progress-icon');
-            if (progressBar && progressStatus) {
-              progressBar.style.width = `${status.progress}%`;
-              progressStatus.textContent = status.message;
-              if (status.status === 'downloading') {
-                progressIcon.className = 'ti ti-download text-blue-400 text-2xl';
-              } else if (status.status === 'processing') {
-                progressIcon.className = 'ti ti-settings text-blue-400 text-2xl animate-spin';
-              } else if (status.status === 'complete') {
-                progressIcon.className = 'ti ti-check text-green-400 text-2xl';
-                progressBar.classList.remove('bg-blue-500');
-                progressBar.classList.add('bg-green-500');
-                showToast('success', 'Video imported successfully');
-                setTimeout(() => {
-                  window.location.reload();
-                }, 2000);
-                clearInterval(progressInterval);
-              } else if (status.status === 'failed') {
-                progressIcon.className = 'ti ti-alert-triangle text-red-400 text-2xl';
-                progressBar.classList.remove('bg-blue-500');
-                progressBar.classList.add('bg-red-500');
-                showToast('error', status.message || 'Failed to import video');
-                clearInterval(progressInterval);
-              }
-            }
-          } catch (error) {
-            console.error('Error monitoring import progress:', error);
-          }
-        }, 1000);
-      }
-      document.addEventListener('DOMContentLoaded', function () {
-        const searchInput = document.querySelector('input[placeholder="Search videos..."]');
-        const sortSelect = document.querySelector('select');
-        const videoGrid = document.querySelector('.grid');
-        const allVideosElements = Array.from(document.querySelectorAll('.grid > div:not(.col-span-full)'));
-        const paginationContainer = document.querySelector('.mt-6.flex.items-center.justify-between');
-        const paginationButtons = document.querySelectorAll('.mt-6.flex.items-center.justify-between button');
+        <button type="button" class="text-gray-400 hover:text-red-400 p-1" data-index="${i}">
+          <i class="ti ti-x text-sm"></i>
+        </button>
+      `;
+      div.querySelector('button').addEventListener('click', () => {
+        selectedFiles.splice(i, 1);
+        if (selectedFiles.length > 0) updateFilesList();
+        else resetUploadForm();
+      });
+      selectedFilesList.appendChild(div);
+    });
+  }
 
-        const itemsPerPage = 12;
-        let currentPage = 1;
-        let totalPages = 1;
+  if (clearFileButton) clearFileButton.addEventListener('click', resetUploadForm);
 
-        if (allVideosElements.length === 0) return;
+  if (uploadButton) {
+    uploadButton.addEventListener('click', async function() {
+      if (selectedFiles.length === 0) return;
+      uploadDropzone.classList.add('hidden');
+      selectedFileInfo.classList.add('hidden');
+      uploadProgress.classList.remove('hidden');
+      uploadButton.disabled = true;
+      
+      let success = 0, failed = [];
+      uploadFilesList.innerHTML = '';
+      selectedFiles.forEach((f) => {
+        const isAudio = isAudioFile(f);
+        const icon = isAudio ? 'ti-music' : 'ti-video';
+        const div = document.createElement('div');
+        div.className = 'flex items-center justify-between p-2 rounded-lg';
+        div.innerHTML = `
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded bg-dark-600 flex items-center justify-center shrink-0">
+              <i class="ti ${icon} text-gray-400 text-sm"></i>
+            </div>
+            <span class="text-sm truncate">${f.name}</span>
+          </div>
+          <span class="file-status text-xs text-gray-500">Waiting</span>
+        `;
+        uploadFilesList.appendChild(div);
+      });
 
-        window.allVideosData = allVideosElements.map(videoEl => {
-          const dateText = videoEl.querySelector('.text-xs.text-gray-400 span:first-child').textContent.trim();
-          let dateObj;
-          try {
-            const parts = dateText.split(/[\/,\s-]/);
-            if (parts.length === 3) {
-              const day = parseInt(parts[0], 10);
-              const month = parseInt(parts[1], 10);
-              const year = parseInt(parts[2], 10);
-
-              if (!isNaN(day) && !isNaN(month) && !isNaN(year) &&
-                year >= 1000 && year <= 9999 &&
-                month >= 1 && month <= 12 &&
-                day >= 1 && day <= 31) {
-                dateObj = new Date(year, month - 1, day);
-              } else {
-                dateObj = new Date(0);
-              }
-            } else {
-              dateObj = new Date(0);
-            }
-
-            if (!dateObj || isNaN(dateObj.getTime())) {
-              dateObj = new Date(0);
-            }
-          } catch (e) {
-            dateObj = new Date(0);
-          }
-
-          return {
-            element: videoEl,
-            title: videoEl.querySelector('h3').textContent.toLowerCase(),
-            date: dateObj,
-            size: videoEl.querySelector('.text-xs.text-gray-400 span:last-child').textContent
-          };
-        });
-
-        const initialSortOrder = sortSelect.value;
-        filterAndDisplayVideos('', initialSortOrder, 1);
-
-        searchInput.addEventListener('input', function () {
-          const searchTerm = this.value.toLowerCase().trim();
-          currentPage = 1;
-          filterAndDisplayVideos(searchTerm, sortSelect.value, currentPage);
-        });
-
-        sortSelect.addEventListener('change', function () {
-          currentPage = 1;
-          filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), this.value, currentPage);
-        });
-
-        function setupPaginationControls(filteredVideos) {
-          if (!paginationContainer) return;
-
-          const paginationButtonsContainer = paginationContainer.querySelector('div.flex.items-center.gap-2');
-          if (!paginationButtonsContainer) return;
-
-          paginationButtonsContainer.innerHTML = '';
-
-          const prevButton = document.createElement('button');
-          prevButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${currentPage === 1 ? 'bg-dark-700 text-gray-400 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
-          prevButton.innerHTML = '<i class="ti ti-chevron-left"></i>';
-          prevButton.disabled = currentPage === 1;
-          prevButton.addEventListener('click', () => {
-            if (currentPage > 1) {
-              currentPage--;
-              filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
-            }
-          });
-          paginationButtonsContainer.appendChild(prevButton);
-
-          totalPages = Math.ceil(filteredVideos.length / itemsPerPage);
-
-          let startPage = Math.max(1, currentPage - 2);
-          let endPage = Math.min(totalPages, startPage + 4);
-
-          if (endPage - startPage < 4 && startPage > 1) {
-            startPage = Math.max(1, endPage - 4);
-          }
-
-          for (let i = startPage; i <= endPage; i++) {
-            const pageButton = document.createElement('button');
-            pageButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${i === currentPage ? 'bg-primary text-white' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
-            pageButton.textContent = i;
-            pageButton.addEventListener('click', () => {
-              if (i !== currentPage) {
-                currentPage = i;
-                filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
-              }
-            });
-            paginationButtonsContainer.appendChild(pageButton);
-          }
-
-          const nextButton = document.createElement('button');
-          nextButton.className = `w-9 h-9 flex items-center justify-center rounded-lg ${currentPage === totalPages ? 'bg-dark-700 text-gray-400 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
-          nextButton.innerHTML = '<i class="ti ti-chevron-right"></i>';
-          nextButton.disabled = currentPage === totalPages;
-          nextButton.addEventListener('click', () => {
-            if (currentPage < totalPages) {
-              currentPage++;
-              filterAndDisplayVideos(searchInput.value.toLowerCase().trim(), sortSelect.value, currentPage);
-            }
-          });
-          paginationButtonsContainer.appendChild(nextButton);
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        const isAudio = isAudioFile(file);
+        uploadProgressStatus.textContent = `Uploading ${i + 1}/${selectedFiles.length}: ${file.name}`;
+        updateFileProgress(i, 'uploading', 0);
+        
+        let result;
+        if (isAudio) {
+          result = await uploadAudioSimple(file, i, selectedFiles.length);
+        } else {
+          const useChunked = file.size > 50 * 1024 * 1024;
+          result = useChunked ? await uploadChunked(file, i, selectedFiles.length) : await uploadSimple(file, i, selectedFiles.length);
         }
+        
+        if (result.success) { success++; updateFileProgress(i, 'success', 100); }
+        else { failed.push(file.name); updateFileProgress(i, 'error', 0); }
+      }
 
-        function filterAndDisplayVideos(searchTerm, sortOrder, page) {
-          let filteredVideos = window.allVideosData.filter(video =>
-            video.title.includes(searchTerm)
-          );
+      if (failed.length === 0) showToast('success', `${success} file${success > 1 ? 's' : ''} uploaded successfully`);
+      else showToast('warning', `${success} uploaded, ${failed.length} failed`);
+      setTimeout(() => window.location.reload(), 2000);
+    });
+  }
 
-          filteredVideos.forEach(video => {
-            if (!(video.date instanceof Date) || isNaN(video.date.getTime())) {
-              video.date = new Date(0);
-            }
-          });
+  function updateFileProgress(index, status, percent) {
+    const items = uploadFilesList.children;
+    if (items[index]) {
+      const el = items[index].querySelector('.file-status');
+      if (status === 'uploading') { el.textContent = `${percent}%`; el.className = 'file-status text-xs text-primary'; }
+      else if (status === 'success') { el.textContent = '✓'; el.className = 'file-status text-xs text-green-400'; }
+      else if (status === 'error') { el.textContent = '✗'; el.className = 'file-status text-xs text-red-400'; }
+    }
+  }
 
-          if (sortOrder === 'Oldest') {
-            filteredVideos.sort((a, b) => a.date.getTime() - b.date.getTime());
-          } else {
-            filteredVideos.sort((a, b) => b.date.getTime() - a.date.getTime());
-          }
-
-          videoGrid.innerHTML = '';
-
-          if (filteredVideos.length === 0) {
-            videoGrid.innerHTML = `
-              <div class="col-span-full text-center py-12">
-                <div class="text-gray-500 mb-3">
-                  <i class="ti ti-search text-6xl"></i>
-                </div>
-                <h3 class="text-xl font-medium text-gray-300 mb-1">No videos found</h3>
-                <p class="text-gray-500 mb-4">Try adjusting your search criteria</p>
-              </div>
-            `;
-          } else {
-            totalPages = Math.ceil(filteredVideos.length / itemsPerPage);
-            currentPage = Math.min(page, totalPages);
-
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = Math.min(startIndex + itemsPerPage, filteredVideos.length);
-            const currentPageVideos = filteredVideos.slice(startIndex, endIndex);
-
-            currentPageVideos.forEach(video => {
-              videoGrid.appendChild(video.element.cloneNode(true));
-            });
-
-            videoGrid.querySelectorAll('.play-button').forEach(button => {
-              const videoId = button.getAttribute('data-video-id');
-              const videoTitle = button.getAttribute('data-video-title');
-              button.onclick = function () {
-                playVideo(videoId, videoTitle);
-              };
-            });
-
-            videoGrid.querySelectorAll('button[onclick^="showRenameDialog"]').forEach(button => {
-              const onclick = button.getAttribute('onclick');
-              button.onclick = function () {
-                const match = onclick.match(/showRenameDialog\('([^']+)',\s*'([^']+)'\)/);
-                if (match) {
-                  showRenameDialog(match[1], match[2]);
-                }
-              };
-            });
-
-            videoGrid.querySelectorAll('button[onclick^="showDeleteDialog"]').forEach(button => {
-              const onclick = button.getAttribute('onclick');
-              button.onclick = function () {
-                const match = onclick.match(/showDeleteDialog\('([^']+)',\s*'([^']+)'\)/);
-                if (match) {
-                  showDeleteDialog(match[1], match[2]);
-                }
-              };
-            });
-          }
-
-          setupPaginationControls(filteredVideos);
-          updatePaginationInfo(filteredVideos);
-        }
-
-        function updatePaginationInfo(filteredVideos) {
-          if (!paginationContainer) return;
-          const paginationInfo = paginationContainer.querySelector('p.text-sm.text-gray-400');
-          if (paginationInfo) {
-            const totalVideos = filteredVideos.length;
-
-            if (totalVideos === 0) {
-              paginationInfo.textContent = 'No videos found';
-            } else {
-              const startIndex = (currentPage - 1) * itemsPerPage + 1;
-              const endIndex = Math.min(currentPage * itemsPerPage, totalVideos);
-              paginationInfo.textContent = `Showing ${startIndex}-${endIndex} of ${totalVideos} videos`;
-            }
-          }
+  async function uploadSimple(file, index, total) {
+    return new Promise((resolve) => {
+      const formData = new FormData();
+      formData.append('video', file);
+      const xhr = new XMLHttpRequest();
+      xhr.timeout = 30 * 60 * 1000;
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          const overall = Math.round(((index + e.loaded / e.total) / total) * 100);
+          uploadProgressBar.style.width = overall + '%';
+          uploadProgressPercent.textContent = overall + '%';
+          updateFileProgress(index, 'uploading', pct);
         }
       });
-    </script>
-    <style>
-      .video-js {
-        margin: 0 auto;
-        height: 100% !important;
-        width: auto !important;
-        max-width: 100%;
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          try { const r = JSON.parse(xhr.responseText); resolve({ success: r.success }); }
+          catch { resolve({ success: false }); }
+        } else resolve({ success: false });
+      });
+      xhr.addEventListener('error', () => resolve({ success: false }));
+      xhr.addEventListener('timeout', () => resolve({ success: false }));
+      xhr.open('POST', '/api/videos/upload', true);
+      xhr.send(formData);
+    });
+  }
+
+  async function uploadAudioSimple(file, index, total) {
+    return new Promise((resolve) => {
+      const formData = new FormData();
+      formData.append('audio', file);
+      const xhr = new XMLHttpRequest();
+      xhr.timeout = 60 * 60 * 1000;
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          const overall = Math.round(((index + e.loaded / e.total) / total) * 100);
+          uploadProgressBar.style.width = overall + '%';
+          uploadProgressPercent.textContent = overall + '%';
+          updateFileProgress(index, 'uploading', pct);
+        }
+      });
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          try { const r = JSON.parse(xhr.responseText); resolve({ success: r.success }); }
+          catch { resolve({ success: false }); }
+        } else resolve({ success: false });
+      });
+      xhr.addEventListener('error', () => resolve({ success: false }));
+      xhr.addEventListener('timeout', () => resolve({ success: false }));
+      xhr.open('POST', '/api/audio/upload', true);
+      xhr.send(formData);
+    });
+  }
+
+  async function uploadChunked(file, index, total) {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    try {
+      const init = await fetch('/api/videos/chunk/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: file.name, fileSize: file.size, totalChunks })
+      });
+      const initData = await init.json();
+      if (!initData.success) throw new Error(initData.error);
+      const uploadId = initData.uploadId;
+      let uploaded = initData.uploadedChunks || [];
+
+      for (let i = 0; i < totalChunks; i++) {
+        if (uploaded.includes(i)) continue;
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+        let retries = 3;
+        while (retries > 0) {
+          try {
+            const res = await fetch('/api/videos/chunk/upload', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/octet-stream', 'X-Upload-Id': uploadId, 'X-Chunk-Index': i.toString() },
+              body: chunk
+            });
+            const data = await res.json();
+            if (data.success) { uploaded = data.uploadedChunks; break; }
+            throw new Error(data.error);
+          } catch { retries--; if (retries === 0) throw new Error('Upload failed'); await new Promise(r => setTimeout(r, 1000)); }
+        }
+        const bytes = Math.min((i + 1) * CHUNK_SIZE, file.size);
+        const pct = Math.round((bytes / file.size) * 100);
+        const overall = Math.round(((index + bytes / file.size) / total) * 100);
+        uploadProgressBar.style.width = overall + '%';
+        uploadProgressPercent.textContent = overall + '%';
+        updateFileProgress(index, 'uploading', pct);
       }
 
-      .vjs-poster {
-        background-size: contain !important;
-      }
+      const complete = await fetch('/api/videos/chunk/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uploadId })
+      });
+      const completeData = await complete.json();
+      return { success: completeData.success };
+    } catch (e) {
+      console.error(e);
+      return { success: false };
+    }
+  }
 
-      .video-js.vjs-9-16,
-      .video-js.vjs-4-5 {
-        max-width: 56.25% !important;
+  if (uploadDropzone) {
+    uploadDropzone.addEventListener('click', (e) => {
+      if (!e.target.closest('label')) mediaFileInput.click();
+    });
+    uploadDropzone.addEventListener('dragenter', (e) => { e.preventDefault(); uploadDropzone.classList.add('border-primary', 'bg-primary/5'); });
+    uploadDropzone.addEventListener('dragover', (e) => { e.preventDefault(); });
+    uploadDropzone.addEventListener('dragleave', (e) => { e.preventDefault(); uploadDropzone.classList.remove('border-primary', 'bg-primary/5'); });
+    uploadDropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadDropzone.classList.remove('border-primary', 'bg-primary/5');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        const validFiles = Array.from(files).filter(f => {
+          if (currentUploadType === 'video') return isVideoFile(f);
+          return isAudioFile(f);
+        });
+        if (validFiles.length > 0) {
+          const totalNewSize = validFiles.reduce((sum, f) => sum + f.size, 0);
+          const totalSelectedSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+          if (userDiskLimit > 0 && (userDiskUsage + totalSelectedSize + totalNewSize) > userDiskLimit) {
+            const remaining = getRemainingSpace() - totalSelectedSize;
+            showToast('error', `Disk limit exceeded. Remaining space: ${formatFileSize(Math.max(0, remaining))}`);
+            return;
+          }
+          validFiles.forEach(f => { if (!selectedFiles.some(e => e.name === f.name && e.size === f.size)) selectedFiles.push(f); });
+          updateFilesList();
+          uploadDropzone.classList.add('hidden');
+          selectedFileInfo.classList.remove('hidden');
+          uploadButton.disabled = false;
+        } else {
+          if (currentUploadType === 'video') showToast('error', 'Please upload a valid video file (MP4, AVI, MOV)');
+          else showToast('error', 'Please upload a valid audio file (MP3, WAV, AAC, M4A, OGG, FLAC)');
+        }
       }
+    });
+  }
 
-      .video-js.vjs-16-9 {
-        max-width: 100% !important;
-      }
+  const gridItems = document.querySelectorAll('.file-item');
+  const listItems = document.querySelectorAll('.file-item-row');
+  const itemsPerPage = 18;
+  let currentPage = 1;
+  let filteredGridItems = [...gridItems];
+  let filteredListItems = [...listItems];
 
-      .video-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 53vh;
-        max-height: 600px;
-        background-color: black;
-      }
+  function getItemData(item) {
+    return {
+      id: item.dataset.id,
+      title: item.dataset.title || '',
+      date: new Date(item.dataset.date || 0).getTime(),
+      size: parseInt(item.dataset.size) || 0,
+      type: item.dataset.type || 'video'
+    };
+  }
 
-      /* Custom Scrollbar Styling */
-      * {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+  function filterAndSort() {
+    const search = searchInput ? searchInput.value.toLowerCase() : '';
+    const sort = sortSelect ? sortSelect.value : 'newest';
+    const typeFilter = document.getElementById('typeFilter');
+    const type = typeFilter ? typeFilter.value : 'all';
+    
+    const filterFn = (item) => {
+      const data = getItemData(item);
+      const matchesSearch = data.title.toLowerCase().includes(search);
+      const matchesType = type === 'all' || data.type === type;
+      return matchesSearch && matchesType;
+    };
+
+    const sortFn = (a, b) => {
+      const dataA = getItemData(a);
+      const dataB = getItemData(b);
+      
+      switch (sort) {
+        case 'oldest':
+          return dataA.date - dataB.date;
+        case 'newest':
+          return dataB.date - dataA.date;
+        case 'name':
+          return dataA.title.localeCompare(dataB.title);
+        case 'size':
+          return dataB.size - dataA.size;
+        default:
+          return dataB.date - dataA.date;
       }
-      ::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.3);
-        border-radius: 20px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background-color: rgba(156, 163, 175, 0.5);
-      }
-      .overflow-y-auto::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
-      }
-      #selectedFilesList::-webkit-scrollbar-thumb,
-      #uploadFilesList::-webkit-scrollbar-thumb {
-        background-color: rgba(156, 163, 175, 0.2);
-      }
-    </style>
+    };
+
+    filteredGridItems = [...gridItems].filter(filterFn).sort(sortFn);
+    filteredListItems = [...listItems].filter(filterFn).sort(sortFn);
+
+    const gridContainer = document.getElementById('gridView');
+    const listContainer = document.querySelector('#listView tbody');
+    
+    filteredGridItems.forEach(item => gridContainer.appendChild(item));
+    filteredListItems.forEach(item => listContainer.appendChild(item));
+
+    currentPage = 1;
+    renderPage();
+  }
+
+  function renderPage() {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    
+    gridItems.forEach(item => item.style.display = 'none');
+    listItems.forEach(item => item.style.display = 'none');
+    
+    filteredGridItems.slice(start, end).forEach(item => item.style.display = '');
+    filteredListItems.slice(start, end).forEach(item => item.style.display = '');
+    
+    const totalItems = filteredGridItems.length;
+    const info = document.getElementById('paginationInfo');
+    if (info) info.textContent = totalItems > 0 ? `Showing ${start + 1}-${Math.min(end, totalItems)} of ${totalItems} items` : 'No items found';
+    
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const container = document.getElementById('paginationControls');
+    if (!container) return;
+    const totalPages = Math.ceil(filteredGridItems.length / itemsPerPage);
+    container.innerHTML = '';
+    
+    if (totalPages <= 1) return;
+    
+    const prev = document.createElement('button');
+    prev.className = `w-9 h-9 flex items-center justify-center rounded-lg ${currentPage === 1 ? 'bg-dark-700 text-gray-600 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
+    prev.innerHTML = '<i class="ti ti-chevron-left"></i>';
+    prev.disabled = currentPage === 1;
+    prev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderPage(); } });
+    container.appendChild(prev);
+
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      const btn = document.createElement('button');
+      btn.className = `w-9 h-9 flex items-center justify-center rounded-lg ${i === currentPage ? 'bg-primary text-white' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
+      btn.textContent = i;
+      btn.addEventListener('click', () => { currentPage = i; renderPage(); });
+      container.appendChild(btn);
+    }
+
+    const next = document.createElement('button');
+    next.className = `w-9 h-9 flex items-center justify-center rounded-lg ${currentPage === totalPages ? 'bg-dark-700 text-gray-600 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}`;
+    next.innerHTML = '<i class="ti ti-chevron-right"></i>';
+    next.disabled = currentPage === totalPages;
+    next.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; renderPage(); } });
+    container.appendChild(next);
+  }
+
+  if (searchInput) searchInput.addEventListener('input', filterAndSort);
+  if (sortSelect) sortSelect.addEventListener('change', filterAndSort);
+  const typeFilter = document.getElementById('typeFilter');
+  if (typeFilter) typeFilter.addEventListener('change', filterAndSort);
+  
+  if (gridItems.length > 0) filterAndSort();
+});
+</script>
+
+<style>
+* { scrollbar-width: thin; scrollbar-color: rgba(156, 163, 175, 0.3) transparent; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: rgba(156, 163, 175, 0.3); border-radius: 20px; }
+::-webkit-scrollbar-thumb:hover { background-color: rgba(156, 163, 175, 0.5); }
+.audio-visualizer { animation: pulse 2s ease-in-out infinite; }
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+</style>

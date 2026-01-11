@@ -1,10 +1,25 @@
+<div align="center">
+
 ![logo](https://github.com/user-attachments/assets/50231124-d546-43cb-9cf4-7a06a1dad5bd)
 
-# StreamFlow v2.1: Fresh From The Oven 🔥
 
-StreamFlow adalah aplikasi live streaming yang memungkinkan kamu melakukan live streaming ke berbagai platform seperti YouTube, Facebook, dan platform lainnya menggunakan protokol RTMP. Aplikasi ini dapat berjalan di VPS (Virtual Private Server) dan mendukung streaming ke banyak platform secara bersamaan.
+## StreamFlow: Web-Based Multi-Platform Streaming
+
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/bangtutorial/streamflow/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/bangtutorial/streamflow/blob/main/LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/bangtutorial/streamflow/blob/main/CONTRIBUTING.md)
+[![GitHub Stars](https://img.shields.io/github/stars/bangtutorial/streamflow?style=social)](https://github.com/bangtutorial/streamflow/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/bangtutorial/streamflow?style=social)](https://github.com/bangtutorial/streamflow/network/members)
+
+**StreamFlow** adalah platform live streaming berbasis web yang powerful dan mudah digunakan. Streaming ke YouTube, Facebook, dan platform RTMP lainnya secara bersamaan dengan satu aplikasi. Dilengkapi dengan video management, scheduled streaming, dan real-time monitoring untuk pengalaman streaming yang profesional.
+
+[🚀 Installation](#-quick-installation) • [📖 Documentation](#-manual-installation) • [🐳 Docker](#-docker-deployment) • [🪛 Troubleshooting](#-troubleshooting) • [💬 Community](https://github.com/bangtutorial/streamflow/discussions)
 
 ![Untitled-2](https://github.com/user-attachments/assets/3d7bb367-a1b2-43a5-839b-b6aa8dd5de90)
+
+</div>
+
+---
 
 ## ✨ Fitur Utama
 
@@ -17,9 +32,9 @@ StreamFlow adalah aplikasi live streaming yang memungkinkan kamu melakukan live 
 - **Video Analytics** - Pantau statistik dan performa video langsung dari aplikasi
 - **Responsive UI** - Antarmuka modern yang responsif di semua perangkat
 
-## 🛠️ System Requirements
+## 💻 System Requirements
 
-- **Node.js** v20 atau versi terbaru
+- **Node.js** v18 atau versi terbaru
 - **FFmpeg** untuk video processing
 - **SQLite3** (sudah termasuk dalam package)
 - **VPS/Server** dengan minimal 1 Core CPU & 1GB RAM
@@ -251,7 +266,7 @@ Data akan tersimpan secara otomatis di:
 docker-compose exec app node reset-password.js
 ```
 
-## 🔫 Troubleshooting
+## 🪛 Troubleshooting
 
 ### Permission Error
 ```bash
@@ -299,5 +314,5 @@ pm2 restart streamflow
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/bangtutorial/streamflow/blob/main/LICENSE)
 
 ---
-© 2025 - [Bang Tutorial](https://youtube.com/bangtutorial)
+© 2026 - [Bang Tutorial](https://youtube.com/bangtutorial)
 

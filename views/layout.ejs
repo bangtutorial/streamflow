@@ -10,13 +10,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-  <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css"></noscript>
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/fonts/tabler-icons.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.30.0/tabler-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/css/styles.css">
-  <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
-  <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -59,46 +57,6 @@
   </script>
   <script src="/js/stream-modal.js" defer></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(function() {
-          document.querySelectorAll('.ti').forEach(function(icon) {
-            icon.classList.add('font-loaded');
-          });
-        });
-      } else {
-        setTimeout(function() {
-          document.querySelectorAll('.ti').forEach(function(icon) {
-            icon.classList.add('font-loaded');
-          });
-        }, 100);
-      }
-      
-      const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-          mutation.addedNodes.forEach(function(node) {
-            if (node.nodeType === 1) {
-              const icons = node.querySelectorAll ? node.querySelectorAll('.ti') : [];
-              icons.forEach(function(icon) {
-                if (document.fonts && document.fonts.check && document.fonts.check('1em tabler-icons')) {
-                  icon.classList.add('font-loaded');
-                } else {
-                  setTimeout(function() {
-                    icon.classList.add('font-loaded');
-                  }, 100);
-                }
-              });
-            }
-          });
-        });
-      });
-      
-      observer.observe(document.body, {
-         childList: true,
-         subtree: true
-       });
-     });
-
      if ('serviceWorker' in navigator) {
        window.addEventListener('load', function() {
          navigator.serviceWorker.register('/sw.js')
@@ -114,11 +72,17 @@
 </head>
 <body class="bg-dark-900 text-white font-inter">
   <div
-    class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-dark-800 shadow-lg flex items-center justify-between px-4 z-30">
+    class="lg:hidden fixed top-0 left-0 right-0 h-16 bg-dark-800 shadow-lg flex items-center justify-between px-6 z-30">
     <div class="flex items-center">
       <img src="/images/logo_mobile.svg" alt="StreamFlow Logo" class="h-8">
     </div>
     <div class="flex items-center gap-1">
+      <div id="mobile-server-time" class="hidden items-center gap-1.5 text-gray-400 text-sm mr-2">
+        <span id="mobile-server-date">--</span>
+        <span class="text-gray-600">•</span>
+        <span id="mobile-server-clock" class="tabular-nums">--:--:--</span>
+      </div>
+      <div id="mobile-separator" class="hidden h-4 w-px bg-gray-600 mr-1"></div>
       <a href="https://donate.youtube101.id/" target="_blank" 
          class="p-2 text-gray-400 hover:text-white transition-colors">
         <i class="ti ti-gift text-lg"></i>
@@ -141,6 +105,11 @@
           <i class="ti ti-broadcast text-xl"></i>
           <span class="text-xs mt-1">Streams</span>
           <span class="sidebar-tooltip group-hover:scale-100">Stream Manager</span>
+        </a>
+        <a href="/rotations" class="sidebar-icon group <%= active === 'rotations' ? 'bg-primary' : '' %>">
+          <i class="ti ti-rotate text-xl"></i>
+          <span class="text-xs mt-1">Rotations</span>
+          <span class="sidebar-tooltip group-hover:scale-100">Stream Rotations</span>
         </a>
         <a href="/gallery" class="sidebar-icon group <%= active === 'gallery' ? 'bg-primary' : '' %>">
           <i class="ti ti-video text-xl"></i>
@@ -202,6 +171,12 @@
     <div class="w-full lg:ml-20 flex flex-col min-h-screen">
       <div
         class="hidden lg:fixed lg:flex top-0 right-0 left-20 items-center justify-end h-14 px-6 bg-dark-800 shadow-md z-10">
+        <div id="server-time-display" class="flex items-center gap-1.5 text-gray-400 text-sm mr-4">
+          <span id="server-date">--</span>
+          <span class="text-gray-600">•</span>
+          <span id="server-clock" class="tabular-nums">--:--:--</span>
+        </div>
+        <div class="h-4 w-px bg-gray-600 mr-4"></div>
         <a href="https://github.com/bangtutorial/streamflow" target="_blank"
           class="p-2 text-gray-400 hover:text-white transition-colors mr-2">
           <i class="ti ti-brand-github text-lg"></i>
@@ -227,18 +202,17 @@
       <div class="hidden lg:flex justify-end pr-6 py-4">
         <div class="flex items-center gap-2">
           <div class="text-xs text-gray-500">
-            StreamFlow <span class="text-xs font-medium bg-gray-700 px-1 rounded">v2.1</span>
+            StreamFlow <span class="text-xs font-medium bg-gray-700 px-1 rounded">v<%= appVersion %></span>
           </div>
           <div class="h-3 w-px bg-gray-700"></div>
           <a href="https://youtube.com/@bangtutorial" target="_blank" class="text-xs text-gray-500 hover:underline">by
             Bang Tutorial</a>
-          <a href="https://donate.youtube101.id/" target="_blank" class="kirim-tip-button relative ml-1">
-            <span class="relative z-10 flex items-center gap-1 text-white font-medium px-1.5 py-0.5 text-xs">
-              <i class="ti ti-heart text-white"></i>
+          <a href="https://saweria.co/fitrieffendi" target="_blank" class="saweria-button relative ml-1">
+            <span class="relative z-10 flex items-center gap-1.5 text-gray-800 font-medium px-2.5 py-1 text-xs">
+              <img src="/images/saweria.svg" alt="Saweria" class="w-3.5 h-3.5">
               <span>Donate</span>
             </span>
-            <div
-              class="kirim-tip-tooltip px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg whitespace-nowrap">
+            <div class="saweria-tooltip px-3 py-2 bg-white text-gray-800 text-xs rounded-lg shadow-lg whitespace-nowrap">
               Terima kasih sudah bantu support 🙏
               <div class="tooltip-arrow"></div>
             </div>
@@ -253,6 +227,10 @@
         <i class="ti ti-broadcast"></i>
         <span>Streams</span>
       </a>
+      <a href="/rotations" class="bottom-nav-item <%= active === 'rotations' ? 'bottom-nav-active' : '' %>">
+        <i class="ti ti-rotate"></i>
+        <span>Rotations</span>
+      </a>
       <a href="/gallery" class="bottom-nav-item <%= active === 'gallery' ? 'bottom-nav-active' : '' %>">
         <i class="ti ti-video"></i>
         <span>Gallery</span>
@@ -260,10 +238,6 @@
       <a href="/playlist" class="bottom-nav-item <%= active === 'playlist' ? 'bottom-nav-active' : '' %>">
         <i class="ti ti-playlist"></i>
         <span>Playlist</span>
-      </a>
-      <a href="/history" class="bottom-nav-item <%= active === 'history' ? 'bottom-nav-active' : '' %>">
-        <i class="ti ti-history"></i>
-        <span>History</span>
       </a>
       <button id="mobile-profile-btn" class="bottom-nav-item">
         <div class="relative">
@@ -378,6 +352,25 @@
 </body>
 </html>
 <style>
+  #server-clock, #mobile-server-clock {
+    font-variant-numeric: tabular-nums;
+  }
+  @media (min-width: 550px) {
+    #mobile-server-time {
+      display: flex !important;
+    }
+    #mobile-separator {
+      display: block !important;
+    }
+  }
+  @media (min-width: 1024px) {
+    #mobile-server-time {
+      display: none !important;
+    }
+    #mobile-separator {
+      display: none !important;
+    }
+  }
   #profile-dropdown {
     position: fixed;
     z-index: 100;
@@ -414,17 +407,23 @@
   .text-logout:hover {
     color: #FF7777;
   }
-  .kirim-tip-button {
+  .saweria-button {
     position: relative;
-    border-radius: 5px;
-    background: linear-gradient(45deg, #01935d, #01e304);
-    transition: all 0.3s ease;
+    border-radius: 6px;
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 3px 3px 0px #000000;
+    transition: all 0.2s ease;
   }
-  .kirim-tip-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 168, 107, 0.3);
+  .saweria-button:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px #000000;
   }
-  .kirim-tip-tooltip {
+  .saweria-button:active {
+    transform: translate(2px, 2px);
+    box-shadow: 0px 0px 0px #000000;
+  }
+  .saweria-tooltip {
     position: absolute;
     bottom: 100%;
     right: 0;
@@ -436,7 +435,7 @@
     z-index: 50;
     filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
   }
-  .kirim-tip-button:hover .kirim-tip-tooltip {
+  .saweria-button:hover .saweria-tooltip {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
@@ -768,7 +767,60 @@
 
   document.addEventListener('DOMContentLoaded', function() {
     loadNotifications();
+    initServerTime();
   });
+
+  let serverTimeOffset = 0;
+  let serverTimeInterval = null;
+
+  async function initServerTime() {
+    try {
+      const response = await fetch('/api/server-time');
+      if (!response.ok) return;
+      const data = await response.json();
+      const serverTime = new Date(data.serverTime);
+      const clientTime = new Date();
+      serverTimeOffset = serverTime.getTime() - clientTime.getTime();
+      updateServerTimeDisplay();
+      if (serverTimeInterval) clearInterval(serverTimeInterval);
+      serverTimeInterval = setInterval(updateServerTimeDisplay, 1000);
+      setInterval(syncServerTime, 5 * 60 * 1000);
+    } catch (error) {
+    }
+  }
+
+  async function syncServerTime() {
+    try {
+      const response = await fetch('/api/server-time');
+      if (!response.ok) return;
+      const data = await response.json();
+      const serverTime = new Date(data.serverTime);
+      const clientTime = new Date();
+      serverTimeOffset = serverTime.getTime() - clientTime.getTime();
+    } catch (error) {
+    }
+  }
+
+  function updateServerTimeDisplay() {
+    const now = new Date(Date.now() + serverTimeOffset);
+    const day = String(now.getDate()).padStart(2, '0');
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[now.getMonth()];
+    const year = now.getFullYear();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const dateStr = `${day} ${month} ${year}`;
+    const timeStr = `${hours}:${minutes}:${seconds}`;
+    const dateEl = document.getElementById('server-date');
+    const clockEl = document.getElementById('server-clock');
+    const mobileDateEl = document.getElementById('mobile-server-date');
+    const mobileClockEl = document.getElementById('mobile-server-clock');
+    if (dateEl) dateEl.textContent = dateStr;
+    if (clockEl) clockEl.textContent = timeStr;
+    if (mobileDateEl) mobileDateEl.textContent = dateStr;
+    if (mobileClockEl) mobileClockEl.textContent = timeStr;
+  }
 
   function openStreamflowUpdateModal() {
     const modal = document.getElementById('streamflowUpdateModal');

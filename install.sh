@@ -14,12 +14,37 @@ echo
 echo "🔄 Updating sistem..."
 sudo apt update && sudo apt upgrade -y
 
-echo "📦 Installing Node.js..."
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
+# Check dan install Node.js (minimal v18)
+if command -v node &> /dev/null; then
+    NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
+    if [ "$NODE_VERSION" -ge 18 ]; then
+        echo "✅ Node.js sudah terinstall ($(node -v)), skip..."
+    else
+        echo "⚠️ Node.js versi $(node -v) terlalu lama, upgrade ke v18..."
+        curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+        sudo apt-get install -y nodejs
+    fi
+else
+    echo "📦 Installing Node.js v18..."
+    curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+fi
 
-echo "🎬 Installing FFmpeg dan Git..."
-sudo apt install ffmpeg git -y
+# Check dan install FFmpeg
+if command -v ffmpeg &> /dev/null; then
+    echo "✅ FFmpeg sudah terinstall, skip..."
+else
+    echo "🎬 Installing FFmpeg..."
+    sudo apt install ffmpeg -y
+fi
+
+# Check dan install Git
+if command -v git &> /dev/null; then
+    echo "✅ Git sudah terinstall, skip..."
+else
+    echo "🎬 Installing Git..."
+    sudo apt install git -y
+fi
 
 echo "📥 Clone repository..."
 git clone https://github.com/bangtutorial/streamflow
@@ -37,8 +62,13 @@ sudo ufw allow ssh
 sudo ufw allow 7575
 sudo ufw --force enable
 
-echo "🚀 Installing PM2..."
-sudo npm install -g pm2
+# Check dan install PM2
+if command -v pm2 &> /dev/null; then
+    echo "✅ PM2 sudah terinstall, skip..."
+else
+    echo "🚀 Installing PM2..."
+    sudo npm install -g pm2
+fi
 
 echo "▶️ Starting StreamFlow..."
 pm2 start app.js --name streamflow

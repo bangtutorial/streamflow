@@ -87,7 +87,7 @@ class Video {
               return reject(err);
             }
             if (video.filepath) {
-              const fullPath = path.join(process.cwd(), 'public', video.filepath);
+              const fullPath = path.join(__dirname, '..', 'public', video.filepath);
               try {
                 if (fs.existsSync(fullPath)) {
                   fs.unlinkSync(fullPath);
@@ -97,7 +97,7 @@ class Video {
               }
             }
             if (video.thumbnail_path) {
-              const thumbnailPath = path.join(process.cwd(), 'public', video.thumbnail_path);
+              const thumbnailPath = path.join(__dirname, '..', 'public', video.thumbnail_path);
               try {
                 if (fs.existsSync(thumbnailPath)) {
                   fs.unlinkSync(thumbnailPath);

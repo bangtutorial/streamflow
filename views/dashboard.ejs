@@ -1,66 +1,39 @@
-<% layout('layout') -%>  <div class="grid grid-cols-2 md:hidden gap-3 mb-6">
-    <div class="bg-gray-800 rounded-lg p-4 shadow-md">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="text-sm font-semibold">Active Streams</h3>
-        <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-broadcast text-white text-sm font-loaded"></i>
-        </div>
+<% layout('layout') -%>
+<div class="md:hidden mb-4" style="margin-top: -10px;">
+  <div class="bg-gray-800 rounded-lg px-3 py-2 shadow-md">
+    <div class="flex items-center justify-between gap-2 overflow-x-auto scrollbar-hide">
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <i class="ti ti-broadcast text-primary text-sm font-loaded"></i>
+        <span class="text-xs font-bold text-white">0</span>
+        <span class="text-[10px] text-gray-400">live</span>
       </div>
-      <p class="text-xl font-bold">0</p>
-    </div>
-    <div class="bg-gray-800 rounded-lg p-4 shadow-md">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="text-sm font-semibold">CPU Usage</h3>
-        <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-cpu text-white text-sm font-loaded"></i>
-        </div>
+      <div class="w-px h-4 bg-gray-700 flex-shrink-0"></div>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <i class="ti ti-cpu text-blue-400 text-sm font-loaded"></i>
+        <span id="cpu-usage-mobile" class="text-xs font-bold text-white">0</span>
+        <span class="text-[10px] text-gray-400">%</span>
       </div>
-      <p class="text-xl font-bold"><span id="cpu-usage-mobile">0</span>%</p>
-      <div class="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-        <div id="cpu-bar-mobile" class="bg-primary h-1.5 rounded-full" style="width: 0%"></div>
+      <div class="w-px h-4 bg-gray-700 flex-shrink-0"></div>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <i class="ti ti-device-sd-card text-green-400 text-sm font-loaded"></i>
+        <span id="memory-usage-mobile" class="text-xs font-bold text-white">0</span>
+        <span id="memory-total-mobile" class="text-[10px] text-gray-400">/ 0</span>
       </div>
-    </div>    
-    <div class="bg-gray-800 rounded-lg p-4 shadow-md">
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="text-sm font-semibold">Memory</h3>
-        <div class="w-7 h-7 bg-dark-700 rounded-lg flex items-center justify-center">
-          <i class="ti ti-device-sd-card text-white text-sm font-loaded"></i>
+      <div class="w-px h-4 bg-gray-700 flex-shrink-0"></div>
+      <div class="flex items-center gap-1.5 flex-shrink-0 cursor-pointer" onclick="toggleNetworkDiskDisplay('mobile')">
+        <i class="ti ti-wifi text-yellow-400 text-sm font-loaded" id="toggle-icon-mobile"></i>
+        <div id="network-content-mobile" class="flex items-center gap-1">
+          <span class="text-[10px] text-blue-400">↑<span id="upload-speed-mobile" class="font-bold">0</span></span>
+          <span class="text-[10px] text-green-400">↓<span id="download-speed-mobile" class="font-bold">0</span></span>
         </div>
-      </div>      
-      <p class="text-lg font-bold">
-        <span id="memory-usage-mobile">0 MB</span><span id="memory-total-mobile" class="text-xs text-gray-400"> / 0 MB</span>
-      </p>
-      <div class="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-        <div id="memory-bar-mobile" class="bg-primary h-1.5 rounded-full" style="width: 0%"></div>
-      </div>
-    </div>      
-    <div class="bg-gray-800 rounded-lg p-4 shadow-md">        
-      <div class="flex items-center justify-between mb-2">
-        <h3 class="text-sm font-semibold" id="network-disk-title-mobile">Internet Speed</h3>
-        <div class="w-7 h-7 bg-dark-700 hover:bg-dark-600 rounded-lg flex items-center justify-center cursor-pointer transition-colors duration-200" onclick="toggleNetworkDiskDisplay('mobile')">
-          <i class="ti ti-wifi text-white text-sm font-loaded" id="toggle-icon-mobile"></i>
-        </div>
-      </div>
-      <div id="network-content-mobile" class="space-y-1">
-        <div class="flex justify-between items-center">
-          <span class="text-xs text-gray-400">↑ U</span>
-          <span id="upload-speed-mobile" class="text-sm font-bold text-blue-400">0 Mbps</span>
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-xs text-gray-400">↓ D</span>
-          <span id="download-speed-mobile" class="text-sm font-bold text-green-400">0 Mbps</span>
-        </div>
-      </div>
-      <div id="disk-content-mobile" style="display: none;">
-        <p class="text-lg font-bold">
-          <span id="disk-used-mobile">0 GB</span><span id="disk-total-mobile" class="text-xs text-gray-400"> / 0 GB</span>
-        </p>        
-        <div class="w-full bg-gray-700 rounded-full h-1.5 mt-1">
-          <div id="disk-bar-mobile" class="bg-primary h-1.5 rounded-full transition-colors duration-300" style="width: 0%"></div>
+        <div id="disk-content-mobile" class="items-center gap-1" style="display: none;">
+          <span id="disk-used-mobile" class="text-xs font-bold text-white">0</span>
+          <span id="disk-total-mobile" class="text-[10px] text-gray-400">/ 0</span>
         </div>
       </div>
     </div>
   </div>
+</div>
   <div class="hidden md:grid md:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-5 gap-6 mb-6">
     <div class="bg-gray-800 rounded-lg p-6 shadow-md">
       <div class="flex items-center justify-between">
@@ -158,17 +131,14 @@
       </div>
     </div>
   </div>
-  <div class="mt-8">
-    <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+  <div class="sm:mt-8 mt-4">
+    <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between sm:mb-6 mb-3">
       <div class="flex items-center gap-3">
         <h2 class="text-xl font-bold">Streaming Status</h2>
-        <span id="dashboardServerTime" class="hidden sm:inline-block bg-gray-700 text-xs text-gray-300 px-2 py-1 rounded">
-          Server time: loading...
-        </span>
       </div>
       <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
         <div class="relative w-full sm:w-64">
-          <input type="text" placeholder="Search streams..."
+          <input type="text" id="streams-search" placeholder="Search streams..."
             class="w-full bg-dark-700 border border-gray-600 text-white pl-9 pr-4 py-2 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary">
           <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
         </div>
@@ -179,7 +149,7 @@
         </button>
       </div>
     </div>
-    <div class="block md:hidden space-y-4">
+    <div class="block md:hidden space-y-2">
     </div>
     <div class="hidden md:block bg-gray-800 rounded-lg shadow-md overflow-hidden">
       <div class="overflow-x-auto">
@@ -188,8 +158,11 @@
             <tr>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Stream Name
               </th>
+              <% if (typeof youtubeConnected !== 'undefined' && youtubeConnected) { %>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Channel</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Dashboard</th>
+              <% } %>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Platform</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Start Date</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Schedule</th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
               <th class="px-6 py-3 text-right text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
@@ -197,7 +170,7 @@
           </thead>
           <tbody class="divide-y divide-gray-700">
             <tr id="empty-state" class="hover:bg-dark-700/50 transition-colors" style="display: none;">
-              <td colspan="6" class="px-6 py-10 text-center">
+              <td colspan="<%= (typeof youtubeConnected !== 'undefined' && youtubeConnected) ? '7' : '5' %>" class="px-6 py-10 text-center">
                 <div class="flex flex-col items-center">
                   <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
                     <i class="ti ti-broadcast text-gray-500 text-2xl"></i>
@@ -212,11 +185,17 @@
         </table>
       </div>
     </div>
+    <div id="streams-pagination" class="mt-6 hidden">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p id="pagination-info" class="text-sm text-gray-400"></p>
+        <div id="pagination-controls" class="flex items-center gap-2"></div>
+      </div>
+    </div>
   </div>
   <div id="newStreamModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
     <div class="flex min-h-screen items-center justify-center p-4">
       <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
-        <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
+        <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-gray-700">
           <h3 class="text-lg font-semibold">Create New Stream</h3>
           <div class="flex items-center gap-2">
             <button type="button" onclick="openTipsStreaming()" class="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors shadow-sm">
@@ -231,6 +210,22 @@
         <div class="p-4 sm:px-6 pt-1 pb-4 overflow-y-auto flex-grow">
           <form id="newStreamForm" class="space-y-6">
             <input type="hidden" id="selectedVideoId" name="videoId" value="">
+            <input type="hidden" id="streamMode" name="streamMode" value="manual">
+            
+            <% if (typeof youtubeConnected !== 'undefined' && youtubeConnected) { %>
+            <div class="flex gap-2 p-1 bg-dark-900 rounded-lg">
+              <button type="button" id="manualModeBtn" onclick="setStreamMode('manual')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-primary text-white">
+                <i class="ti ti-settings"></i>
+                <span class="text-sm font-medium">Manual (RTMP)</span>
+              </button>
+              <button type="button" id="autoModeBtn" onclick="setStreamMode('auto')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-dark-700">
+                <i class="ti ti-brand-youtube"></i>
+                <span class="text-sm font-medium">YouTube API</span>
+              </button>
+            </div>
+            <% } %>
+
+            <div id="manualStreamForm">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div class="space-y-4">
                 <div class="relative">
@@ -259,11 +254,10 @@
                 <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
                   <div class="aspect-video bg-dark-900">
                     <div id="videoPreviewMobile" class="hidden w-full h-full">
-                      <video id="videojs-preview-mobile" class="video-js vjs-default-skin vjs-big-play-centered"
-                        controls preload="auto" width="100%" height="100%"
-                        data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
+                      <video id="native-preview-mobile" class="native-video-player"
+                        controls preload="metadata">
                         <source src="" type="video/mp4">
-                        <p class="vjs-no-js">Please enable JavaScript to view videos</p>
+                        Your browser does not support the video tag.
                       </video>
                     </div>
                     <div id="emptyPreviewMobile" class="h-full flex flex-col items-center justify-center">
@@ -344,12 +338,10 @@
                 <div class="overflow-hidden h-full">
                   <div class="aspect-video rounded-lg bg-dark-900">
                     <div id="videoPreview" class="hidden w-full h-full">
-                      <video id="videojs-preview-desktop"
-                        class="video-js vjs-default-skin vjs-big-play-centered rounded-lg" controls preload="auto"
-                        width="100%" height="100%"
-                        data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
+                      <video id="native-preview-desktop"
+                        class="native-video-player rounded-lg" controls preload="metadata">
                         <source src="" type="video/mp4">
-                        <p class="vjs-no-js">Please enable JavaScript to view videos</p>
+                        Your browser does not support the video tag.
                       </video>
                     </div>
                     <div id="emptyPreview" class="h-full flex flex-col items-center justify-center">
@@ -360,7 +352,7 @@
                 </div>
               </div>
             </div>
-            <div class="space-y-2">
+            <div class="space-y-2 mt-4 mb-6">
               <div class="flex flex-col sm:flex-row sm:items-center">
                 <label class="text-sm font-medium text-white">Schedule Settings</label>
                 <span id="serverTimeDisplay"
@@ -488,9 +480,174 @@
                 </div>
               </div>
             </div>
+            </div>
+
+            <div id="youtubeStreamForm" class="hidden">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Select Video</label>
+                    <div class="relative">
+                      <button type="button" onclick="toggleYoutubeVideoSelector()"
+                        class="w-full flex items-center justify-between px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left">
+                        <span class="text-sm text-gray-300" id="ytSelectedVideo">Choose a video...</span>
+                        <i class="ti ti-chevron-down text-gray-400"></i>
+                      </button>
+                      <div id="ytVideoSelectorDropdown" class="hidden absolute z-10 mt-2 w-full bg-dark-700 rounded-lg border border-gray-600 shadow-lg">
+                        <div class="p-2 border-b border-gray-600/50">
+                          <div class="relative">
+                            <input type="text" id="ytVideoSearchInput" class="w-full bg-dark-800 text-white pl-8 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700" placeholder="Search videos...">
+                            <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                          </div>
+                        </div>
+                        <div id="ytVideoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <input type="hidden" id="ytSelectedVideoId" name="ytVideoId" value="">
+
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Stream Title</label>
+                    <input type="text" id="ytStreamTitle" name="ytStreamTitle" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Enter stream title...">
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Description</label>
+                    <textarea id="ytDescription" name="ytDescription" rows="3" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary resize-y min-h-[60px]" placeholder="Enter stream description..."></textarea>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="text-sm font-medium text-white block mb-2">Privacy</label>
+                      <select id="ytPrivacy" name="ytPrivacy" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
+                        <option value="public">Public</option>
+                        <option value="unlisted" selected>Unlisted</option>
+                        <option value="private">Private</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-white block mb-2">Category</label>
+                      <select id="ytCategory" name="ytCategory" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
+                        <option value="22">People & Blogs</option>
+                        <option value="20">Gaming</option>
+                        <option value="24">Entertainment</option>
+                        <option value="10">Music</option>
+                        <option value="28">Science & Technology</option>
+                        <option value="17">Sports</option>
+                        <option value="27">Education</option>
+                        <option value="26">Howto & Style</option>
+                        <option value="19">Travel & Events</option>
+                        <option value="1">Film & Animation</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Tags</label>
+                    <div id="ytTagsContainer" class="relative flex flex-wrap gap-2 p-2 bg-dark-700 border border-gray-600 rounded-lg min-h-[42px]">
+                      <input type="text" id="ytTagsInput" class="flex-1 min-w-[100px] bg-transparent border-none outline-none text-white text-sm placeholder-gray-500" placeholder="Type and press Enter...">
+                      <button type="button" onclick="clearYtTags()" class="absolute top-0 right-2 text-gray-400 hover:text-white transition-colors" title="Clear all tags">
+                        <i class="ti ti-x text-sm"></i>
+                      </button>
+                    </div>
+                    <input type="hidden" id="ytTags" name="ytTags" value="">
+                    <div class="flex items-center justify-between mt-1">
+                      <p class="text-xs text-gray-500">Press Enter or comma to add tag</p>
+                      <span id="ytTagsCharCount" class="text-xs text-gray-500">0/500</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-4">
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Select Channel</label>
+                    <div class="bg-dark-900 rounded-lg p-3 border border-gray-700">
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                          <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                            <img id="ytChannelThumb" src="<%= typeof youtubeChannelThumbnail !== 'undefined' ? youtubeChannelThumbnail : '' %>" alt="Channel" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center bg-red-600\'><i class=\'ti ti-brand-youtube text-white text-xl\'></i></div>'">
+                          </div>
+                          <div class="min-w-0">
+                            <p id="ytChannelNameDisplay" class="font-medium text-white text-sm truncate"><%= typeof youtubeChannelName !== 'undefined' ? youtubeChannelName : 'YouTube Channel' %></p>
+                            <p id="ytChannelSubsDisplay" class="text-xs text-gray-400"><%= typeof youtubeSubscriberCount !== 'undefined' ? Number(youtubeSubscriberCount).toLocaleString() : '0' %> subscribers</p>
+                          </div>
+                        </div>
+                        <% if (typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 1) { %>
+                        <button type="button" onclick="toggleChannelSelector()" class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm flex-shrink-0">
+                          <i class="ti ti-switch-horizontal mr-1"></i>Change
+                        </button>
+                        <% } %>
+                      </div>
+                      <% if (typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 1) { %>
+                      <div id="channelSelectorDropdown" class="hidden mt-3 pt-3 border-t border-gray-700 space-y-2">
+                        <% youtubeChannels.forEach(function(channel) { %>
+                        <button type="button" onclick="selectYtChannel('<%= channel.id %>', '<%= channel.channel_name %>', '<%= channel.channel_thumbnail %>', '<%= channel.subscriber_count %>')"
+                          class="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-700 transition-colors text-left channel-option <%= channel.is_default ? 'bg-gray-700/50 selected-channel' : '' %>" data-channel-id="<%= channel.id %>">
+                          <div class="w-8 h-8 rounded-full overflow-hidden bg-gray-600 flex-shrink-0">
+                            <img src="<%= channel.channel_thumbnail %>" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'">
+                          </div>
+                          <div class="min-w-0 flex-1">
+                            <p class="text-sm text-white truncate"><%= channel.channel_name %></p>
+                            <p class="text-xs text-gray-400"><%= Number(channel.subscriber_count || 0).toLocaleString() %> subs</p>
+                          </div>
+                          <% if (channel.is_default) { %>
+                          <span class="text-xs text-primary">Default</span>
+                          <% } %>
+                        </button>
+                        <% }); %>
+                      </div>
+                      <% } %>
+                    </div>
+                    <input type="hidden" id="ytSelectedChannelId" name="ytChannelId" value="<%= typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 0 ? (youtubeChannels.find(c => c.is_default) || youtubeChannels[0]).id : '' %>">
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Thumbnail</label>
+                    <div class="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer" onclick="document.getElementById('ytThumbnail').click()">
+                      <input type="file" id="ytThumbnail" name="ytThumbnail" accept="image/*" class="hidden">
+                      <div id="ytThumbnailPreview" class="hidden">
+                        <img id="ytThumbnailImg" src="" alt="Thumbnail" class="max-h-32 mx-auto rounded">
+                      </div>
+                      <div id="ytThumbnailPlaceholder">
+                        <i class="ti ti-photo text-3xl text-gray-500 mb-2"></i>
+                        <p class="text-sm text-gray-400">Click to upload thumbnail</p>
+                        <p class="text-xs text-gray-500">Recommended: 1280x720</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="h-[42px] flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <label class="text-sm text-gray-300">Enable Schedule</label>
+                      <span id="ytServerTimeDisplay" class="bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">loading...</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="ytEnableSchedule" class="sr-only peer">
+                      <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                      <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                    </label>
+                  </div>
+
+                  <div id="ytScheduleSettings" class="hidden space-y-4">
+                    <div>
+                      <label class="text-xs text-gray-400 block mb-1">Start Time</label>
+                      <input type="datetime-local" id="ytScheduleStart" name="ytScheduleStart" class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
+                    </div>
+                    <div>
+                      <label class="text-xs text-gray-400 mb-1 flex items-center">
+                        <span>End Time</span>
+                        <span id="ytDurationBadge" class="ml-2 bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded hidden">00:00</span>
+                      </label>
+                      <input type="datetime-local" id="ytScheduleEnd" name="ytScheduleEnd" class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </form>
         </div>
-        <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
+        <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-4 border-t border-gray-700">
           <button onclick="closeNewStreamModal()"
             class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
             Cancel
@@ -506,7 +663,7 @@
   <div id="editStreamModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
     <div class="flex min-h-screen items-center justify-center p-4">
       <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-4xl modal-container flex flex-col max-h-[90vh]">
-        <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
+        <div class="flex-shrink-0 flex items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-gray-700">
           <h3 class="text-lg font-semibold">Edit Stream</h3>
           <div class="flex items-center gap-2">
             <button type="button" onclick="openTipsStreaming()" class="flex items-center gap-2 px-3 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors shadow-sm">
@@ -522,6 +679,22 @@
           <form id="editStreamForm" class="space-y-6">
             <input type="hidden" id="editStreamId" name="streamId" value="">
             <input type="hidden" id="editSelectedVideoId" name="videoId" value="">
+            <input type="hidden" id="editStreamMode" name="streamMode" value="manual">
+
+            <div id="editStreamModeSelector" class="hidden">
+              <div class="flex gap-2 p-1 bg-dark-900 rounded-lg">
+                <button type="button" id="editManualModeBtn" onclick="setEditStreamMode('manual')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-primary text-white">
+                  <i class="ti ti-settings"></i>
+                  <span class="text-sm font-medium">Manual (RTMP)</span>
+                </button>
+                <button type="button" id="editAutoModeBtn" onclick="setEditStreamMode('auto')" class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-dark-700">
+                  <i class="ti ti-brand-youtube"></i>
+                  <span class="text-sm font-medium">YouTube API</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="editManualStreamForm">
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div class="space-y-4">
                 <div class="relative">
@@ -550,11 +723,10 @@
                 <div class="lg:hidden bg-dark-900 rounded-lg overflow-hidden">
                   <div class="aspect-video bg-dark-900">
                     <div id="editVideoPreviewMobile" class="hidden w-full h-full">
-                      <video id="edit-videojs-preview-mobile" class="video-js vjs-default-skin vjs-big-play-centered"
-                        controls preload="auto" width="100%" height="100%"
-                        data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
+                      <video id="edit-native-preview-mobile" class="native-video-player"
+                        controls preload="metadata">
                         <source src="" type="video/mp4">
-                        <p class="vjs-no-js">Please enable JavaScript to view videos</p>
+                        Your browser does not support the video tag.
                       </video>
                     </div>
                     <div id="editEmptyPreviewMobile" class="h-full flex flex-col items-center justify-center">
@@ -635,12 +807,10 @@
                 <div class="overflow-hidden h-full">
                   <div class="aspect-video rounded-lg bg-dark-900">
                     <div id="editVideoPreview" class="hidden w-full h-full">
-                      <video id="edit-videojs-preview-desktop"
-                        class="video-js vjs-default-skin vjs-big-play-centered rounded-lg" controls preload="auto"
-                        width="100%" height="100%"
-                        data-setup='{"fluid": true, "playbackRates": [0.5, 1, 1.25, 1.5, 2]}'>
+                      <video id="edit-native-preview-desktop"
+                        class="native-video-player rounded-lg" controls preload="metadata">
                         <source src="" type="video/mp4">
-                        <p class="vjs-no-js">Please enable JavaScript to view videos</p>
+                        Your browser does not support the video tag.
                       </video>
                     </div>
                     <div id="editEmptyPreview" class="h-full flex flex-col items-center justify-center">
@@ -651,7 +821,7 @@
                 </div>
               </div>
             </div>
-            <div class="space-y-2">
+            <div class="space-y-2 mt-4 mb-6">
               <div class="flex flex-col sm:flex-row sm:items-center">
                 <label class="text-sm font-medium text-white">Schedule Settings</label>
                 <span id="editServerTimeDisplay"
@@ -779,9 +949,152 @@
                 </div>
               </div>
             </div>
+            </div>
+
+            <div id="editYoutubeStreamForm" class="hidden">
+              <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Select Video</label>
+                    <div class="relative">
+                      <button type="button" onclick="toggleEditYoutubeVideoSelector()"
+                        class="w-full flex items-center justify-between px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg hover:border-primary focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-left">
+                        <span class="text-sm text-gray-300" id="editYtSelectedVideo">Choose a video...</span>
+                        <i class="ti ti-chevron-down text-gray-400"></i>
+                      </button>
+                      <div id="editYtVideoSelectorDropdown" class="hidden absolute z-10 mt-2 w-full bg-dark-700 rounded-lg border border-gray-600 shadow-lg">
+                        <div class="p-2 border-b border-gray-600/50">
+                          <div class="relative">
+                            <input type="text" id="editYtVideoSearchInput" class="w-full bg-dark-800 text-white pl-8 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary border border-gray-700" placeholder="Search videos...">
+                            <i class="ti ti-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                          </div>
+                        </div>
+                        <div id="editYtVideoListContainer" class="p-2 space-y-1 max-h-60 overflow-y-auto"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <input type="hidden" id="editYtSelectedVideoId" name="ytVideoId" value="">
+
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Stream Title</label>
+                    <input type="text" id="editYtStreamTitle" name="ytStreamTitle" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary" placeholder="Enter stream title...">
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Description</label>
+                    <textarea id="editYtDescription" name="ytDescription" rows="3" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary resize-y min-h-[60px]" placeholder="Enter stream description..."></textarea>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <label class="text-sm font-medium text-white block mb-2">Privacy</label>
+                      <select id="editYtPrivacy" name="ytPrivacy" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
+                        <option value="public">Public</option>
+                        <option value="unlisted" selected>Unlisted</option>
+                        <option value="private">Private</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="text-sm font-medium text-white block mb-2">Category</label>
+                      <select id="editYtCategory" name="ytCategory" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
+                        <option value="22">People & Blogs</option>
+                        <option value="20">Gaming</option>
+                        <option value="24">Entertainment</option>
+                        <option value="10">Music</option>
+                        <option value="28">Science & Technology</option>
+                        <option value="17">Sports</option>
+                        <option value="27">Education</option>
+                        <option value="26">Howto & Style</option>
+                        <option value="19">Travel & Events</option>
+                        <option value="1">Film & Animation</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Tags</label>
+                    <div id="editYtTagsContainer" class="relative flex flex-wrap gap-2 p-2 bg-dark-700 border border-gray-600 rounded-lg min-h-[42px]">
+                      <input type="text" id="editYtTagsInput" class="flex-1 min-w-[100px] bg-transparent border-none outline-none text-white text-sm placeholder-gray-500" placeholder="Type and press Enter...">
+                      <button type="button" onclick="clearEditYtTags()" class="absolute top-0 right-2 text-gray-400 hover:text-white transition-colors" title="Clear all tags">
+                        <i class="ti ti-x text-sm"></i>
+                      </button>
+                    </div>
+                    <input type="hidden" id="editYtTags" name="ytTags" value="">
+                    <div class="flex items-center justify-between mt-1">
+                      <p class="text-xs text-gray-500">Press Enter or comma to add tag</p>
+                      <span id="editYtTagsCharCount" class="text-xs text-gray-500">0/500</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="space-y-4">
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">YouTube Channel</label>
+                    <div class="bg-dark-900 rounded-lg p-3 border border-gray-700">
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                          <div class="w-10 h-10 rounded-full overflow-hidden bg-gray-700 flex-shrink-0">
+                            <img id="editYtChannelThumb" src="<%= typeof youtubeChannelThumbnail !== 'undefined' ? youtubeChannelThumbnail : '' %>" alt="Channel" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<div class=\'w-full h-full flex items-center justify-center bg-red-600\'><i class=\'ti ti-brand-youtube text-white text-xl\'></i></div>'">
+                          </div>
+                          <div class="min-w-0">
+                            <p id="editYtChannelNameDisplay" class="font-medium text-white text-sm truncate"><%= typeof youtubeChannelName !== 'undefined' ? youtubeChannelName : 'YouTube Channel' %></p>
+                            <p id="editYtChannelSubsDisplay" class="text-xs text-gray-400"><%= typeof youtubeSubscriberCount !== 'undefined' ? Number(youtubeSubscriberCount).toLocaleString() : '0' %> subscribers</p>
+                          </div>
+                        </div>
+
+                      </div>
+
+                    </div>
+                    <input type="hidden" id="editYtSelectedChannelId" name="ytChannelId" value="<%= typeof youtubeChannels !== 'undefined' && youtubeChannels.length > 0 ? (youtubeChannels.find(c => c.is_default) || youtubeChannels[0]).id : '' %>">
+                  </div>
+
+                  <div>
+                    <label class="text-sm font-medium text-white block mb-2">Thumbnail</label>
+                    <div class="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer" onclick="document.getElementById('editYtThumbnail').click()">
+                      <input type="file" id="editYtThumbnail" name="editYtThumbnail" accept="image/*" class="hidden">
+                      <div id="editYtThumbnailPreview" class="hidden">
+                        <img id="editYtThumbnailImg" src="" alt="Thumbnail" class="max-h-32 mx-auto rounded">
+                      </div>
+                      <div id="editYtThumbnailPlaceholder">
+                        <i class="ti ti-photo text-3xl text-gray-500 mb-2"></i>
+                        <p class="text-sm text-gray-400">Click to upload thumbnail</p>
+                        <p class="text-xs text-gray-500">Recommended: 1280x720</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="h-[42px] flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <label class="text-sm text-gray-300">Enable Schedule</label>
+                      <span id="editYtServerTimeDisplay" class="bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded">loading...</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="editYtEnableSchedule" class="sr-only peer">
+                      <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                      <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                    </label>
+                  </div>
+
+                  <div id="editYtScheduleSettings" class="hidden space-y-4">
+                    <div>
+                      <label class="text-xs text-gray-400 block mb-1">Start Time</label>
+                      <input type="datetime-local" id="editYtScheduleStart" name="ytScheduleStart" class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
+                    </div>
+                    <div>
+                      <label class="text-xs text-gray-400 mb-1 flex items-center">
+                        <span>End Time</span>
+                        <span id="editYtDurationBadge" class="ml-2 bg-gray-700 text-xs text-gray-300 px-2 py-0.5 rounded hidden">00:00</span>
+                      </label>
+                      <input type="datetime-local" id="editYtScheduleEnd" name="ytScheduleEnd" class="w-full h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary text-sm [color-scheme:dark]">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </form>
         </div>
-        <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-6 border-t border-gray-700">
+        <div class="flex-shrink-0 flex items-center justify-end gap-3 p-4 sm:px-6 sm:py-4 border-t border-gray-700">
           <button onclick="closeEditStreamModal()"
             class="px-5 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-colors">
             Cancel
@@ -807,69 +1120,15 @@
       }
     }
     
-    .video-js {
+    .native-video-player {
       background-color: #1f2937;
       width: 100%;
       height: 100%;
+      object-fit: contain;
     }
-    .video-js .vjs-big-play-button {
-      background-color: rgba(59, 130, 246, 0.7);
-      border-color: rgba(59, 130, 246, 0.7);
-      border-radius: 50%;
-      width: 60px;
-      height: 60px;
-      line-height: 60px;
-      left: 50%;
-      top: 50%;
-      margin-left: -30px;
-      margin-top: -30px;
-    }
-    .video-js:hover .vjs-big-play-button {
-      background-color: rgb(59, 130, 246);
-    }
-    .video-js .vjs-control-bar {
-      background-color: rgba(31, 41, 55, 0.7);
-    }
-    .video-js .vjs-slider {
-      background-color: rgba(255, 255, 255, 0.2);
-    }
-    .video-js .vjs-play-progress,
-    .video-js .vjs-volume-level {
-      background-color: rgb(59, 130, 246);
-    }
-    .video-js .vjs-load-progress {
-      background: rgba(255, 255, 255, 0.3);
-    }
-    .aspect-video .video-js {
+    .aspect-video .native-video-player {
       aspect-ratio: 16/9;
-      height: auto !important;
-    }
-    .video-js .vjs-control-bar {
-      display: flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
-      transition: visibility 0.1s, opacity 0.1s !important;
-    }
-    .video-js.vjs-user-inactive:not(.vjs-paused) .vjs-control-bar {
-      visibility: visible !important;
-      opacity: 0.7 !important;
-    }
-    .video-js .vjs-progress-control {
-      min-width: 4em !important;
-      flex: 1 !important;
-    }
-    .video-js .vjs-progress-control .vjs-progress-holder {
-      margin: 0 10px !important;
-      height: 0.3em !important;
-    }
-    .video-js .vjs-progress-control:hover .vjs-progress-holder {
-      height: 0.5em !important;
-    }
-    .vjs-icon-placeholder:before {
-      position: absolute !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
+      height: auto;
     }
     #videoListContainer {
       scrollbar-width: thin;
@@ -951,6 +1210,13 @@
     ::-webkit-scrollbar-thumb:hover {
       background-color: rgba(156, 163, 175, 0.5);
     }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
     .modal-overlay,
     .overflow-y-auto,
     .overflow-x-auto {
@@ -987,6 +1253,10 @@
     }
   </style>
   <script>
+    const initialStreamsData = <%- typeof initialStreams !== 'undefined' ? initialStreams : '[]' %>;
+    const initialPaginationData = <%- typeof initialPagination !== 'undefined' ? initialPagination : '{"page":1,"limit":10,"totalCount":0,"totalPages":0}' %>;
+    let initialDataUsed = false;
+
     function showToast(type, message) {
       const toast = document.getElementById('toast');
       const toastIcon = document.getElementById('toast-icon');
@@ -1013,6 +1283,32 @@
         toast.classList.add('hidden');
       }, 3000);
     }
+
+    function toggleChannelSelector() {
+      const dropdown = document.getElementById('channelSelectorDropdown');
+      if (dropdown) {
+        dropdown.classList.toggle('hidden');
+      }
+    }
+
+    function selectYtChannel(channelId, channelName, channelThumbnail, subscriberCount) {
+      document.getElementById('ytSelectedChannelId').value = channelId;
+      document.getElementById('ytChannelThumb').src = channelThumbnail;
+      document.getElementById('ytChannelNameDisplay').textContent = channelName;
+      document.getElementById('ytChannelSubsDisplay').textContent = Number(subscriberCount || 0).toLocaleString() + ' subscribers';
+      
+      document.querySelectorAll('.channel-option').forEach(opt => {
+        opt.classList.remove('bg-gray-700/50', 'selected-channel');
+      });
+      const selectedOption = document.querySelector(`.channel-option[data-channel-id="${channelId}"]`);
+      if (selectedOption) {
+        selectedOption.classList.add('bg-gray-700/50', 'selected-channel');
+      }
+      
+      toggleChannelSelector();
+    }
+
+
 
     function createModalDialog(options) {
       const dialog = document.createElement('div');
@@ -1132,7 +1428,12 @@
     }
 
     function formatMemory(value) {
-      return typeof value === 'string' ? value : '0 MB';
+      if (typeof value !== 'string') return '0 MB';
+      const match = value.match(/^(\d+\.?\d*)\s*(\w+)$/);
+      if (!match) return value;
+      const number = parseFloat(match[1]);
+      const unit = match[2];
+      return Math.round(number) + ' ' + unit;
     }
 
     function fetchPlaylistInfo(playlistId, streamId) {
@@ -1147,7 +1448,7 @@
             
             const streamCards = document.querySelectorAll(`[data-stream-id="${streamId}"]`);
             streamCards.forEach(card => {
-              const metadataElement = card.querySelector('.text-gray-400');
+              const metadataElement = card.querySelector('.stream-settings-display');
               if (metadataElement && metadataElement.textContent.includes('Playlist • Loading...')) {
                 metadataElement.textContent = playlistMetadata;
               }
@@ -1155,9 +1456,9 @@
             
             const tableRows = document.querySelectorAll(`tr[data-stream-id="${streamId}"]`);
             tableRows.forEach(row => {
-              const metadataCell = row.querySelector('td:nth-child(4)');
-              if (metadataCell && metadataCell.textContent.includes('Playlist • Loading...')) {
-                metadataCell.textContent = playlistMetadata;
+              const metadataElement = row.querySelector('.stream-settings-display');
+              if (metadataElement && metadataElement.textContent.includes('Playlist • Loading...')) {
+                metadataElement.textContent = playlistMetadata;
               }
             });
           }
@@ -1166,7 +1467,7 @@
           console.error('Error fetching playlist info:', error);
           const streamCards = document.querySelectorAll(`[data-stream-id="${streamId}"]`);
           streamCards.forEach(card => {
-            const metadataElement = card.querySelector('.text-gray-400');
+            const metadataElement = card.querySelector('.stream-settings-display');
             if (metadataElement && metadataElement.textContent.includes('Playlist • Loading...')) {
               metadataElement.textContent = 'Playlist • Error loading info';
             }
@@ -1175,48 +1476,41 @@
     }
 
     let showingNetwork = true;
-      function toggleNetworkDiskDisplay(device) {
+    function toggleNetworkDiskDisplay(device) {
       const currentPreference = localStorage.getItem('networkDiskToggle') || 'network';
       const newPreference = currentPreference === 'network' ? 'disk' : 'network';
-      
       localStorage.setItem('networkDiskToggle', newPreference);
       showingNetwork = newPreference === 'network';
-      
       updateToggleDisplay('both');
     }
-      function updateToggleDisplay(device = 'both') {
+    function updateToggleDisplay(device = 'both') {
       const preference = localStorage.getItem('networkDiskToggle') || 'network';
       showingNetwork = preference === 'network';
-      
       const devices = device === 'both' ? ['mobile', 'desktop'] : [device];
-      
       devices.forEach(dev => {
         const networkContent = document.getElementById(`network-content-${dev}`);
         const diskContent = document.getElementById(`disk-content-${dev}`);
         const toggleIcon = document.getElementById(`toggle-icon-${dev}`);
-        
         if (networkContent && diskContent && toggleIcon) {
           if (showingNetwork) {
-            networkContent.style.display = 'block';
+            networkContent.classList.remove('hidden');
+            networkContent.style.display = dev === 'mobile' ? 'flex' : 'block';
+            diskContent.classList.add('hidden');
             diskContent.style.display = 'none';
-            toggleIcon.className = dev === 'mobile' ? 'ti ti-wifi text-white text-sm font-loaded' : 'ti ti-wifi text-xl text-white font-loaded';
+            toggleIcon.className = dev === 'mobile' ? 'ti ti-wifi text-yellow-400 text-sm font-loaded' : 'ti ti-wifi text-xl text-white font-loaded';
           } else {
+            networkContent.classList.add('hidden');
             networkContent.style.display = 'none';
-            diskContent.style.display = 'block';
-            toggleIcon.className = dev === 'mobile' ? 'ti ti-database text-white text-sm font-loaded' : 'ti ti-database text-xl text-white font-loaded';
+            diskContent.classList.remove('hidden');
+            diskContent.style.display = dev === 'mobile' ? 'flex' : 'block';
+            toggleIcon.className = dev === 'mobile' ? 'ti ti-database text-yellow-400 text-sm font-loaded' : 'ti ti-database text-xl text-white font-loaded';
           }
         }
       });
-      
       const titleElement = document.getElementById('network-disk-title');
-      const titleMobileElement = document.getElementById('network-disk-title-mobile');
       const newTitle = showingNetwork ? 'Internet Speed' : 'Disk Usage';
-      
       if (titleElement) {
         titleElement.textContent = newTitle;
-      }
-      if (titleMobileElement) {
-        titleMobileElement.textContent = newTitle;
       }
     }
     
@@ -1230,17 +1524,20 @@
           document.getElementById('memory-total').textContent = ' / ' + formatMemory(data.memory.total);
           document.getElementById('memory-bar').style.width = data.memory.usagePercent + '%';
           
-          document.getElementById('cpu-usage-mobile').textContent = data.cpu.usage;
-          document.getElementById('cpu-bar-mobile').style.width = data.cpu.usage + '%';
-          document.getElementById('memory-usage-mobile').textContent = formatMemory(data.memory.used);
-          document.getElementById('memory-total-mobile').textContent = ' / ' + formatMemory(data.memory.total);
-          document.getElementById('memory-bar-mobile').style.width = data.memory.usagePercent + '%';
+          const cpuMobile = document.getElementById('cpu-usage-mobile');
+          if (cpuMobile) cpuMobile.textContent = data.cpu.usage;
+          const memMobile = document.getElementById('memory-usage-mobile');
+          if (memMobile) memMobile.textContent = formatMemory(data.memory.used).replace(' ', '');
+          const memTotalMobile = document.getElementById('memory-total-mobile');
+          if (memTotalMobile) memTotalMobile.textContent = '/ ' + formatMemory(data.memory.total).replace(' ', '');
           
           if (data.network) {
             document.getElementById('upload-speed').textContent = data.network.uploadFormatted;
             document.getElementById('download-speed').textContent = data.network.downloadFormatted;
-            document.getElementById('upload-speed-mobile').textContent = data.network.uploadFormatted;
-            document.getElementById('download-speed-mobile').textContent = data.network.downloadFormatted;
+            const uploadMobile = document.getElementById('upload-speed-mobile');
+            const downloadMobile = document.getElementById('download-speed-mobile');
+            if (uploadMobile) uploadMobile.textContent = data.network.uploadFormatted.replace(' Mbps', '');
+            if (downloadMobile) downloadMobile.textContent = data.network.downloadFormatted.replace(' Mbps', '');
             const uploadWide = document.getElementById('upload-speed-wide');
             const downloadWide = document.getElementById('download-speed-wide');
             if (uploadWide) uploadWide.textContent = data.network.uploadFormatted;
@@ -1251,8 +1548,10 @@
             
             document.getElementById('disk-used').textContent = data.disk.used;
             document.getElementById('disk-total').textContent = ' / ' + data.disk.total;
-            document.getElementById('disk-used-mobile').textContent = data.disk.used;
-            document.getElementById('disk-total-mobile').textContent = ' / ' + data.disk.total;
+            const diskUsedMobile = document.getElementById('disk-used-mobile');
+            const diskTotalMobile = document.getElementById('disk-total-mobile');
+            if (diskUsedMobile) diskUsedMobile.textContent = data.disk.used;
+            if (diskTotalMobile) diskTotalMobile.textContent = '/ ' + data.disk.total;
             
             const diskUsedWide = document.getElementById('disk-used-wide');
             const diskTotalWide = document.getElementById('disk-total-wide');
@@ -1260,7 +1559,6 @@
             if (diskTotalWide) diskTotalWide.textContent = ' / ' + data.disk.total;
             
             const diskBar = document.getElementById('disk-bar');
-            const diskBarMobile = document.getElementById('disk-bar-mobile');
             const diskBarWide = document.getElementById('disk-bar-wide');
             
             let barColor;
@@ -1272,16 +1570,13 @@
             const colorClasses = ['bg-primary', 'bg-green-400'];
             colorClasses.forEach(cls => {
               diskBar.classList.remove(cls);
-              diskBarMobile.classList.remove(cls);
               if (diskBarWide) diskBarWide.classList.remove(cls);
             });
             
             diskBar.classList.add(barColor);
-            diskBarMobile.classList.add(barColor);
             if (diskBarWide) diskBarWide.classList.add(barColor);
             
             diskBar.style.width = diskUsagePercent + '%';
-            diskBarMobile.style.width = diskUsagePercent + '%';
             if (diskBarWide) diskBarWide.style.width = diskUsagePercent + '%';
           }
         })
@@ -1296,6 +1591,102 @@
     setInterval(updateSystemStats, 5000);
     document.getElementById('newStreamForm').addEventListener('submit', function (e) {
       e.preventDefault();
+      const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+      
+      if (currentStreamMode === 'auto') {
+        const ytVideoId = document.getElementById('ytSelectedVideoId').value;
+        if (!ytVideoId) {
+          showToast('error', 'Please select a video before creating the stream');
+          return;
+        }
+        
+        const ytFormData = {
+          videoId: ytVideoId,
+          title: document.getElementById('ytStreamTitle').value,
+          description: document.getElementById('ytDescription').value,
+          privacy: document.getElementById('ytPrivacy').value,
+          category: document.getElementById('ytCategory').value,
+          tags: document.getElementById('ytTags').value,
+          loopVideo: true,
+          ytChannelId: document.getElementById('ytSelectedChannelId')?.value || ''
+        };
+        
+        const enableSchedule = document.getElementById('ytEnableSchedule').checked;
+        if (enableSchedule) {
+          const scheduleStart = document.getElementById('ytScheduleStart').value;
+          const scheduleEnd = document.getElementById('ytScheduleEnd').value;
+          if (scheduleStart) ytFormData.scheduleStartTime = scheduleStart;
+          if (scheduleEnd) ytFormData.scheduleEndTime = scheduleEnd;
+        }
+        
+        const createBtn = document.querySelector('#newStreamModal button[type="submit"]');
+        const originalBtnText = createBtn.innerHTML;
+        createBtn.innerHTML = '<i class="ti ti-loader animate-spin font-loaded"></i> Creating...';
+        createBtn.disabled = true;
+        createBtn.classList.add('opacity-70', 'cursor-not-allowed');
+        
+        function resetCreateBtn() {
+          createBtn.innerHTML = originalBtnText;
+          createBtn.disabled = false;
+          createBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+        }
+        
+        const thumbnailInput = document.getElementById('ytThumbnail');
+        if (thumbnailInput.files.length > 0) {
+          const formDataObj = new FormData();
+          Object.keys(ytFormData).forEach(key => formDataObj.append(key, ytFormData[key]));
+          formDataObj.append('thumbnail', thumbnailInput.files[0]);
+          
+          fetch('/api/streams/youtube', {
+            method: 'POST',
+            headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+            body: formDataObj
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                showToast('success', 'YouTube stream created successfully!');
+                closeNewStreamModal();
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                showToast('error', data.error || 'Failed to create YouTube stream');
+                resetCreateBtn();
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              showToast('error', 'An error occurred while creating the YouTube stream');
+              resetCreateBtn();
+            });
+        } else {
+          fetch('/api/streams/youtube', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+            },
+            body: JSON.stringify(ytFormData)
+          })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                showToast('success', 'YouTube stream created successfully!');
+                closeNewStreamModal();
+                setTimeout(() => window.location.reload(), 1000);
+              } else {
+                showToast('error', data.error || 'Failed to create YouTube stream');
+                resetCreateBtn();
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              showToast('error', 'An error occurred while creating the YouTube stream');
+              resetCreateBtn();
+            });
+        }
+        return;
+      }
+      
       const videoId = document.getElementById('selectedVideoId').value;
       if (!videoId) {
         showToast('error', 'Please select a video before creating the stream');
@@ -1346,7 +1737,6 @@
       if (scheduleEndTime) {
         formData.scheduleEndTime = scheduleEndTime;
       }
-      const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
       fetch('/api/streams', {
         method: 'POST',
         headers: {
@@ -1372,420 +1762,537 @@
           showToast('error', 'An error occurred while creating the stream');
         });
     });
-    document.addEventListener('DOMContentLoaded', function () {
-      fetch('/api/streams')
+    let currentPage = 1;
+    let currentLimit = 10;
+    let currentSearch = '';
+    let totalStreamsCount = 0;
+
+    function updateStreamCounters(streams) {
+      const liveStreams = streams.filter(stream => stream.status === 'live').length;
+      const desktopCounter = document.querySelector('.hidden.md\\:grid .bg-gray-800:nth-child(1) p.text-3xl');
+      const mobileCounter = document.querySelector('.grid.grid-cols-2.md\\:hidden .bg-gray-800:nth-child(1) p.text-xl');
+      if (desktopCounter) desktopCounter.textContent = liveStreams;
+      if (mobileCounter) mobileCounter.textContent = liveStreams;
+    }
+
+    function formatDate(date) {
+      if (!date) return '';
+      const serverDate = convertFromServerTime(date.toISOString());
+      return serverDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function formatTime(date) {
+      if (!date) return '';
+      const serverDate = convertFromServerTime(date.toISOString());
+      const hours = String(serverDate.getHours()).padStart(2, '0');
+      const minutes = String(serverDate.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+
+    function getPlatformIcon(platform) {
+      switch (platform) {
+        case 'YouTube': return 'youtube';
+        case 'Facebook': return 'facebook';
+        case 'Twitch': return 'twitch';
+        case 'TikTok': return 'tiktok';
+        case 'Instagram': return 'instagram';
+        case 'Shopee Live': return 'shopping-bag';
+        case 'Restream.io': return 'live-photo';
+        default: return 'broadcast';
+      }
+    }
+
+    function getPlatformColor(platform) {
+      switch (platform) {
+        case 'YouTube': return 'red-500';
+        case 'Facebook': return 'blue-500';
+        case 'Twitch': return 'purple-500';
+        case 'TikTok': return 'gray-100';
+        case 'Instagram': return 'pink-500';
+        case 'Shopee Live': return 'orange-500';
+        case 'Restream.io': return 'teal-500';
+        default: return 'gray-400';
+      }
+    }
+
+    function getStatusBadgeHTML(status, duration = '') {
+      switch (status) {
+        case 'live':
+          return `
+          <span class="flex items-center bg-red-400/10 text-red-400 rounded-full px-2.5 py-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
+            <span class="text-xs font-medium">Live${duration ? ' • ' + duration : ''}</span>
+          </span>
+        `;
+        case 'scheduled':
+          return `
+          <span class="flex items-center bg-yellow-500/10 text-yellow-500 rounded-full px-2.5 py-1">
+            <i class="ti ti-calendar-event text-xs mr-1.5"></i>
+            <span class="text-xs font-medium">Scheduled</span>
+          </span>
+        `;
+        case 'offline':
+        default:
+          return `
+          <span class="flex items-center bg-gray-700 text-gray-400 rounded-full px-2.5 py-1">
+            <i class="ti ti-circle-dot text-xs mr-1.5"></i>
+            <span class="text-xs font-medium">Offline</span>
+          </span>
+        `;
+      }
+    }
+
+    function getActionButtonHTML(status, streamId, view = 'desktop') {
+      const btnClass = view === 'mobile'
+        ? 'action-btn px-2.5 py-1 text-white text-[10px] font-medium rounded transition-colors'
+        : 'action-btn inline-flex items-center px-2.5 py-1.5 text-white text-xs font-medium rounded transition-colors';
+      switch (status) {
+        case 'live':
+          return `
+          <button 
+            onclick="stopStream('${streamId}')"
+            id="action-btn-${streamId}-${view}"
+            class="${btnClass} bg-red-500 hover:bg-red-600">
+            Stop
+          </button>
+        `;
+        case 'scheduled':
+          return `
+          <button
+            onclick="cancelSchedule('${streamId}')"
+            id="action-btn-${streamId}-${view}"
+            class="${btnClass} bg-yellow-500 hover:bg-yellow-600">
+            Cancel
+          </button>
+        `;
+        case 'offline':
+        default:
+          return `
+          <button
+            onclick="startStream('${streamId}')"
+            id="action-btn-${streamId}-${view}"
+            class="${btnClass} bg-primary hover:bg-blue-600">
+            Start
+          </button>
+        `;
+      }
+    }
+
+    function showEmptyState() {
+      document.querySelectorAll('tbody tr:not(#empty-state)').forEach(el => {
+        el.style.display = 'none';
+      });
+      const emptyState = document.getElementById('empty-state');
+      if (emptyState) {
+        emptyState.style.display = 'table-row';
+        const emptyStateMessage = emptyState.querySelector('p.text-gray-500');
+        if (emptyStateMessage) {
+          emptyStateMessage.textContent = currentSearch ? 'No streams match your search' : 'Create your first stream to start broadcasting to your audience';
+        }
+      }
+      document.querySelectorAll('.block.md\\:hidden.space-y-2 > div').forEach(el => {
+        el.style.display = 'none';
+      });
+      const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-2');
+      if (mobileContainer) {
+        const searchMessage = currentSearch ? 'No streams match your search' : 'No streams found';
+        mobileContainer.innerHTML = `
+        <div class="bg-gray-800 rounded-lg p-4 text-center">
+          <div class="flex flex-col items-center">
+            <div class="w-12 h-12 rounded-full bg-dark-700 flex items-center justify-center mb-3">
+              <i class="ti ti-${currentSearch ? 'search' : 'broadcast'} text-gray-500 text-xl"></i>
+            </div>
+            <p class="text-gray-400 font-medium text-sm mb-1">${searchMessage}</p>
+            <p class="text-gray-500 text-xs">${currentSearch ? '' : 'Create your first stream to start broadcasting'}</p>
+          </div>
+        </div>
+      `;
+      }
+      hidePagination();
+    }
+
+    function createMobileStreamCard(stream) {
+      const card = document.createElement('div');
+      card.className = 'bg-gray-800 rounded-lg shadow-md overflow-hidden';
+      card.dataset.streamId = stream.id;
+      const youtubeConnected = <%= typeof youtubeConnected !== 'undefined' && youtubeConnected ? 'true' : 'false' %>;
+      let thumbnail = stream.video_type === 'playlist' ? '/images/playlist-thumbnail.svg' : (stream.video_thumbnail || '/images/default-video-thumbnail.svg');
+      if (stream.youtube_thumbnail) thumbnail = stream.youtube_thumbnail;
+      let durationDisplay = '';
+      if (stream.status === 'live' && stream.start_time) {
+        const startTime = new Date(stream.start_time);
+        const now = new Date();
+        const durationMs = now - startTime;
+        const hours = Math.floor(durationMs / (1000 * 60 * 60)).toString().padStart(2, '0');
+        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
+        durationDisplay = `${hours}:${minutes}:${seconds}`;
+      }
+      const scheduleDate = stream.schedule_time ? formatDate(new Date(stream.schedule_time)) : '';
+      const scheduleTime = stream.schedule_time ? formatTime(new Date(stream.schedule_time)) : '';
+      const endDate = stream.end_time ? formatDate(new Date(stream.end_time)) : '';
+      const endTime = stream.end_time ? formatTime(new Date(stream.end_time)) : '';
+      let settingsDisplay = '';
+      if (stream.video_type === 'playlist') {
+        settingsDisplay = 'Playlist • Loading...';
+        fetchPlaylistInfo(stream.video_id, stream.id);
+      } else if (stream.use_advanced_settings) {
+        settingsDisplay = `${stream.resolution || '1280x720'} • ${stream.bitrate || '2500'}kbps`;
+      } else {
+        const videoRes = stream.video_resolution || stream.resolution || '1280x720';
+        const videoBitrate = stream.video_bitrate || stream.bitrate || '2500';
+        settingsDisplay = `${videoRes} • ${videoBitrate}kbps`;
+      }
+      let statusBadge = '';
+      if (stream.status === 'live') {
+        statusBadge = `<span class="flex items-center text-red-400"><span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1"></span><span class="text-[10px] font-medium">Live${durationDisplay ? ' • ' : ''}</span>${durationDisplay ? `<span class="text-[10px] font-medium tabular-nums live-duration" data-start-time="${stream.start_time}">${durationDisplay}</span>` : ''}</span>`;
+      } else if (stream.status === 'scheduled') {
+        statusBadge = `<span class="flex items-center text-yellow-500"><i class="ti ti-calendar-event text-[10px] mr-1"></i><span class="text-[10px] font-medium">Scheduled</span></span>`;
+      } else {
+        statusBadge = `<span class="flex items-center text-gray-400"><i class="ti ti-circle-dot text-[10px] mr-1"></i><span class="text-[10px] font-medium">Offline</span></span>`;
+      }
+      let scheduleHTML = '';
+      if (stream.status === 'scheduled' && scheduleDate) {
+        scheduleHTML = `<span class="text-[10px] text-yellow-500">${scheduleDate} ${scheduleTime}</span>`;
+        if (endDate) scheduleHTML += ` <span class="text-[10px] text-gray-500">→</span> <span class="text-[10px] text-green-500">${endDate} ${endTime}</span>`;
+      } else if (endDate) {
+        scheduleHTML = `<span class="text-[10px] text-green-500">End: ${endDate} ${endTime}</span>`;
+      }
+      let youtubeInfoHTML = '';
+      if (youtubeConnected && stream.youtube_channel_name) {
+        youtubeInfoHTML = `<div class="flex items-center gap-1">${stream.youtube_channel_thumbnail ? `<img src="${stream.youtube_channel_thumbnail}" alt="" class="w-3 h-3 rounded-full object-cover">` : `<div class="w-3 h-3 rounded-full bg-red-600 flex items-center justify-center"><i class="ti ti-brand-youtube text-white text-[6px]"></i></div>`}<span class="text-[10px] text-gray-400">${stream.youtube_channel_name}</span></div>`;
+      }
+      card.innerHTML = `
+      <div class="p-3">
+        <div class="flex gap-3">
+          <div class="relative flex-shrink-0 w-20 h-14 bg-dark-700 rounded overflow-hidden">
+            <img src="${thumbnail}" class="w-full h-full object-cover" alt="${stream.title}">
+          </div>
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-medium text-white truncate leading-tight">${stream.title}</h4>
+            <div class="flex items-center gap-1.5 mt-1">
+              <div class="flex items-center text-[10px] text-gray-400">
+                <i class="ti ti-brand-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-0.5 text-xs"></i>
+                <span>${stream.platform || 'Custom'}</span>
+              </div>
+              <span class="text-gray-600 text-[10px]">•</span>
+              <span class="text-[10px] text-gray-400 stream-settings-display">${settingsDisplay}</span>
+            </div>
+            ${youtubeInfoHTML ? `<div class="mt-0.5">${youtubeInfoHTML}</div>` : ''}
+            ${scheduleHTML ? `<div class="mt-0.5">${scheduleHTML}</div>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="border-t border-gray-700 px-3 py-1.5 flex items-center justify-between">
+        <div>${statusBadge}</div>
+        <div class="flex items-center gap-1.5">
+          ${getActionButtonHTML(stream.status, stream.id, 'mobile')}
+          <button class="p-1 hover:bg-dark-700 rounded transition-colors ${stream.status === 'live' || stream.status === 'scheduled' ? 'opacity-50 cursor-not-allowed' : ''}" onclick="${stream.status === 'live' || stream.status === 'scheduled' ? '' : `editStream('${stream.id}')`}" ${stream.status === 'live' || stream.status === 'scheduled' ? 'disabled' : ''}><i class="ti ti-edit text-gray-400 hover:text-white text-sm"></i></button>
+          <button class="p-1 hover:bg-dark-700 rounded transition-colors ${stream.status === 'live' || stream.status === 'scheduled' ? 'opacity-50 cursor-not-allowed' : ''}" onclick="${stream.status === 'live' || stream.status === 'scheduled' ? '' : `deleteStream('${stream.id}')`}" ${stream.status === 'live' || stream.status === 'scheduled' ? 'disabled' : ''}><i class="ti ti-trash text-gray-400 hover:text-red-400 text-sm"></i></button>
+        </div>
+      </div>
+    `;
+      return card;
+    }
+
+    function createStreamTableRow(stream) {
+      const row = document.createElement('tr');
+      row.className = 'hover:bg-dark-700/50 transition-colors';
+      row.dataset.streamId = stream.id;
+      const youtubeConnected = <%= typeof youtubeConnected !== 'undefined' && youtubeConnected ? 'true' : 'false' %>;
+      let thumbnail = stream.video_type === 'playlist' ? 
+        '/images/playlist-thumbnail.svg' : 
+        (stream.video_thumbnail || '/images/default-video-thumbnail.svg');
+      if (stream.youtube_thumbnail) {
+        thumbnail = stream.youtube_thumbnail;
+      }
+      const startDate = stream.start_time ? new Date(stream.start_time) : null;
+      const scheduleDate = stream.schedule_time ? new Date(stream.schedule_time) : null;
+      let settingsDisplay = '';
+      if (stream.video_type === 'playlist') {
+        settingsDisplay = 'Playlist • Loading...';
+        fetchPlaylistInfo(stream.video_id, stream.id);
+      } else if (stream.use_advanced_settings) {
+        settingsDisplay = `${stream.resolution || '1280x720'} • ${stream.bitrate || '2500'} kbps • ${stream.fps || '30'} FPS`;
+      } else {
+        const videoRes = stream.video_resolution || stream.resolution || '1280x720';
+        const videoBitrate = stream.video_bitrate || stream.bitrate || '2500';
+        const videoFps = stream.video_fps || stream.fps || '30';
+        settingsDisplay = `${videoRes} • ${videoBitrate} kbps • ${videoFps} FPS`;
+      }
+      let durationDisplay = '';
+      let statusBadge = '';
+      if (stream.status === 'live' && stream.start_time) {
+        const startTime = new Date(stream.start_time);
+        const now = new Date();
+        const durationMs = now - startTime;
+        const hours = Math.floor(durationMs / (1000 * 60 * 60)).toString().padStart(2, '0');
+        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+        const seconds = Math.floor((durationMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
+        durationDisplay = `${hours}:${minutes}:${seconds}`;
+        statusBadge = `
+          <span class="flex items-center bg-red-400/10 text-red-400 rounded-full px-2.5 py-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
+            <span class="text-xs font-medium">Live • <span class="live-duration tabular-nums" data-start-time="${stream.start_time}">
+              ${durationDisplay}</span></span>
+          </span>
+        `;
+      } else {
+        statusBadge = getStatusBadgeHTML(stream.status);
+      }
+      row.innerHTML = `
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+          <div class="w-20 h-12 bg-dark-700 rounded flex-shrink-0 overflow-hidden mr-3">
+            <img src="${thumbnail}" class="w-full h-full object-cover" alt="${stream.title}">
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-medium truncate max-w-[200px]" title="${stream.title}">${stream.title}</div>
+            <div class="text-xs text-gray-400 stream-settings-display">${settingsDisplay}</div>
+          </div>
+        </div>
+      </td>
+      ${youtubeConnected ? `
+      <td class="px-6 py-4 whitespace-nowrap">
+        ${stream.youtube_channel_name && stream.youtube_channel_external_id ? `
+        <a href="https://www.youtube.com/channel/${stream.youtube_channel_external_id}" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           class="inline-flex items-center gap-1.5 hover:transition-colors group"
+           title="${stream.youtube_channel_name}">
+          ${stream.youtube_channel_thumbnail ? `
+          <img src="${stream.youtube_channel_thumbnail}" alt="" class="w-5 h-5 rounded-full object-cover">
+          ` : `
+          <div class="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center">
+            <i class="ti ti-brand-youtube text-white text-xs"></i>
+          </div>
+          `}
+          <span class="text-sm group-hover:text-gray-300">${stream.youtube_channel_name}</span>
+        </a>
+        ` : '<span class="text-gray-500 text-xs">—</span>'}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        ${stream.youtube_broadcast_id ? `
+        <a href="https://studio.youtube.com/video/${stream.youtube_broadcast_id}/livestreaming" 
+           target="_blank" 
+           rel="noopener noreferrer"
+           class="inline-flex items-center gap-1.5  hover:text-gray-300 text-sm transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M19.875 6.27a2.225 2.225 0 0 1 1.125 1.948v7.284c0 .809 -.443 1.555 -1.158 1.948l-6.75 4.27a2.269 2.269 0 0 1 -2.184 0l-6.75 -4.27a2.225 2.225 0 0 1 -1.158 -1.948v-7.285c0 -.809 .443 -1.554 1.158 -1.947l6.75 -3.98a2.33 2.33 0 0 1 2.25 0l6.75 3.98h-.033z" />
+            <path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
+          </svg>
+          <span>YT Studio</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M12 6h-6a2 2 0 0 0 -2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-6" />
+            <path d="M11 13l9 -9" />
+            <path d="M15 4h5v5" />
+          </svg>
+        </a>
+        ` : '<span class="text-gray-500 text-xs">—</span>'}
+      </td>
+      ` : ''}
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+          <i class="ti ti-brand-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1.5"></i>
+          <span class="text-sm">${stream.platform || 'Custom'}</span>
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        ${(() => {
+          const endDate = stream.end_time ? new Date(stream.end_time) : null;
+          if (scheduleDate && endDate) {
+            return `<div class="text-xs text-yellow-500 font-medium">Start: ${formatDate(scheduleDate)} ${formatTime(scheduleDate)}</div>
+                    <div class="text-xs text-green-500 font-medium">End: ${formatDate(endDate)} ${formatTime(endDate)}</div>`;
+          } else if (scheduleDate) {
+            return `<div class="text-xs text-yellow-500 font-medium">Start: ${formatDate(scheduleDate)} ${formatTime(scheduleDate)}</div>`;
+          } else if (endDate) {
+            return `<div class="text-xs text-green-500 font-medium">End: ${formatDate(endDate)} ${formatTime(endDate)}</div>`;
+          } else {
+            return `<div class="text-sm">--</div>`;
+          }
+        })()}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap min-w-[150px]">
+        <div class="flex items-center">
+          ${statusBadge}
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-right">
+        <div class="flex items-center justify-end space-x-2">
+          ${getActionButtonHTML(stream.status, stream.id, 'desktop')}
+          <div class="ml-2 flex items-center gap-1">
+            <button class="p-1.5 hover:bg-dark-700 rounded transition-colors ${stream.status === 'live' || stream.status === 'scheduled' ? 'opacity-50 cursor-not-allowed' : ''}" 
+                    onclick="${stream.status === 'live' || stream.status === 'scheduled' ? '' : `editStream('${stream.id}')`}"
+                    ${stream.status === 'live' || stream.status === 'scheduled' ? 'disabled' : ''}>
+              <i class="ti ti-edit text-gray-400 hover:text-white"></i>
+            </button>
+            <button class="p-1.5 hover:bg-dark-700 rounded transition-colors ${stream.status === 'live' || stream.status === 'scheduled' ? 'opacity-50 cursor-not-allowed' : ''}" 
+                    onclick="${stream.status === 'live' || stream.status === 'scheduled' ? '' : `deleteStream('${stream.id}')`}"
+                    ${stream.status === 'live' || stream.status === 'scheduled' ? 'disabled' : ''}>
+              <i class="ti ti-trash text-gray-400 hover:text-red-400"></i>
+            </button>
+          </div>
+        </div>
+      </td>
+    `;
+      return row;
+    }
+
+    function displayMobileStreams(streams) {
+      const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-2');
+      if (!mobileContainer) return;
+      mobileContainer.innerHTML = '';
+      streams.forEach(stream => {
+        const card = createMobileStreamCard(stream);
+        mobileContainer.appendChild(card);
+      });
+    }
+
+    function displayDesktopStreams(streams) {
+      const tableBody = document.querySelector('.hidden.md\\:block table tbody');
+      if (!tableBody) return;
+      Array.from(tableBody.querySelectorAll('tr:not(#empty-state)')).forEach(row => {
+        row.remove();
+      });
+      const emptyState = document.getElementById('empty-state');
+      if (emptyState) {
+        emptyState.style.display = 'none';
+      }
+      streams.forEach(stream => {
+        const row = createStreamTableRow(stream);
+        tableBody.insertBefore(row, emptyState);
+      });
+    }
+
+    function displayStreams(streams) {
+      if (!streams || streams.length === 0) {
+        showEmptyState();
+        hidePagination();
+        return;
+      }
+      displayMobileStreams(streams);
+      displayDesktopStreams(streams);
+    }
+
+    function fetchStreams(page = 1, limit = 10, search = '') {
+      currentPage = page;
+      currentLimit = limit;
+      currentSearch = search;
+      
+      const params = new URLSearchParams({
+        page: page,
+        limit: limit
+      });
+      if (search) params.append('search', search);
+      
+      fetch(`/api/streams?${params.toString()}`)
         .then(response => response.json())
         .then(data => {
           if (data.success) {
             displayStreams(data.streams);
-            updateStreamCounters(data.streams);
+            if (data.pagination) {
+              totalStreamsCount = data.pagination.totalCount;
+              updatePagination(data.pagination);
+            }
+            updateStreamCountersFromAPI();
           } else {
             console.error('Error fetching streams:', data.error);
             showEmptyState();
+            hidePagination();
           }
         })
         .catch(error => {
           console.error('Error fetching streams:', error);
           showEmptyState();
-        });      function updateStreamCounters(streams) {
-        const liveStreams = streams.filter(stream => stream.status === 'live').length;
-        document.querySelector('.hidden.md\\:grid .bg-gray-800:nth-child(1) p.text-3xl').textContent = liveStreams;
-        document.querySelector('.grid.grid-cols-2.md\\:hidden .bg-gray-800:nth-child(1) p.text-xl').textContent = liveStreams;
-      }
-      function displayStreams(streams) {
-        if (!streams || streams.length === 0) {
-          showEmptyState();
-          return;
-        }
-        displayMobileStreams(streams);
-        displayDesktopStreams(streams);
-      }
-      function displayMobileStreams(streams) {
-        const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-4');
-        mobileContainer.innerHTML = '';
-        streams.forEach(stream => {
-          const card = createMobileStreamCard(stream);
-          mobileContainer.appendChild(card);
+          hidePagination();
         });
-      }
-      function displayDesktopStreams(streams) {
-        const tableBody = document.querySelector('.hidden.md\\:block table tbody');
-        Array.from(tableBody.querySelectorAll('tr:not(#empty-state)')).forEach(row => {
-          row.remove();
-        });
-        const emptyState = document.getElementById('empty-state');
-        if (emptyState) {
-          emptyState.style.display = 'none';
-        }
-        streams.forEach(stream => {
-          const row = createStreamTableRow(stream);
-          tableBody.insertBefore(row, emptyState);
-        });
-      }
-      function createMobileStreamCard(stream) {
-        const card = document.createElement('div');
-        card.className = 'bg-gray-800 rounded-lg overflow-hidden shadow-md';
-        card.dataset.streamId = stream.id;
-        const thumbnail = stream.video_type === 'playlist' ? 
-          '/images/playlist-thumbnail.svg' : 
-          (stream.video_thumbnail || '/images/default-video-thumbnail.svg');
-        let durationDisplay = '';
-        if (stream.status === 'live' && stream.start_time) {
-          const startTime = new Date(stream.start_time);
-          const now = new Date();
-          const durationMs = now - startTime;
-          const hours = Math.floor(durationMs / (1000 * 60 * 60)).toString().padStart(2, '0');
-          const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-          const seconds = Math.floor((durationMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
-          durationDisplay = `${hours}:${minutes}:${seconds}`;
-        }
-        const statusBadge = getStatusBadgeHTML(stream.status);
-        const startDate = stream.start_time ? formatDate(new Date(stream.start_time)) : '';
-        const scheduleDate = stream.schedule_time ? formatDate(new Date(stream.schedule_time)) : '';
-        const scheduleTime = stream.schedule_time ? formatTime(new Date(stream.schedule_time)) : '';
-        let settingsDisplay = '';
-        if (stream.video_type === 'playlist') {
-          settingsDisplay = 'Playlist • Loading...';
-          fetchPlaylistInfo(stream.video_id, stream.id);
-        } else if (stream.use_advanced_settings) {
-          settingsDisplay = `${stream.resolution || '1280x720'} • ${stream.bitrate || '2500'} kbps • ${stream.fps || '30'} FPS`;
-        } else {
-          const videoRes = stream.video_resolution || stream.resolution || '1280x720';
-          const videoBitrate = stream.video_bitrate || stream.bitrate || '2500';
-          const videoFps = stream.video_fps || stream.fps || '30';
-          settingsDisplay = `${videoRes} • ${videoBitrate} kbps • ${videoFps} FPS`;
-        }
-        let formattedDuration = '—';
-        if (stream.duration) {
-          if (stream.duration >= 60) {
-            const hours = Math.floor(stream.duration / 60);
-            const minutes = stream.duration % 60;
-            formattedDuration = `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
-          } else {
-            formattedDuration = `${stream.duration} min`;
+    }
+    
+    function updateStreamCountersFromAPI() {
+      fetch('/api/streams')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            updateStreamCounters(data.streams);
           }
+        })
+        .catch(error => console.error('Error updating counters:', error));
+    }
+    
+    document.addEventListener('DOMContentLoaded', async function () {
+      await fetchServerTimeSync();
+      if (initialStreamsData && initialStreamsData.length >= 0 && !initialDataUsed) {
+        initialDataUsed = true;
+        displayStreams(initialStreamsData);
+        if (initialPaginationData) {
+          totalStreamsCount = initialPaginationData.totalCount;
+          updatePagination(initialPaginationData);
         }
-        card.innerHTML = `
-        <div class="relative">
-          <div class="bg-dark-700 aspect-video relative">
-            <img src="${thumbnail}" class="w-full h-full object-cover" alt="${stream.title}">
-            <div class="absolute top-2 right-2">
-              ${statusBadge}
-            </div>            ${stream.status === 'live' ? `
-            <div class="absolute bottom-2 right-2 bg-black/70 rounded px-1.5 py-0.5 min-w-[4rem] text-center">
-              <span class="text-xs font-medium text-white tabular-nums">
-                <span class="live-duration" data-start-time="${stream.start_time}">${durationDisplay}</span>
-              </span>
-            </div>` : ''}
-          </div>
-        </div>
-        <div class="p-4">
-          <div class="flex items-center justify-between mb-2">
-            <div class="font-medium">${stream.title}</div>
-            <div class="flex items-center text-sm">
-              <i class="ti ti-brand-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1"></i>
-              <span>${stream.platform || 'Custom'}</span>
-            </div>
-          </div>
-          <div class="text-xs text-gray-400 mb-2">
-            ${settingsDisplay}
-          </div>
-          ${(() => {
-            const endDate = stream.end_time ? formatDate(new Date(stream.end_time)) : '';
-            const endTime = stream.end_time ? formatTime(new Date(stream.end_time)) : '';
-            if (stream.status === 'scheduled') {
-              if (scheduleDate && endDate) {
-                return `<div class="text-xs mb-3">
-                          <div class="flex items-center mb-1 text-yellow-500 font-medium">
-                            <i class="ti ti-calendar-event mr-1.5"></i>
-                            <span>Start: ${scheduleDate} ${scheduleTime}</span>
-                          </div>
-                          <div class="flex items-center text-green-500 font-medium">
-                            <i class="ti ti-calendar-check mr-1.5"></i>
-                            <span>End: ${endDate} ${endTime}</span>
-                          </div>
-                        </div>`;
-              } else if (scheduleDate) {
-                return `<div class="flex items-center text-xs text-yellow-500 font-medium mb-3">
-                          <i class="ti ti-calendar-event mr-1.5"></i>
-                          <span>Start: ${scheduleDate} ${scheduleTime}</span>
-                        </div>`;
-              } else if (endDate) {
-                return `<div class="flex items-center text-xs text-green-500 font-medium mb-3">
-                          <i class="ti ti-calendar-check mr-1.5"></i>
-                          <span>End: ${endDate} ${endTime}</span>
-                        </div>`;
-              }
-            }
-            return `<div class="flex items-center text-sm text-gray-400 mb-3">
-                      <i class="ti ti-calendar mr-1.5"></i>
-                      <span>${startDate || 'Not started'}</span>
-                    </div>`;
-          })()}
-          <div class="flex justify-between items-center">
-            ${getActionButtonHTML(stream.status, stream.id, 'mobile')}
-            <div class="flex items-center gap-3 text-gray-400">
-              <button class="hover:text-white transition-colors" onclick="editStream('${stream.id}')">
-                <i class="ti ti-edit"></i>
-              </button>
-              <button class="hover:text-red-400 transition-colors" onclick="deleteStream('${stream.id}')">
-                <i class="ti ti-trash"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-        return card;
+        updateStreamCounters(initialStreamsData);
+      } else {
+        fetchStreams(1, 10, '');
       }
-      function createStreamTableRow(stream) {
-        const row = document.createElement('tr');
-        row.className = 'hover:bg-dark-700/50 transition-colors';
-        row.dataset.streamId = stream.id;
-        const thumbnail = stream.video_type === 'playlist' ? 
-          '/images/playlist-thumbnail.svg' : 
-          (stream.video_thumbnail || '/images/default-video-thumbnail.svg');
-        const startDate = stream.start_time ? new Date(stream.start_time) : null;
-        const scheduleDate = stream.schedule_time ? new Date(stream.schedule_time) : null;
-        let settingsDisplay = '';
-        if (stream.video_type === 'playlist') {
-          settingsDisplay = 'Playlist • Loading...';
-          fetchPlaylistInfo(stream.video_id, stream.id);
-        } else if (stream.use_advanced_settings) {
-          settingsDisplay = `${stream.resolution || '1280x720'} • ${stream.bitrate || '2500'} kbps • ${stream.fps || '30'} FPS`;
-        } else {
-          const videoRes = stream.video_resolution || stream.resolution || '1280x720';
-          const videoBitrate = stream.video_bitrate || stream.bitrate || '2500';
-          const videoFps = stream.video_fps || stream.fps || '30';
-          settingsDisplay = `${videoRes} • ${videoBitrate} kbps • ${videoFps} FPS`;
-        }
-        let durationDisplay = '';
-        let statusBadge = '';
-        if (stream.status === 'live' && stream.start_time) {
-          const startTime = new Date(stream.start_time);
-          const now = new Date();
-          const durationMs = now - startTime;
-          const hours = Math.floor(durationMs / (1000 * 60 * 60)).toString().padStart(2, '0');
-          const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-          const seconds = Math.floor((durationMs % (1000 * 60)) / 1000).toString().padStart(2, '0');
-          durationDisplay = `${hours}:${minutes}:${seconds}`;
-          statusBadge = `
-            <span class="flex items-center bg-red-400/10 text-red-400 rounded-full px-2.5 py-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
-              <span class="text-xs font-medium">Live • <span class="live-duration tabular-nums" data-start-time="${stream.start_time}">
-                ${durationDisplay}</span></span>
-            </span>
-          `;
-        } else {
-          statusBadge = getStatusBadgeHTML(stream.status);
-        }
-        let formattedDuration = '—';
-        if (stream.duration) {
-          if (stream.duration >= 60) {
-            const hours = Math.floor(stream.duration / 60);
-            const minutes = stream.duration % 60;
-            formattedDuration = `${hours}h${minutes > 0 ? ` ${minutes}m` : ''}`;
-          } else {
-            formattedDuration = `${stream.duration} min`;
-          }
-        }
-        row.innerHTML = `
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="flex items-center">
-            <div class="w-20 h-12 bg-dark-700 rounded flex-shrink-0 overflow-hidden mr-3">
-              <img src="${thumbnail}" class="w-full h-full object-cover" alt="${stream.title}">
-            </div>
-            <div>
-              <div class="text-sm font-medium">${stream.title}</div>
-              <div class="text-xs text-gray-400">${settingsDisplay}</div>
-            </div>
-          </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="flex items-center">
-            <i class="ti ti-brand-${getPlatformIcon(stream.platform)} text-${getPlatformColor(stream.platform)} mr-1.5"></i>
-            <span class="text-sm">${stream.platform || 'Custom'}</span>
-          </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          <div class="text-sm text-gray-400">${formatDate(startDate) || '--'}</div>
-          ${startDate ? `<div class="text-xs text-gray-500">Started: ${formatTime(startDate)}</div>` : ''}
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-          ${(() => {
-            const endDate = stream.end_time ? new Date(stream.end_time) : null;
-            if (scheduleDate && endDate) {
-              return `<div class="text-xs text-yellow-500 font-medium">Start: ${formatDate(scheduleDate)} ${formatTime(scheduleDate)}</div>
-                      <div class="text-xs text-green-500 font-medium">End: ${formatDate(endDate)} ${formatTime(endDate)}</div>`;
-            } else if (scheduleDate) {
-              return `<div class="text-xs text-yellow-500 font-medium">Start: ${formatDate(scheduleDate)} ${formatTime(scheduleDate)}</div>`;
-            } else if (endDate) {
-              return `<div class="text-xs text-green-500 font-medium">End: ${formatDate(endDate)} ${formatTime(endDate)}</div>`;
-            } else {
-              return `<div class="text-sm">--</div>`;
-            }
-          })()}
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap min-w-[150px]">
-          <div class="flex items-center">
-            ${statusBadge}
-          </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right">
-          <div class="flex items-center justify-end space-x-2">
-            ${getActionButtonHTML(stream.status, stream.id, 'desktop')}
-            <div class="ml-2 flex items-center gap-1">
-              <button class="p-1.5 hover:bg-dark-700 rounded transition-colors" onclick="editStream('${stream.id}')">
-                <i class="ti ti-edit text-gray-400 hover:text-white"></i>
-              </button>
-              <button class="p-1.5 hover:bg-dark-700 rounded transition-colors" onclick="deleteStream('${stream.id}')">
-                <i class="ti ti-trash text-gray-400 hover:text-red-400"></i>
-              </button>
-            </div>
-          </div>
-        </td>
-      `;
-        return row;
-      }
-      function showEmptyState() {
-        document.querySelectorAll('tbody tr:not(#empty-state)').forEach(el => {
-          el.style.display = 'none';
-        });
-        const emptyState = document.getElementById('empty-state');
-        if (emptyState) {
-          emptyState.style.display = 'table-row';
-        }
-        document.querySelectorAll('.block.md\\:hidden.space-y-4 > div').forEach(el => {
-          el.style.display = 'none';
-        });
-        const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-4');
-        mobileContainer.innerHTML = `
-        <div class="bg-gray-800 rounded-lg p-6 text-center">
-          <div class="flex flex-col items-center">
-            <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
-              <i class="ti ti-broadcast text-gray-500 text-2xl"></i>
-            </div>
-            <p class="text-gray-400 font-medium mb-2">No streams found</p>
-            <p class="text-gray-500 mb-4">Create your first stream to start broadcasting</p>
-          </div>
-        </div>
-      `;
-      }
-      function formatDate(date) {
-        if (!date) return '';
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      }
-      function formatTime(date) {
-        if (!date) return '';
-        
-        return date.toLocaleTimeString('en-US', {
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        });
-      }
-      function getPlatformIcon(platform) {
-        switch (platform) {
-          case 'YouTube': return 'youtube';
-          case 'Facebook': return 'facebook';
-          case 'Twitch': return 'twitch';
-          case 'TikTok': return 'tiktok';
-          case 'Instagram': return 'instagram';
-          case 'Shopee Live': return 'shopping-bag';
-          case 'Restream.io': return 'live-photo';
-          default: return 'broadcast';
-        }
-      }
-      function getPlatformColor(platform) {
-        switch (platform) {
-          case 'YouTube': return 'red-500';
-          case 'Facebook': return 'blue-500';
-          case 'Twitch': return 'purple-500';
-          case 'TikTok': return 'gray-100';
-          case 'Instagram': return 'pink-500';
-          case 'Shopee Live': return 'orange-500';
-          case 'Restream.io': return 'teal-500';
-          default: return 'gray-400';
-        }
-      }
-      function getStatusBadgeHTML(status, duration = '') {
-        switch (status) {
-          case 'live':
-            return `
-            <span class="flex items-center bg-red-400/10 text-red-400 rounded-full px-2.5 py-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse mr-1.5"></span>
-              <span class="text-xs font-medium">Live${duration ? ' • ' + duration : ''}</span>
-            </span>
-          `;
-          case 'scheduled':
-            return `
-            <span class="flex items-center bg-yellow-500/10 text-yellow-500 rounded-full px-2.5 py-1">
-              <i class="ti ti-calendar-event text-xs mr-1.5"></i>
-              <span class="text-xs font-medium">Scheduled</span>
-            </span>
-          `;
-          case 'offline':
-          default:
-            return `
-            <span class="flex items-center bg-gray-700 text-gray-400 rounded-full px-2.5 py-1">
-              <i class="ti ti-circle-dot text-xs mr-1.5"></i>
-              <span class="text-xs font-medium">Offline</span>
-            </span>
-          `;
-        }
-      }
-      function getActionButtonHTML(status, streamId, view = 'desktop') {
-        const btnClass = view === 'mobile'
-          ? 'px-4 py-1.5 text-white text-xs font-medium rounded transition-colors'
-          : 'inline-flex items-center px-2.5 py-1.5 text-white text-xs font-medium rounded transition-colors';
-        switch (status) {
-          case 'live':
-            return `
-            <button 
-              onclick="stopStream('${streamId}')"
-              class="${btnClass} bg-red-500 hover:bg-red-600">
-              Stop
-            </button>
-          `;
-          case 'scheduled':
-            return `
-            <button
-              onclick="cancelSchedule('${streamId}')"
-              class="${btnClass} bg-yellow-500 hover:bg-yellow-600">
-              Cancel
-            </button>
-          `;
-          case 'offline':
-          default:
-            return `
-            <button
-              onclick="startStream('${streamId}')"
-              class="${btnClass} bg-primary hover:bg-blue-600">
-              Start
-            </button>
-          `;
-        }
-      }
+      startCountdowns();
+      startLiveTimers();
     });
     function startStream(streamId) {
       if (!streamId) return;
-      const actionBtns = document.querySelectorAll(`[data-stream-id="${streamId}"] .action-btn`);
+      
+      const actionBtnDesktop = document.getElementById(`action-btn-${streamId}-desktop`);
+      const actionBtnMobile = document.getElementById(`action-btn-${streamId}-mobile`);
+      const actionBtns = [actionBtnDesktop, actionBtnMobile].filter(btn => btn !== null);
+      
+      const editBtns = document.querySelectorAll(`button[onclick="editStream('${streamId}')"]`);
+      const deleteBtns = document.querySelectorAll(`button[onclick="deleteStream('${streamId}')"]`);
+      
       const originalBtnStates = [];
+      
       actionBtns.forEach(btn => {
         originalBtnStates.push({
           element: btn,
           html: btn.innerHTML,
-          disabled: btn.disabled
+          disabled: btn.disabled,
+          type: 'action'
         });
         btn.innerHTML = '<i class="ti ti-loader animate-spin"></i> Starting...';
         btn.disabled = true;
+        btn.classList.add('opacity-70', 'cursor-not-allowed');
+        btn.onclick = null;
       });
+      
+      editBtns.forEach(btn => {
+        originalBtnStates.push({
+          element: btn,
+          disabled: btn.disabled,
+          type: 'edit'
+        });
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+      });
+      
+      deleteBtns.forEach(btn => {
+        originalBtnStates.push({
+          element: btn,
+          disabled: btn.disabled,
+          type: 'delete'
+        });
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+      });
+      
       function restoreButtons() {
         originalBtnStates.forEach(state => {
-          state.element.innerHTML = state.html;
+          if (state.type === 'action') {
+            state.element.innerHTML = state.html;
+            state.element.onclick = () => startStream(streamId);
+          }
           state.element.disabled = state.disabled;
+          state.element.classList.remove('opacity-70', 'opacity-50', 'cursor-not-allowed');
         });
       }
+      
       fetch(`/api/streams/${streamId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1958,20 +2465,671 @@
       updateTimers();
       setInterval(updateTimers, 1000);
     }
-    document.addEventListener('DOMContentLoaded', function () {
-      startCountdowns();
-    });
     let editSelectedVideoData = null;
     let currentEditOrientation = 'horizontal';
-    let editDesktopVideoPlayer = null;
-    let editMobileVideoPlayer = null;
+
+    let currentStreamMode = 'manual';
+    
+    function setStreamMode(mode) {
+      currentStreamMode = mode;
+      const streamModeInput = document.getElementById('streamMode');
+      if (streamModeInput) streamModeInput.value = mode;
+      
+      const manualBtn = document.getElementById('manualModeBtn');
+      const autoBtn = document.getElementById('autoModeBtn');
+      const manualForm = document.getElementById('manualStreamForm');
+      const youtubeForm = document.getElementById('youtubeStreamForm');
+      
+      if (!manualBtn || !autoBtn || !manualForm || !youtubeForm) {
+        return;
+      }
+      
+      const manualStreamTitle = document.getElementById('streamTitle');
+      const manualRtmpUrl = document.getElementById('rtmpUrl');
+      const manualStreamKey = document.getElementById('streamKey');
+      
+      if (mode === 'manual') {
+        manualBtn.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-primary text-white';
+        autoBtn.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-dark-700';
+        manualForm.classList.remove('hidden');
+        youtubeForm.classList.add('hidden');
+        
+        if (manualStreamTitle) manualStreamTitle.required = true;
+        if (manualRtmpUrl) manualRtmpUrl.required = true;
+        if (manualStreamKey) manualStreamKey.required = true;
+      } else {
+        autoBtn.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-red-600 text-white';
+        manualBtn.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-dark-700';
+        manualForm.classList.add('hidden');
+        youtubeForm.classList.remove('hidden');
+        
+        if (manualStreamTitle) manualStreamTitle.required = false;
+        if (manualRtmpUrl) manualRtmpUrl.required = false;
+        if (manualStreamKey) manualStreamKey.required = false;
+        
+        loadYoutubeVideos();
+      }
+    }
+
+    function toggleYoutubeVideoSelector() {
+      const dropdown = document.getElementById('ytVideoSelectorDropdown');
+      dropdown.classList.toggle('hidden');
+    }
+
+    let ytVideosLoaded = false;
+    function loadYoutubeVideos() {
+      if (ytVideosLoaded) return;
+      
+      fetch('/api/videos')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const container = document.getElementById('ytVideoListContainer');
+            container.innerHTML = '';
+            
+            const hasPlaylists = data.playlists && data.playlists.length > 0;
+            const hasVideos = data.videos && data.videos.length > 0;
+            
+            if (!hasPlaylists && !hasVideos) {
+              container.innerHTML = '<div class="text-center text-gray-400 py-4">No videos or playlists found</div>';
+              return;
+            }
+            
+            if (hasPlaylists) {
+              const playlistHeader = document.createElement('div');
+              playlistHeader.className = 'text-xs text-gray-400 px-2 py-1 font-medium';
+              playlistHeader.textContent = 'Playlists';
+              container.appendChild(playlistHeader);
+              
+              data.playlists.forEach(playlist => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 cursor-pointer transition-colors';
+                item.onclick = () => selectYoutubeVideo({ id: playlist.id, title: playlist.name, type: 'playlist', videoCount: playlist.video_count, audioCount: playlist.audio_count, is_shuffle: playlist.is_shuffle });
+                let countText = `${playlist.video_count || 0} videos`;
+                if (playlist.audio_count && playlist.audio_count > 0) {
+                  countText += ` • ${playlist.audio_count} audio`;
+                }
+                item.innerHTML = `
+                  <div class="w-16 h-10 bg-primary/20 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    <i class="ti ti-playlist text-primary text-lg"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-white truncate">${playlist.name}</p>
+                    <p class="text-xs text-gray-400">${countText}</p>
+                  </div>
+                `;
+                container.appendChild(item);
+              });
+            }
+            
+            if (hasVideos) {
+              if (hasPlaylists) {
+                const divider = document.createElement('div');
+                divider.className = 'border-t border-gray-600 my-2';
+                container.appendChild(divider);
+              }
+              
+              const videoHeader = document.createElement('div');
+              videoHeader.className = 'text-xs text-gray-400 px-2 py-1 font-medium';
+              videoHeader.textContent = 'Videos';
+              container.appendChild(videoHeader);
+              
+              data.videos.forEach(video => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 cursor-pointer transition-colors';
+                item.onclick = () => selectYoutubeVideo(video);
+                item.innerHTML = `
+                  <div class="w-16 h-10 bg-dark-800 rounded overflow-hidden flex-shrink-0">
+                    <img src="${video.thumbnail_path || '/images/default-video-thumbnail.svg'}" class="w-full h-full object-cover" alt="${video.title}">
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-white truncate">${video.title}</p>
+                    <p class="text-xs text-gray-400">${formatDuration(video.duration)}</p>
+                  </div>
+                `;
+                container.appendChild(item);
+              });
+            }
+            
+            ytVideosLoaded = true;
+          }
+        })
+        .catch(error => console.error('Error loading videos:', error));
+    }
+
+    function selectYoutubeVideo(video) {
+      document.getElementById('ytSelectedVideoId').value = video.id;
+      if (video.type === 'playlist') {
+        let displayText = `[Playlist] ${video.title}`;
+        document.getElementById('ytSelectedVideo').textContent = displayText;
+      } else {
+        document.getElementById('ytSelectedVideo').textContent = video.title;
+      }
+      document.getElementById('ytVideoSelectorDropdown').classList.add('hidden');
+    }
+
+    function formatDuration(seconds) {
+      if (!seconds) return '0:00';
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+      return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    document.getElementById('ytEnableSchedule')?.addEventListener('change', function() {
+      const scheduleSettings = document.getElementById('ytScheduleSettings');
+      if (this.checked) {
+        scheduleSettings.classList.remove('hidden');
+      } else {
+        scheduleSettings.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('ytThumbnail')?.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          document.getElementById('ytThumbnailImg').src = event.target.result;
+          document.getElementById('ytThumbnailPreview').classList.remove('hidden');
+          document.getElementById('ytThumbnailPlaceholder').classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById('ytVideoSearchInput')?.addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      const items = document.querySelectorAll('#ytVideoListContainer > div');
+      items.forEach(item => {
+        const title = item.querySelector('.text-white')?.textContent.toLowerCase() || '';
+        item.style.display = title.includes(searchTerm) ? 'flex' : 'none';
+      });
+    });
+
+    let ytTags = [];
+    const ytTagsInput = document.getElementById('ytTagsInput');
+    const ytTagsContainer = document.getElementById('ytTagsContainer');
+    const ytTagsHidden = document.getElementById('ytTags');
+    const YT_TAGS_MAX_CHARS = 500;
+
+    function sanitizeYtTag(tag) {
+      return tag.replace(/[^a-zA-Z0-9\s&\-]/g, '').trim();
+    }
+
+    function getYtTagsCharCount() {
+      return ytTags.join(',').length;
+    }
+
+    function updateYtTagsCharCount() {
+      const charCount = getYtTagsCharCount();
+      const countEl = document.getElementById('ytTagsCharCount');
+      if (countEl) {
+        countEl.textContent = `${charCount}/${YT_TAGS_MAX_CHARS}`;
+        countEl.className = charCount > YT_TAGS_MAX_CHARS ? 'text-xs text-red-400' : 'text-xs text-gray-500';
+      }
+    }
+
+    function addYtTags(tagString) {
+      const newTags = tagString.split(',')
+        .map(tag => sanitizeYtTag(tag))
+        .filter(tag => tag && !ytTags.includes(tag));
+      
+      for (const tag of newTags) {
+        const potentialLength = [...ytTags, tag].join(',').length;
+        if (potentialLength <= YT_TAGS_MAX_CHARS) {
+          ytTags.push(tag);
+        }
+      }
+      renderYtTags();
+    }
+
+    function renderYtTags() {
+      const existingBadges = ytTagsContainer.querySelectorAll('.yt-tag-badge');
+      existingBadges.forEach(badge => badge.remove());
+      
+      ytTags.forEach((tag, index) => {
+        const badge = document.createElement('span');
+        badge.className = 'yt-tag-badge inline-flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/30 rounded-full text-xs text-blue-300';
+        badge.innerHTML = `
+          <span>${tag}</span>
+          <button type="button" class="flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-white/20" onclick="removeYtTag(${index})">
+            <i class="ti ti-x text-xs"></i>
+          </button>
+        `;
+        ytTagsContainer.insertBefore(badge, ytTagsInput);
+      });
+      
+      ytTagsHidden.value = ytTags.join(',');
+      updateYtTagsCharCount();
+    }
+
+    function addYtTag(tag) {
+      const sanitizedTag = sanitizeYtTag(tag);
+      if (!sanitizedTag || ytTags.includes(sanitizedTag)) return;
+      const potentialLength = [...ytTags, sanitizedTag].join(',').length;
+      if (potentialLength <= YT_TAGS_MAX_CHARS) {
+        ytTags.push(sanitizedTag);
+        renderYtTags();
+      }
+    }
+
+    function removeYtTag(index) {
+      ytTags.splice(index, 1);
+      renderYtTags();
+    }
+
+    function resetYtTags() {
+      ytTags = [];
+      renderYtTags();
+    }
+
+
+
+    function clearYtTags() {
+      ytTags = [];
+      renderYtTags();
+    }
+
+    if (ytTagsInput) {
+      ytTagsInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        addYtTags(pastedText);
+        this.value = '';
+      });
+
+      ytTagsInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          const val = this.value.trim();
+          if (val) {
+            addYtTags(val);
+            this.value = '';
+          }
+        } else if (e.key === 'Backspace' && !this.value && ytTags.length > 0) {
+          removeYtTag(ytTags.length - 1);
+        }
+      });
+
+      ytTagsInput.addEventListener('input', function(e) {
+        const cursorPos = e.target.selectionStart;
+        const sanitized = e.target.value.replace(/[^a-zA-Z0-9\s,&\-]/g, '');
+        if (sanitized !== e.target.value) {
+          e.target.value = sanitized;
+          e.target.setSelectionRange(Math.max(0, cursorPos - 1), Math.max(0, cursorPos - 1));
+        }
+      });
+
+      ytTagsInput.addEventListener('blur', function() {
+        const value = this.value.trim();
+        if (value) {
+          addYtTags(value);
+          this.value = '';
+        }
+      });
+    }
+
+    if (ytTagsContainer) {
+      ytTagsContainer.addEventListener('click', function(e) {
+        if (e.target === this || e.target.closest('.yt-tag-badge') === null) {
+          ytTagsInput.focus();
+        }
+      });
+    }
+
     let isEditStreamKeyValid = true;
     let originalStreamKey = '';
+    let currentEditStreamMode = 'manual';
+    let editYtTags = [];
+    
+    function setEditStreamMode(mode) {
+      currentEditStreamMode = mode;
+      const editStreamModeInput = document.getElementById('editStreamMode');
+      if (editStreamModeInput) editStreamModeInput.value = mode;
+      
+      const manualBtn = document.getElementById('editManualModeBtn');
+      const autoBtn = document.getElementById('editAutoModeBtn');
+      const manualForm = document.getElementById('editManualStreamForm');
+      const youtubeForm = document.getElementById('editYoutubeStreamForm');
+      
+      if (!manualBtn || !autoBtn || !manualForm || !youtubeForm) {
+        return;
+      }
+      
+      const editStreamTitle = document.getElementById('editStreamTitle');
+      const editRtmpUrl = document.getElementById('editRtmpUrl');
+      const editStreamKey = document.getElementById('editStreamKey');
+      
+      if (mode === 'manual') {
+        manualBtn.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-primary text-white';
+        autoBtn.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-dark-700';
+        manualForm.classList.remove('hidden');
+        youtubeForm.classList.add('hidden');
+        
+        if (editStreamTitle) editStreamTitle.required = true;
+        if (editRtmpUrl) editRtmpUrl.required = true;
+        if (editStreamKey) editStreamKey.required = true;
+      } else {
+        autoBtn.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors bg-red-600 text-white';
+        manualBtn.className = 'flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-colors text-gray-400 hover:text-white hover:bg-dark-700';
+        manualForm.classList.add('hidden');
+        youtubeForm.classList.remove('hidden');
+        
+        if (editStreamTitle) editStreamTitle.required = false;
+        if (editRtmpUrl) editRtmpUrl.required = false;
+        if (editStreamKey) editStreamKey.required = false;
+        
+        loadEditYoutubeVideos();
+      }
+    }
+    
+    function sanitizeEditYtTag(tag) {
+      return tag.replace(/[^a-zA-Z0-9\s&\-]/g, '').trim();
+    }
+
+    const EDIT_YT_TAGS_MAX_CHARS = 500;
+
+    function getEditYtTagsCharCount() {
+      return editYtTags.join(',').length;
+    }
+
+    function updateEditYtTagsCharCount() {
+      const charCount = getEditYtTagsCharCount();
+      const countEl = document.getElementById('editYtTagsCharCount');
+      if (countEl) {
+        countEl.textContent = `${charCount}/${EDIT_YT_TAGS_MAX_CHARS}`;
+        countEl.className = charCount > EDIT_YT_TAGS_MAX_CHARS ? 'text-xs text-red-400' : 'text-xs text-gray-500';
+      }
+    }
+
+    function renderEditYtTags() {
+      const container = document.getElementById('editYtTagsContainer');
+      const input = document.getElementById('editYtTagsInput');
+      const hidden = document.getElementById('editYtTags');
+      if (!container || !input || !hidden) return;
+      
+      const existingBadges = container.querySelectorAll('.edit-yt-tag-badge');
+      existingBadges.forEach(badge => badge.remove());
+      
+      editYtTags.forEach((tag, index) => {
+        const badge = document.createElement('span');
+        badge.className = 'edit-yt-tag-badge inline-flex items-center gap-1 px-2 py-0.5 bg-primary/20 border border-primary/30 rounded-full text-xs text-blue-300';
+        badge.innerHTML = `<span>${tag}</span><button type="button" class="flex items-center justify-center w-3.5 h-3.5 rounded-full hover:bg-white/20" onclick="removeEditYtTag(${index})"><i class="ti ti-x text-xs"></i></button>`;
+        container.insertBefore(badge, input);
+      });
+      
+      hidden.value = editYtTags.join(',');
+      updateEditYtTagsCharCount();
+    }
+    
+    function addEditYtTag(tag) {
+      const sanitizedTag = sanitizeEditYtTag(tag);
+      if (!sanitizedTag || editYtTags.includes(sanitizedTag)) return;
+      const potentialLength = [...editYtTags, sanitizedTag].join(',').length;
+      if (potentialLength <= EDIT_YT_TAGS_MAX_CHARS) {
+        editYtTags.push(sanitizedTag);
+        renderEditYtTags();
+      }
+    }
+    
+    function addEditYtTags(tagString) {
+      const newTags = tagString.split(',')
+        .map(tag => sanitizeEditYtTag(tag))
+        .filter(tag => tag && !editYtTags.includes(tag));
+      
+      for (const tag of newTags) {
+        const potentialLength = [...editYtTags, tag].join(',').length;
+        if (potentialLength <= EDIT_YT_TAGS_MAX_CHARS) {
+          editYtTags.push(tag);
+        }
+      }
+      renderEditYtTags();
+    }
+    
+    function removeEditYtTag(index) {
+      editYtTags.splice(index, 1);
+      renderEditYtTags();
+    }
+
+
+
+    function clearEditYtTags() {
+      editYtTags = [];
+      renderEditYtTags();
+    }
+    
+    function toggleEditYoutubeVideoSelector() {
+      const dropdown = document.getElementById('editYtVideoSelectorDropdown');
+      if (dropdown.classList.contains('hidden')) {
+        dropdown.classList.remove('hidden');
+        loadEditYoutubeVideos();
+      } else {
+        dropdown.classList.add('hidden');
+      }
+    }
+    
+    let editYtVideosLoaded = false;
+    let editYtAllVideos = [];
+    let editYtAllPlaylists = [];
+    
+    function loadEditYoutubeVideos() {
+      if (editYtVideosLoaded) return;
+      
+      const container = document.getElementById('editYtVideoListContainer');
+      container.innerHTML = '<div class="text-center text-gray-400 py-4"><i class="ti ti-loader animate-spin font-loaded"></i> Loading videos...</div>';
+      
+      fetch('/api/videos')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            editYtAllVideos = data.videos;
+            editYtAllPlaylists = data.playlists || [];
+            renderEditYoutubeVideos(editYtAllVideos, editYtAllPlaylists);
+            editYtVideosLoaded = true;
+          }
+        })
+        .catch(error => {
+          console.error('Error loading videos:', error);
+          container.innerHTML = '<div class="text-center text-red-400 py-4">Failed to load videos</div>';
+        });
+    }
+    
+    function renderEditYoutubeVideos(videos, playlists = []) {
+      const container = document.getElementById('editYtVideoListContainer');
+      container.innerHTML = '';
+      
+      const hasPlaylists = playlists && playlists.length > 0;
+      const hasVideos = videos && videos.length > 0;
+      
+      if (!hasPlaylists && !hasVideos) {
+        container.innerHTML = '<div class="text-center text-gray-400 py-4">No videos or playlists found</div>';
+        return;
+      }
+      
+      if (hasPlaylists) {
+        const playlistHeader = document.createElement('div');
+        playlistHeader.className = 'text-xs text-gray-400 px-2 py-1 font-medium';
+        playlistHeader.textContent = 'Playlists';
+        container.appendChild(playlistHeader);
+        
+        playlists.forEach(playlist => {
+          const item = document.createElement('div');
+          item.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 cursor-pointer transition-colors';
+          item.onclick = () => selectEditYoutubeVideo({ id: playlist.id, title: playlist.name, type: 'playlist', videoCount: playlist.video_count, audioCount: playlist.audio_count, is_shuffle: playlist.is_shuffle });
+          let countText = `${playlist.video_count || 0} videos`;
+          if (playlist.audio_count && playlist.audio_count > 0) {
+            countText += ` • ${playlist.audio_count} audio`;
+          }
+          item.innerHTML = `
+            <div class="w-16 h-10 bg-primary/20 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
+              <i class="ti ti-playlist text-primary text-lg"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-white truncate">${playlist.name}</p>
+              <p class="text-xs text-gray-400">${countText}</p>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+      
+      if (hasVideos) {
+        if (hasPlaylists) {
+          const divider = document.createElement('div');
+          divider.className = 'border-t border-gray-600 my-2';
+          container.appendChild(divider);
+        }
+        
+        const videoHeader = document.createElement('div');
+        videoHeader.className = 'text-xs text-gray-400 px-2 py-1 font-medium';
+        videoHeader.textContent = 'Videos';
+        container.appendChild(videoHeader);
+        
+        videos.forEach(video => {
+          const item = document.createElement('div');
+          item.className = 'flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 cursor-pointer transition-colors';
+          item.onclick = () => selectEditYoutubeVideo(video);
+          item.innerHTML = `
+            <div class="w-16 h-10 bg-dark-800 rounded overflow-hidden flex-shrink-0">
+              <img src="${video.thumbnail_path || '/images/default-video-thumbnail.svg'}" class="w-full h-full object-cover" alt="${video.title}">
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-white truncate">${video.title}</p>
+              <p class="text-xs text-gray-400">${formatDuration(video.duration)}</p>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      const searchInput = document.getElementById('editYtVideoSearchInput');
+      if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+          const searchTerm = e.target.value.toLowerCase();
+          const filteredVideos = editYtAllVideos.filter(video => 
+            video.title.toLowerCase().includes(searchTerm)
+          );
+          const filteredPlaylists = editYtAllPlaylists.filter(playlist => 
+            playlist.name.toLowerCase().includes(searchTerm)
+          );
+          renderEditYoutubeVideos(filteredVideos, filteredPlaylists);
+        });
+      }
+    });
+    
+    function selectEditYoutubeVideo(video) {
+      document.getElementById('editYtSelectedVideoId').value = video.id;
+      if (video.type === 'playlist') {
+        let displayText = `[Playlist] ${video.title}`;
+        document.getElementById('editYtSelectedVideo').textContent = displayText;
+      } else {
+        document.getElementById('editYtSelectedVideo').textContent = video.title;
+      }
+      document.getElementById('editYtVideoSelectorDropdown').classList.add('hidden');
+    }
+    
+    document.getElementById('editYtEnableSchedule')?.addEventListener('change', function() {
+      const scheduleSettings = document.getElementById('editYtScheduleSettings');
+      if (this.checked) {
+        scheduleSettings.classList.remove('hidden');
+      } else {
+        scheduleSettings.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('editYtThumbnail')?.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          document.getElementById('editYtThumbnailImg').src = event.target.result;
+          document.getElementById('editYtThumbnailPreview').classList.remove('hidden');
+          document.getElementById('editYtThumbnailPlaceholder').classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    
+    const editYtTagsInput = document.getElementById('editYtTagsInput');
+    if (editYtTagsInput) {
+      editYtTagsInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+        addEditYtTags(pastedText);
+        this.value = '';
+      });
+
+      editYtTagsInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          const value = this.value.replace(',', '').trim();
+          if (value) {
+            addEditYtTags(value);
+            this.value = '';
+          }
+        } else if (e.key === 'Backspace' && !this.value && editYtTags.length > 0) {
+          removeEditYtTag(editYtTags.length - 1);
+        }
+      });
+
+      editYtTagsInput.addEventListener('input', function(e) {
+        const cursorPos = e.target.selectionStart;
+        const sanitized = e.target.value.replace(/[^a-zA-Z0-9\s,&\-]/g, '');
+        if (sanitized !== e.target.value) {
+          e.target.value = sanitized;
+          e.target.setSelectionRange(Math.max(0, cursorPos - 1), Math.max(0, cursorPos - 1));
+        }
+      });
+      
+      editYtTagsInput.addEventListener('blur', function() {
+        const value = this.value.trim();
+        if (value) {
+          addEditYtTags(value);
+          this.value = '';
+        }
+      });
+    }
+
+    const editYtTagsContainer = document.getElementById('editYtTagsContainer');
+    if (editYtTagsContainer) {
+      editYtTagsContainer.addEventListener('click', function(e) {
+        if (e.target === this || e.target.closest('.edit-yt-tag-badge') === null) {
+          editYtTagsInput.focus();
+        }
+      });
+    }
+    
     function editStream(streamId) {
       if (!streamId) return;
+      
+      const editButtons = document.querySelectorAll(`button[onclick="editStream('${streamId}')"]`);
+      const originalStates = [];
+      
+      editButtons.forEach(btn => {
+        originalStates.push({
+          element: btn,
+          html: btn.innerHTML,
+          disabled: btn.disabled
+        });
+        btn.innerHTML = '<i class="ti ti-loader animate-spin font-loaded"></i>';
+        btn.disabled = true;
+      });
+      
+      function restoreButtons() {
+        originalStates.forEach(state => {
+          state.element.innerHTML = state.html;
+          state.element.disabled = state.disabled;
+        });
+      }
+      
       fetch(`/api/streams/${streamId}`)
         .then(response => response.json())
         .then(data => {
+          restoreButtons();
           if (data.success) {
             openEditStreamModal(data.stream);
           } else {
@@ -1979,6 +3137,7 @@
           }
         })
         .catch(error => {
+          restoreButtons();
           console.error('Error fetching stream data:', error);
           showToast('error', 'An error occurred while fetching stream data');
         });
@@ -1986,13 +3145,120 @@
     function openEditStreamModal(stream) {
       originalStreamKey = stream.stream_key;
       document.getElementById('editStreamId').value = stream.id;
-      document.getElementById('editStreamTitle').value = stream.title;
-      document.getElementById('editRtmpUrl').value = stream.rtmp_url || '';
-      document.getElementById('editStreamKey').value = stream.stream_key || '';
-      if (stream.video_id) {
+      
+      const isYoutubeStream = stream.is_youtube_api === true || stream.is_youtube_api === 1;
+      const modeSelector = document.getElementById('editStreamModeSelector');
+      const manualForm = document.getElementById('editManualStreamForm');
+      const youtubeForm = document.getElementById('editYoutubeStreamForm');
+      
+      if (isYoutubeStream) {
+        currentEditStreamMode = 'auto';
+        document.getElementById('editStreamMode').value = 'auto';
+        modeSelector.classList.add('hidden');
+        manualForm.classList.add('hidden');
+        youtubeForm.classList.remove('hidden');
+        
+        document.getElementById('editYtStreamTitle').value = stream.title || '';
+        document.getElementById('editYtDescription').value = stream.youtube_description || '';
+        document.getElementById('editYtPrivacy').value = stream.youtube_privacy || 'unlisted';
+        document.getElementById('editYtCategory').value = stream.youtube_category || '22';
+        
+        editYtTags = stream.youtube_tags ? stream.youtube_tags.split(',').filter(t => t.trim()) : [];
+        renderEditYtTags();
+        
+        if (stream.video_id) {
+          document.getElementById('editYtSelectedVideoId').value = stream.video_id;
+          const ytDisplayName = stream.video_type === 'playlist' 
+            ? `[Playlist] ${stream.playlist_name || stream.video_title}` 
+            : (stream.video_title || 'Selected Video');
+          document.getElementById('editYtSelectedVideo').textContent = ytDisplayName;
+        }
+        
+        const editYtThumbnailPreview = document.getElementById('editYtThumbnailPreview');
+        const editYtThumbnailPlaceholder = document.getElementById('editYtThumbnailPlaceholder');
+        const editYtThumbnailImg = document.getElementById('editYtThumbnailImg');
+        if (stream.youtube_thumbnail && editYtThumbnailImg) {
+          editYtThumbnailImg.src = stream.youtube_thumbnail;
+          if (editYtThumbnailPreview) editYtThumbnailPreview.classList.remove('hidden');
+          if (editYtThumbnailPlaceholder) editYtThumbnailPlaceholder.classList.add('hidden');
+        } else {
+          if (editYtThumbnailPreview) editYtThumbnailPreview.classList.add('hidden');
+          if (editYtThumbnailPlaceholder) editYtThumbnailPlaceholder.classList.remove('hidden');
+        }
+        
+        if (stream.schedule_time || stream.end_time) {
+          document.getElementById('editYtEnableSchedule').checked = true;
+          document.getElementById('editYtScheduleSettings').classList.remove('hidden');
+          if (stream.schedule_time) {
+            const scheduleDate = new Date(stream.schedule_time);
+            document.getElementById('editYtScheduleStart').value = formatDateTimeLocal(scheduleDate);
+          } else {
+            document.getElementById('editYtScheduleStart').value = '';
+          }
+          if (stream.end_time) {
+            const endDate = new Date(stream.end_time);
+            document.getElementById('editYtScheduleEnd').value = formatDateTimeLocal(endDate);
+          } else {
+            document.getElementById('editYtScheduleEnd').value = '';
+          }
+          updateEditYtDurationBadge();
+        } else {
+          document.getElementById('editYtEnableSchedule').checked = false;
+          document.getElementById('editYtScheduleSettings').classList.add('hidden');
+          document.getElementById('editYtScheduleStart').value = '';
+          document.getElementById('editYtScheduleEnd').value = '';
+        }
+
+        if (stream.youtube_channel_id) {
+          document.getElementById('editYtSelectedChannelId').value = stream.youtube_channel_id;
+          if (stream.youtube_channel_name) {
+            document.getElementById('editYtChannelNameDisplay').textContent = stream.youtube_channel_name;
+          }
+          if (stream.youtube_channel_thumbnail) {
+            document.getElementById('editYtChannelThumb').src = stream.youtube_channel_thumbnail;
+          }
+          const subscriberCount = stream.youtube_subscriber_count || 0;
+          document.getElementById('editYtChannelSubsDisplay').textContent = Number(subscriberCount).toLocaleString() + ' subscribers';
+          
+          document.querySelectorAll('.edit-channel-option').forEach(opt => {
+            opt.classList.remove('bg-gray-700/50', 'selected-channel');
+          });
+          const selectedOption = document.querySelector(`.edit-channel-option[data-channel-id="${stream.youtube_channel_id}"]`);
+          if (selectedOption) {
+            selectedOption.classList.add('bg-gray-700/50', 'selected-channel');
+          }
+        }
+        
+        const editStreamTitle = document.getElementById('editStreamTitle');
+        const editRtmpUrl = document.getElementById('editRtmpUrl');
+        const editStreamKey = document.getElementById('editStreamKey');
+        if (editStreamTitle) editStreamTitle.required = false;
+        if (editRtmpUrl) editRtmpUrl.required = false;
+        if (editStreamKey) editStreamKey.required = false;
+      } else {
+        currentEditStreamMode = 'manual';
+        document.getElementById('editStreamMode').value = 'manual';
+        modeSelector.classList.add('hidden');
+        manualForm.classList.remove('hidden');
+        youtubeForm.classList.add('hidden');
+        
+        document.getElementById('editStreamTitle').value = stream.title;
+        document.getElementById('editRtmpUrl').value = stream.rtmp_url || '';
+        document.getElementById('editStreamKey').value = stream.stream_key || '';
+        
+        const editStreamTitle = document.getElementById('editStreamTitle');
+        const editRtmpUrl = document.getElementById('editRtmpUrl');
+        const editStreamKey = document.getElementById('editStreamKey');
+        if (editStreamTitle) editStreamTitle.required = true;
+        if (editRtmpUrl) editRtmpUrl.required = true;
+        if (editStreamKey) editStreamKey.required = true;
+      }
+      
+      if (stream.video_id && !isYoutubeStream) {
         document.getElementById('editSelectedVideoId').value = stream.video_id;
-        const displayName = stream.video_type === 'playlist' ? (stream.playlist_name || stream.video_title) : stream.video_title;
-        document.getElementById('editSelectedVideo').textContent = displayName || 'Selected Video';
+        const displayName = stream.video_type === 'playlist' 
+          ? (stream.playlist_name || stream.video_title) 
+          : stream.video_title;
         
         const videoData = {
           id: stream.video_id,
@@ -2037,27 +3303,15 @@
           break;
         }
       }
-      if (stream.schedule_time) {
+      if (stream.schedule_time && !isYoutubeStream) {
         const scheduleDate = new Date(stream.schedule_time);
-        const year = scheduleDate.getFullYear();
-        const month = String(scheduleDate.getMonth() + 1).padStart(2, '0');
-        const day = String(scheduleDate.getDate()).padStart(2, '0');
-        const hours = String(scheduleDate.getHours()).padStart(2, '0');
-        const minutes = String(scheduleDate.getMinutes()).padStart(2, '0');
-        const formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`;
-        document.getElementById('editScheduleStartTime').value = formattedDate;
+        document.getElementById('editScheduleStartTime').value = formatDateTimeLocal(scheduleDate);
       } else {
         document.getElementById('editScheduleStartTime').value = '';
       }
-      if (stream.end_time) {
+      if (stream.end_time && !isYoutubeStream) {
         const endDate = new Date(stream.end_time);
-        const year = endDate.getFullYear();
-        const month = String(endDate.getMonth() + 1).padStart(2, '0');
-        const day = String(endDate.getDate()).padStart(2, '0');
-        const hours = String(endDate.getHours()).padStart(2, '0');
-        const minutes = String(endDate.getMinutes()).padStart(2, '0');
-        const formattedEndDate = `${year}-${month}-${day}T${hours}:${minutes}`;
-        document.getElementById('editScheduleEndTime').value = formattedEndDate;
+        document.getElementById('editScheduleEndTime').value = formatDateTimeLocal(endDate);
       } else {
         document.getElementById('editScheduleEndTime').value = '';
       }
@@ -2078,26 +3332,36 @@
       });
       updateDurationBadge(true);
     }
+    
+    function formatDateTimeLocal(date) {
+      const serverDate = convertFromServerTime(date.toISOString());
+      const year = serverDate.getFullYear();
+      const month = String(serverDate.getMonth() + 1).padStart(2, '0');
+      const day = String(serverDate.getDate()).padStart(2, '0');
+      const hours = String(serverDate.getHours()).padStart(2, '0');
+      const minutes = String(serverDate.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
     function closeEditStreamModal() {
       const modal = document.getElementById('editStreamModal');
-      document.body.style.overflow = 'auto';
-      resetEditModalForm();
+      
       modal.classList.remove('active');
+      
+      resetEditModalForm();
+      
       const editDurationBadge = document.getElementById('editDurationBadge');
       if (editDurationBadge) editDurationBadge.classList.add('hidden');
+      
+      const editDesktopVideo = document.getElementById('edit-native-preview-desktop');
+      const editMobileVideo = document.getElementById('edit-native-preview-mobile');
+      if (editDesktopVideo) { editDesktopVideo.pause(); editDesktopVideo.src = ''; }
+      if (editMobileVideo) { editMobileVideo.pause(); editMobileVideo.src = ''; }
+      
       setTimeout(() => {
         modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        document.body.classList.remove('overflow-hidden');
       }, 200);
-      if (editDesktopVideoPlayer) {
-        editDesktopVideoPlayer.pause();
-        editDesktopVideoPlayer.dispose();
-        editDesktopVideoPlayer = null;
-      }
-      if (editMobileVideoPlayer) {
-        editMobileVideoPlayer.pause();
-        editMobileVideoPlayer.dispose();
-        editMobileVideoPlayer = null;
-      }
     }
     function resetEditModalForm() {
       document.getElementById('editStreamForm').reset();
@@ -2136,6 +3400,29 @@
         advancedSettingsContent.classList.add('hidden');
         advancedSettingsCheckbox.checked = false;
       }
+      
+      const editYtThumbnailPreview = document.getElementById('editYtThumbnailPreview');
+      const editYtThumbnailPlaceholder = document.getElementById('editYtThumbnailPlaceholder');
+      const editYtThumbnailInput = document.getElementById('editYtThumbnail');
+      if (editYtThumbnailPreview) editYtThumbnailPreview.classList.add('hidden');
+      if (editYtThumbnailPlaceholder) editYtThumbnailPlaceholder.classList.remove('hidden');
+      if (editYtThumbnailInput) editYtThumbnailInput.value = '';
+      
+      const editYtSelectedVideo = document.getElementById('editYtSelectedVideo');
+      const editYtSelectedVideoId = document.getElementById('editYtSelectedVideoId');
+      if (editYtSelectedVideo) editYtSelectedVideo.textContent = 'Choose a video...';
+      if (editYtSelectedVideoId) editYtSelectedVideoId.value = '';
+      
+      editYtTags = [];
+      renderEditYtTags();
+      
+      const editYtEnableSchedule = document.getElementById('editYtEnableSchedule');
+      const editYtScheduleSettings = document.getElementById('editYtScheduleSettings');
+      if (editYtEnableSchedule) editYtEnableSchedule.checked = false;
+      if (editYtScheduleSettings) editYtScheduleSettings.classList.add('hidden');
+      
+      const editYtDurationBadge = document.getElementById('editYtDurationBadge');
+      if (editYtDurationBadge) editYtDurationBadge.classList.add('hidden');
     }
     function toggleEditVideoSelector() {
       const dropdown = document.getElementById('editVideoSelectorDropdown');
@@ -2187,43 +3474,47 @@
         return;
       }
       container.innerHTML = '';
-      videos.forEach(item => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'w-full flex items-start space-x-3 p-2 rounded hover:bg-dark-600 transition-colors text-left';
-        button.onclick = () => selectEditVideo(item);
-        
-        if (item.type === 'playlist') {
-          button.innerHTML = `
-            <div class="w-16 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded flex-shrink-0 overflow-hidden relative">
-              <img src="${item.thumbnail}" alt="" 
-                class="w-full h-full object-cover rounded" 
-                onerror="this.src='/images/playlist-thumbnail.svg'">
-              <div class="absolute top-0 right-0 bg-green-500 text-white text-xs px-1 rounded-bl text-[8px] font-bold">PL</div>
-            </div>
-            <div class="flex-1 min-w-0 ml-3 text-left">
-              <p class="text-sm font-medium text-white truncate flex items-center">
-                <i class="ti ti-playlist text-blue-400 mr-1 text-xs"></i>
-                ${item.name}
-              </p>
-              <p class="text-xs text-blue-300">${item.resolution || 'Unknown'} • ${item.duration || '00:00'}</p>
-            </div>
-          `;
-        } else {
-          button.innerHTML = `
-            <div class="w-16 h-12 bg-dark-800 rounded flex-shrink-0 overflow-hidden">
-              <img src="${item.thumbnail || '/images/default-thumbnail.jpg'}" alt="" 
-                class="w-full h-full object-cover rounded" 
-                onerror="this.src='/images/default-thumbnail.jpg'">
-            </div>
-            <div class="flex-1 min-w-0 ml-3 text-left">
-              <p class="text-sm font-medium text-white truncate">${item.name}</p>
-              <p class="text-xs text-gray-400">${item.resolution || 'Unknown'} • ${item.duration || '00:00'}</p>
-            </div>
-          `;
+      const playlists = videos.filter(item => item.type === 'playlist');
+      const regularVideos = videos.filter(item => item.type !== 'playlist');
+      const hasPlaylists = playlists.length > 0;
+      const hasVideos = regularVideos.length > 0;
+      if (hasPlaylists) {
+        const playlistHeader = document.createElement('div');
+        playlistHeader.className = 'text-xs text-gray-400 px-2 py-1 font-medium';
+        playlistHeader.textContent = 'Playlists';
+        container.appendChild(playlistHeader);
+        playlists.forEach(item => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'w-full flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 cursor-pointer transition-colors text-left';
+          button.onclick = () => selectEditVideo(item);
+          let countText = `${item.videoCount || 0} videos`;
+          if (item.audioCount && item.audioCount > 0) {
+            countText += ` • ${item.audioCount} audio`;
+          }
+          button.innerHTML = `<div class="w-16 h-10 bg-primary/20 rounded overflow-hidden flex-shrink-0 flex items-center justify-center"><i class="ti ti-playlist text-primary text-lg"></i></div><div class="flex-1 min-w-0"><p class="text-sm text-white truncate">${item.name}</p><p class="text-xs text-gray-400">${countText}</p></div>`;
+          container.appendChild(button);
+        });
+      }
+      if (hasVideos) {
+        if (hasPlaylists) {
+          const divider = document.createElement('div');
+          divider.className = 'border-t border-gray-600 my-2';
+          container.appendChild(divider);
         }
-        container.appendChild(button);
-      });
+        const videoHeader = document.createElement('div');
+        videoHeader.className = 'text-xs text-gray-400 px-2 py-1 font-medium';
+        videoHeader.textContent = 'Videos';
+        container.appendChild(videoHeader);
+        regularVideos.forEach(item => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'w-full flex items-center gap-3 p-2 rounded-lg hover:bg-dark-600 cursor-pointer transition-colors text-left';
+          button.onclick = () => selectEditVideo(item);
+          button.innerHTML = `<div class="w-16 h-10 bg-dark-800 rounded overflow-hidden flex-shrink-0"><img src="${item.thumbnail || '/images/default-video-thumbnail.svg'}" class="w-full h-full object-cover" alt="${item.name}" onerror="this.src='/images/default-video-thumbnail.svg'"></div><div class="flex-1 min-w-0"><p class="text-sm text-white truncate">${item.name}</p><p class="text-xs text-gray-400">${item.duration || '0:00'}</p></div>`;
+          container.appendChild(button);
+        });
+      }
     }
     function selectEditVideo(video) {
       editSelectedVideoData = video;
@@ -2270,46 +3561,24 @@
       document.getElementById('editVideoSelectorDropdown').classList.add('hidden');
     }
     function createEditVideoPreview(video) {
-      if (editDesktopVideoPlayer) {
-        editDesktopVideoPlayer.pause();
-        editDesktopVideoPlayer.dispose();
-        editDesktopVideoPlayer = null;
-      }
-      if (editMobileVideoPlayer) {
-        editMobileVideoPlayer.pause();
-        editMobileVideoPlayer.dispose();
-        editMobileVideoPlayer = null;
-      }
+      const editDesktopVideo = document.getElementById('edit-native-preview-desktop');
+      const editMobileVideo = document.getElementById('edit-native-preview-mobile');
+      if (editDesktopVideo) { editDesktopVideo.pause(); editDesktopVideo.src = ''; }
+      if (editMobileVideo) { editMobileVideo.pause(); editMobileVideo.src = ''; }
       const desktopVideoContainer = document.getElementById('editVideoPreview');
       const mobileVideoContainer = document.getElementById('editVideoPreviewMobile');
       desktopVideoContainer.innerHTML = `
-    <video id="edit-videojs-preview-desktop" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
+    <video id="edit-native-preview-desktop" class="native-video-player rounded-lg" controls preload="metadata">
       <source src="${video.url}" type="video/mp4">
+      Your browser does not support the video tag.
     </video>
   `;
       mobileVideoContainer.innerHTML = `
-    <video id="edit-videojs-preview-mobile" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="auto">
+    <video id="edit-native-preview-mobile" class="native-video-player" controls preload="metadata">
       <source src="${video.url}" type="video/mp4">
+      Your browser does not support the video tag.
     </video>
   `;
-      setTimeout(() => {
-        try {
-          editDesktopVideoPlayer = videojs('edit-videojs-preview-desktop', {
-            controls: true,
-            autoplay: false,
-            preload: 'auto',
-            fluid: true
-          });
-          editMobileVideoPlayer = videojs('edit-videojs-preview-mobile', {
-            controls: true,
-            autoplay: false,
-            preload: 'auto',
-            fluid: true
-          });
-        } catch (e) {
-          console.warn('Error initializing video players:', e);
-        }
-      }, 10);
     }
     function setEditVideoOrientation(orientation) {
       currentEditOrientation = orientation;
@@ -2363,6 +3632,104 @@
             showToast('error', 'Stream ID is missing.');
             return;
           }
+          const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+          
+          if (currentEditStreamMode === 'auto') {
+            const ytVideoId = document.getElementById('editYtSelectedVideoId').value;
+            if (!ytVideoId) {
+              showToast('error', 'Please select a video before updating the stream.');
+              return;
+            }
+            
+            const ytFormDataObj = {
+              streamMode: 'youtube',
+              videoId: ytVideoId,
+              title: document.getElementById('editYtStreamTitle').value,
+              description: document.getElementById('editYtDescription').value,
+              privacy: document.getElementById('editYtPrivacy').value,
+              category: document.getElementById('editYtCategory').value,
+              tags: document.getElementById('editYtTags').value,
+              loopVideo: true,
+              ytChannelId: document.getElementById('editYtSelectedChannelId')?.value || ''
+            };
+            
+            const enableSchedule = document.getElementById('editYtEnableSchedule').checked;
+            if (enableSchedule) {
+              ytFormDataObj.scheduleStartTime = document.getElementById('editYtScheduleStart').value;
+              ytFormDataObj.scheduleEndTime = document.getElementById('editYtScheduleEnd').value;
+            } else {
+              ytFormDataObj.scheduleStartTime = '';
+              ytFormDataObj.scheduleEndTime = '';
+            }
+            
+            const saveBtn = document.querySelector('#editStreamModal button[type="submit"]');
+            const originalSaveBtnText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="ti ti-loader animate-spin font-loaded"></i> Saving...';
+            saveBtn.disabled = true;
+            saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            
+            function resetSaveBtn() {
+              saveBtn.innerHTML = originalSaveBtnText;
+              saveBtn.disabled = false;
+              saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+            
+            const editThumbnailInput = document.getElementById('editYtThumbnail');
+            if (editThumbnailInput && editThumbnailInput.files.length > 0) {
+              const formDataWithFile = new FormData();
+              Object.keys(ytFormDataObj).forEach(key => formDataWithFile.append(key, ytFormDataObj[key]));
+              formDataWithFile.append('thumbnail', editThumbnailInput.files[0]);
+              
+              fetch(`/api/streams/${streamId}`, {
+                method: 'PUT',
+                headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
+                body: formDataWithFile
+              })
+                .then(response => response.json())
+                .then(data => {
+                  if (data.success) {
+                    showToast('success', 'Stream updated successfully!');
+                    closeEditStreamModal();
+                    setTimeout(() => window.location.reload(), 1000);
+                  } else {
+                    showToast('error', data.error || 'Failed to update stream');
+                    resetSaveBtn();
+                  }
+                })
+                .catch(error => {
+                  console.error('Error:', error);
+                  showToast('error', 'An error occurred while updating the stream');
+                  resetSaveBtn();
+                });
+            } else {
+              fetch(`/api/streams/${streamId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
+                },
+                body: JSON.stringify(ytFormDataObj)
+              })
+                .then(response => response.json())
+                .then(data => {
+                  if (data.success) {
+                    showToast('success', 'Stream updated successfully!');
+                    closeEditStreamModal();
+                    setTimeout(() => window.location.reload(), 1000);
+                  } else {
+                    showToast('error', data.error || 'Failed to update stream');
+                    resetSaveBtn();
+                  }
+                })
+                .catch(error => {
+                  console.error('Error:', error);
+                  showToast('error', 'An error occurred while updating the stream');
+                  resetSaveBtn();
+                });
+            }
+            return;
+          }
+          
           const videoId = document.getElementById('editSelectedVideoId').value;
           if (!videoId) {
             showToast('error', 'Please select a video before updating the stream.');
@@ -2392,7 +3759,6 @@
           }
           formData.scheduleStartTime = scheduleStartTime || '';
           formData.scheduleEndTime = scheduleEndTime || '';
-          const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
           fetch(`/api/streams/${streamId}`, {
             method: 'PUT',
             headers: {
@@ -2476,10 +3842,27 @@
         });
       }, 1000);
     }
+    let serverTimezoneOffset = null;
+    
+    async function fetchServerTimeSync() {
+      try {
+        const response = await fetch('/api/server-time');
+        const data = await response.json();
+        if (data.timezoneOffset !== undefined) {
+          serverTimezoneOffset = data.timezoneOffset;
+        }
+      } catch (error) {
+        console.error('Error fetching server time:', error);
+      }
+    }
+    
     function updateServerTime() {
       fetch('/api/server-time')
         .then(response => response.json())
         .then(data => {
+          if (data.timezoneOffset !== undefined) {
+            serverTimezoneOffset = data.timezoneOffset;
+          }
           if (data.formattedTime) {
             const timeDisplay = `Server time: ${data.formattedTime}`;
             const createModalDisplay = document.getElementById('serverTimeDisplay');
@@ -2490,15 +3873,35 @@
             if (editModalDisplay) {
               editModalDisplay.textContent = timeDisplay;
             }
-            const dashboardDisplay = document.getElementById('dashboardServerTime');
-            if (dashboardDisplay) {
-              dashboardDisplay.textContent = `Server time: ${data.formattedTime}`;
+            const ytDisplay = document.getElementById('ytServerTimeDisplay');
+            if (ytDisplay) {
+              ytDisplay.textContent = data.formattedTime;
+            }
+            const editYtDisplay = document.getElementById('editYtServerTimeDisplay');
+            if (editYtDisplay) {
+              editYtDisplay.textContent = data.formattedTime;
             }
           }
         })
         .catch(error => {
           console.error('Error fetching server time:', error);
         });
+    }
+    
+    function convertToServerTime(date) {
+      if (serverTimezoneOffset === null) return date;
+      const localOffset = date.getTimezoneOffset();
+      const offsetDiff = localOffset - serverTimezoneOffset;
+      return new Date(date.getTime() + offsetDiff * 60 * 1000);
+    }
+    
+    function convertFromServerTime(isoString) {
+      if (!isoString) return null;
+      const date = new Date(isoString);
+      if (serverTimezoneOffset === null) return date;
+      const localOffset = date.getTimezoneOffset();
+      const offsetDiff = localOffset - serverTimezoneOffset;
+      return new Date(date.getTime() + offsetDiff * 60 * 1000);
     }
 
     function calculateDuration(startTime, endTime, isEdit = false) {
@@ -2563,60 +3966,238 @@
         editScheduleEndTime.addEventListener('input', () => updateDurationBadge(true));
       }
 
+      const ytScheduleStart = document.getElementById('ytScheduleStart');
+      const ytScheduleEnd = document.getElementById('ytScheduleEnd');
+      if (ytScheduleStart) {
+        ytScheduleStart.addEventListener('change', updateYtDurationBadge);
+        ytScheduleStart.addEventListener('input', updateYtDurationBadge);
+      }
+      if (ytScheduleEnd) {
+        ytScheduleEnd.addEventListener('change', updateYtDurationBadge);
+        ytScheduleEnd.addEventListener('input', updateYtDurationBadge);
+      }
+
+      const editYtScheduleStart = document.getElementById('editYtScheduleStart');
+      const editYtScheduleEnd = document.getElementById('editYtScheduleEnd');
+      if (editYtScheduleStart) {
+        editYtScheduleStart.addEventListener('change', updateEditYtDurationBadge);
+        editYtScheduleStart.addEventListener('input', updateEditYtDurationBadge);
+      }
+      if (editYtScheduleEnd) {
+        editYtScheduleEnd.addEventListener('change', updateEditYtDurationBadge);
+        editYtScheduleEnd.addEventListener('input', updateEditYtDurationBadge);
+      }
+
       setInterval(() => {
         updateDurationBadge(false);
         updateDurationBadge(true);
+        updateYtDurationBadge();
+        updateEditYtDurationBadge();
       }, 60000);
     });
+
+    function updateYtDurationBadge() {
+      const startInput = document.getElementById('ytScheduleStart');
+      const endInput = document.getElementById('ytScheduleEnd');
+      const badge = document.getElementById('ytDurationBadge');
+      if (!badge) return;
+
+      const startTime = startInput?.value;
+      const endTime = endInput?.value;
+
+      if (!endTime) {
+        badge.classList.add('hidden');
+        return;
+      }
+
+      const endDate = new Date(endTime);
+      let startDate;
+
+      if (startTime) {
+        startDate = new Date(startTime);
+      } else {
+        startDate = new Date();
+      }
+
+      const diffMs = endDate - startDate;
+      if (diffMs <= 0) {
+        badge.classList.add('hidden');
+        return;
+      }
+
+      const totalMinutes = Math.floor(diffMs / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const formatted = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+
+      badge.textContent = formatted;
+      badge.classList.remove('hidden');
+    }
+
+    function updateEditYtDurationBadge() {
+      const startInput = document.getElementById('editYtScheduleStart');
+      const endInput = document.getElementById('editYtScheduleEnd');
+      const badge = document.getElementById('editYtDurationBadge');
+      if (!badge) return;
+
+      const startTime = startInput?.value;
+      const endTime = endInput?.value;
+
+      if (!endTime) {
+        badge.classList.add('hidden');
+        return;
+      }
+
+      const endDate = new Date(endTime);
+      let startDate;
+
+      if (startTime) {
+        startDate = new Date(startTime);
+      } else {
+        startDate = new Date();
+      }
+
+      const diffMs = endDate - startDate;
+      if (diffMs <= 0) {
+        badge.classList.add('hidden');
+        return;
+      }
+
+      const totalMinutes = Math.floor(diffMs / 60000);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      const formatted = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+
+      badge.textContent = formatted;
+      badge.classList.remove('hidden');
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
       updateServerTime();
       setInterval(updateServerTime, 1000);
     });
+    function updatePagination(pagination) {
+      const paginationContainer = document.getElementById('streams-pagination');
+      const paginationInfo = document.getElementById('pagination-info');
+      const paginationControls = document.getElementById('pagination-controls');
+      
+      if (!pagination || pagination.totalCount === 0) {
+        hidePagination();
+        return;
+      }
+      
+      paginationContainer.classList.remove('hidden');
+      
+      const startItem = ((pagination.page - 1) * pagination.limit) + 1;
+      const endItem = Math.min(pagination.page * pagination.limit, pagination.totalCount);
+      paginationInfo.textContent = `Showing ${startItem}-${endItem} of ${pagination.totalCount} streams`;
+      
+      if (pagination.totalPages <= 1) {
+        paginationControls.innerHTML = `
+          <select id="streams-limit-select" class="w-16 bg-dark-700 border border-gray-600 text-gray-300 px-2 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+            <option value="10" ${pagination.limit === 10 ? 'selected' : ''}>10</option>
+            <option value="25" ${pagination.limit === 25 ? 'selected' : ''}>25</option>
+            <option value="50" ${pagination.limit === 50 ? 'selected' : ''}>50</option>
+            <option value="100" ${pagination.limit === 100 ? 'selected' : ''}>100</option>
+          </select>
+        `;
+        setupLimitSelect();
+        return;
+      }
+      
+      let controlsHTML = '';
+      
+      controlsHTML += `
+        <button onclick="goToPage(${Math.max(1, pagination.page - 1)})" 
+          class="w-9 h-9 flex items-center justify-center rounded-lg ${pagination.page === 1 ? 'bg-dark-700 text-gray-400 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}"
+          ${pagination.page === 1 ? 'disabled' : ''}>
+          <i class="ti ti-chevron-left"></i>
+        </button>
+      `;
+      
+      let startPage = Math.max(1, pagination.page - 2);
+      let endPage = Math.min(pagination.totalPages, pagination.page + 2);
+      if (endPage - startPage < 4) {
+        if (startPage === 1) {
+          endPage = Math.min(pagination.totalPages, startPage + 4);
+        } else {
+          startPage = Math.max(1, endPage - 4);
+        }
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        controlsHTML += `
+          <button onclick="goToPage(${i})" 
+            class="w-9 h-9 flex items-center justify-center rounded-lg ${i === pagination.page ? 'bg-primary text-white' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}">
+            ${i}
+          </button>
+        `;
+      }
+      
+      controlsHTML += `
+        <button onclick="goToPage(${Math.min(pagination.totalPages, pagination.page + 1)})" 
+          class="w-9 h-9 flex items-center justify-center rounded-lg ${pagination.page === pagination.totalPages ? 'bg-dark-700 text-gray-400 cursor-not-allowed' : 'bg-dark-700 hover:bg-dark-600 text-gray-400 hover:text-white transition-colors'}"
+          ${pagination.page === pagination.totalPages ? 'disabled' : ''}>
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      `;
+      
+      controlsHTML += `
+        <select id="streams-limit-select" class="ml-2 w-16 bg-dark-700 border border-gray-600 text-gray-300 px-2 py-2 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary">
+          <option value="10" ${pagination.limit === 10 ? 'selected' : ''}>10</option>
+          <option value="25" ${pagination.limit === 25 ? 'selected' : ''}>25</option>
+          <option value="50" ${pagination.limit === 50 ? 'selected' : ''}>50</option>
+          <option value="100" ${pagination.limit === 100 ? 'selected' : ''}>100</option>
+        </select>
+      `;
+      
+      paginationControls.innerHTML = controlsHTML;
+      setupLimitSelect();
+    }
+    
+    function setupLimitSelect() {
+      const limitSelect = document.getElementById('streams-limit-select');
+      if (limitSelect) {
+        limitSelect.addEventListener('change', function() {
+          fetchStreams(1, parseInt(this.value), currentSearch);
+        });
+      }
+    }
+    
+    function hidePagination() {
+      const paginationContainer = document.getElementById('streams-pagination');
+      if (paginationContainer) {
+        paginationContainer.classList.add('hidden');
+      }
+    }
+    
+    function goToPage(page) {
+      fetchStreams(page, currentLimit, currentSearch);
+    }
+    
+    function debounceSearch(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+    
     document.addEventListener('DOMContentLoaded', function () {
-      const searchInput = document.querySelector('input[placeholder="Search streams..."]');
+      const searchInput = document.getElementById('streams-search');
       if (searchInput) {
-        searchInput.addEventListener('input', function () {
-          const searchTerm = this.value.toLowerCase().trim();
-          const streamRows = document.querySelectorAll('table tbody tr:not(#empty-state)');
-          const streamCards = document.querySelectorAll('.block.md\\:hidden.space-y-4 > div');
-          streamRows.forEach(row => {
-            const streamTitle = row.querySelector('.text-sm.font-medium')?.textContent.toLowerCase() || '';
-            const isMatch = streamTitle.includes(searchTerm);
-            row.style.display = isMatch ? '' : 'none';
-          });
-          streamCards.forEach(card => {
-            const streamTitle = card.querySelector('.font-medium')?.textContent.toLowerCase() || '';
-            const isMatch = streamTitle.includes(searchTerm);
-            card.style.display = isMatch ? '' : 'none';
-          });
-          const visibleRows = [...streamRows].filter(row => row.style.display !== 'none');
-          const visibleCards = [...streamCards].filter(card => card.style.display !== 'none');
-          const emptyStateRow = document.getElementById('empty-state');
-          if (visibleRows.length === 0 && emptyStateRow) {
-            emptyStateRow.style.display = 'table-row';
-            const emptyStateMessage = emptyStateRow.querySelector('p.text-gray-500');
-            if (emptyStateMessage) {
-              emptyStateMessage.textContent = searchTerm ? 'No streams match your search' : 'Create your first stream to start broadcasting to your audience';
-            }
-          } else if (emptyStateRow) {
-            emptyStateRow.style.display = 'none';
-          }
-          if (visibleCards.length === 0) {
-            const mobileContainer = document.querySelector('.block.md\\:hidden.space-y-4');
-            if (mobileContainer && visibleCards.length === 0 && streamCards.length > 0) {
-              const searchMessage = searchTerm ? 'No streams match your search' : 'Create your first stream to start broadcasting';
-              mobileContainer.innerHTML = `
-            <div class="bg-gray-800 rounded-lg p-6 text-center">
-              <div class="flex flex-col items-center">
-                <div class="w-16 h-16 rounded-full bg-dark-700 flex items-center justify-center mb-4">
-                  <i class="ti ti-search text-gray-500 text-2xl"></i>
-                </div>
-                <p class="text-gray-400 font-medium mb-2">${searchMessage}</p>
-              </div>
-            </div>
-          `;
-            }
+        const handleSearch = debounceSearch(function() {
+          const searchTerm = searchInput.value.trim();
+          fetchStreams(1, currentLimit, searchTerm);
+        }, 500);
+        
+        searchInput.addEventListener('input', handleSearch);
+        
+        searchInput.addEventListener('keypress', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const searchTerm = searchInput.value.trim();
+            fetchStreams(1, currentLimit, searchTerm);
           }
         });
       }
@@ -2631,7 +4212,7 @@
   <div id="tipsStreamingModal" class="fixed inset-0 bg-black/50 z-50 hidden modal-overlay overflow-y-auto">
     <div class="flex min-h-screen items-center justify-center p-4">
       <div class="bg-dark-800 rounded-lg shadow-xl w-full max-w-2xl modal-container">
-        <div class="flex items-center justify-between p-4 sm:px-6 sm:py-6 border-b border-gray-700">
+        <div class="flex items-center justify-between p-4 sm:px-6 sm:py-4 border-b border-gray-700">
           <h3 class="text-lg font-semibold">Tips Streaming</h3>
           <div class="flex items-center gap-2">
             <button onclick="backFromTipsStreaming()" class="flex items-center gap-2 px-3 py-1.5 bg-dark-700 hover:bg-dark-600 text-gray-200 rounded-lg transition-colors">

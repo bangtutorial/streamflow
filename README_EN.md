@@ -24,7 +24,7 @@
 
 - **Multi-Platform Streaming** - Stream to various popular platforms simultaneously.
 - **Video Gallery** - Manage video collections with an intuitive interface.
-- **Upload Video** - Upload from local storage or import directly from Google Drive.
+- **Video Upload** - Upload from local storage or import directly from Google Drive.
 - **Scheduled Streaming** - Schedule streams with flexible time settings.
 - **Advanced Settings** - Full control over bitrate, resolution, FPS, and video orientation.
 - **Real-time Monitoring** - Monitor stream status with a real-time dashboard.

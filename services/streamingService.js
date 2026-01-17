@@ -119,6 +119,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
       return [
         '-nostdin',
         '-loglevel', 'warning',
+        '-stats',
         '-re',
         '-fflags', '+genpts+igndts+discardcorrupt',
         '-avoid_negative_ts', 'make_zero',
@@ -141,6 +142,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
     return [
       '-nostdin',
       '-loglevel', 'warning',
+      '-stats',
       '-re',
       '-fflags', '+genpts+igndts+discardcorrupt',
       '-avoid_negative_ts', 'make_zero',
@@ -196,6 +198,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
     return [
       '-nostdin',
       '-loglevel', 'warning',
+      '-stats',
       '-re',
       '-fflags', '+genpts+igndts+discardcorrupt',
       '-avoid_negative_ts', 'make_zero',
@@ -222,6 +225,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
   return [
     '-nostdin',
     '-loglevel', 'warning',
+    '-stats',
     '-re',
     '-fflags', '+genpts+igndts+discardcorrupt',
     '-avoid_negative_ts', 'make_zero',
@@ -288,6 +292,7 @@ async function buildFFmpegArgs(stream) {
     return [
       '-nostdin',
       '-loglevel', 'warning',
+      '-stats',
       '-re',
       '-fflags', '+genpts+igndts+discardcorrupt',
       '-avoid_negative_ts', 'make_zero',
@@ -309,6 +314,7 @@ async function buildFFmpegArgs(stream) {
   return [
     '-nostdin',
     '-loglevel', 'warning',
+    '-stats',
     '-re',
     '-fflags', '+genpts+igndts+discardcorrupt',
     '-avoid_negative_ts', 'make_zero',
@@ -471,16 +477,15 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
       }
     });
 
-    ffmpegProcess.stderr.on('data', (data) => {
-      const msg = data.toString().trim();
-      if (msg) {
-        if (msg.includes('frame=') || msg.includes('speed=')) {
-          updateStreamActivity(streamId);
-        } else {
-          addStreamLog(streamId, `[FFmpeg] ${msg}`);
-        }
+  ffmpegProcess.stderr.on('data', (data) => {
+    const msg = data.toString().trim();
+    if (msg) {
+      updateStreamActivity(streamId);
+      if (!(msg.includes('frame=') || msg.includes('speed=') || msg.includes('time='))) {
+        addStreamLog(streamId, `[FFmpeg] ${msg}`);
       }
-    });
+    }
+  });
 
     ffmpegProcess.on('exit', async (code, signal) => {
       addStreamLog(streamId, `FFmpeg exited: code=${code}, signal=${signal}`);

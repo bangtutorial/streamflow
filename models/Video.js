@@ -3,6 +3,21 @@ const path = require('path');
 const fs = require('fs');
 const { db } = require('../db/database');
 class Video {
+  static removeOwnedAsset(relativePath) {
+    if (!relativePath || typeof relativePath !== 'string' || !relativePath.startsWith('/uploads/')) {
+      return;
+    }
+
+    const fullPath = path.join(__dirname, '..', 'public', relativePath);
+    try {
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
+    } catch (error) {
+      console.error('Error deleting media asset:', error);
+    }
+  }
+
   static async create(data) {
     return new Promise((resolve, reject) => {
       const id = uuidv4();
@@ -10,12 +25,12 @@ class Video {
       db.run(
         `INSERT INTO videos (
           id, title, filepath, thumbnail_path, file_size, 
-          duration, format, resolution, bitrate, fps, user_id, 
+          duration, format, resolution, bitrate, fps, user_id, folder_id,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id, data.title, data.filepath, data.thumbnail_path, data.file_size,
-          data.duration, data.format, data.resolution, data.bitrate, data.fps, data.user_id,
+          data.duration, data.format, data.resolution, data.bitrate, data.fps, data.user_id, data.folder_id || null,
           now, now
         ],
         function (err) {
@@ -54,6 +69,22 @@ class Video {
       });
     });
   }
+  static findByUserAndFolder(userId, folderId = null) {
+    return new Promise((resolve, reject) => {
+      const isRoot = folderId === null || folderId === undefined || folderId === '';
+      const query = isRoot
+        ? 'SELECT * FROM videos WHERE user_id = ? AND folder_id IS NULL ORDER BY upload_date DESC'
+        : 'SELECT * FROM videos WHERE user_id = ? AND folder_id = ? ORDER BY upload_date DESC';
+      const params = isRoot ? [userId] : [userId, folderId];
+      db.all(query, params, (err, rows) => {
+        if (err) {
+          console.error('Error finding videos by folder:', err.message);
+          return reject(err);
+        }
+        resolve(rows || []);
+      });
+    });
+  }
   static update(id, videoData) {
     const fields = [];
     const values = [];
@@ -86,26 +117,8 @@ class Video {
               console.error('Error deleting video from database:', err.message);
               return reject(err);
             }
-            if (video.filepath) {
-              const fullPath = path.join(__dirname, '..', 'public', video.filepath);
-              try {
-                if (fs.existsSync(fullPath)) {
-                  fs.unlinkSync(fullPath);
-                }
-              } catch (fileErr) {
-                console.error('Error deleting video file:', fileErr);
-              }
-            }
-            if (video.thumbnail_path) {
-              const thumbnailPath = path.join(__dirname, '..', 'public', video.thumbnail_path);
-              try {
-                if (fs.existsSync(thumbnailPath)) {
-                  fs.unlinkSync(thumbnailPath);
-                }
-              } catch (thumbErr) {
-                console.error('Error deleting thumbnail:', thumbErr);
-              }
-            }
+            Video.removeOwnedAsset(video.filepath);
+            Video.removeOwnedAsset(video.thumbnail_path);
             resolve({ success: true, id });
           });
         })

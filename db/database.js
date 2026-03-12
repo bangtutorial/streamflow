@@ -40,7 +40,17 @@ function createTables() {
         bitrate INTEGER,
         fps TEXT,
         user_id TEXT,
+        folder_id TEXT,
         upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )`);
+
+      db.run(`CREATE TABLE IF NOT EXISTS media_folders (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        user_id TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
@@ -333,6 +343,12 @@ function createTables() {
       db.run(`ALTER TABLE videos ADD COLUMN audio_codec TEXT`, (err) => {
         if (err && !err.message.includes('duplicate column name')) {
           console.error('Error adding audio_codec column to videos:', err.message);
+        }
+      });
+
+      db.run(`ALTER TABLE videos ADD COLUMN folder_id TEXT`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding folder_id column to videos:', err.message);
         }
       });
 

@@ -28,6 +28,7 @@ const audioConverter = require('./services/audioConverter');
 const { ensureDirectories } = require('./utils/storage');
 const { getVideoInfo, generateThumbnail, generateImageThumbnail } = require('./utils/videoProcessor');
 const Video = require('./models/Video');
+const MediaFolder = require('./models/MediaFolder');
 const Playlist = require('./models/Playlist');
 const Stream = require('./models/Stream');
 const ffmpeg = require('fluent-ffmpeg');
@@ -705,18 +706,236 @@ app.get('/dashboard', isAuthenticated, async (req, res) => {
     res.redirect('/login');
   }
 });
+function normalizeFolderId(folderId) {
+  if (folderId === undefined || folderId === null || folderId === '' || folderId === 'root' || folderId === 'null') {
+    return null;
+  }
+  return folderId;
+}
+
+async function findLiveStreamConflictsForVideos(userId, videoIds) {
+  const targetIds = Array.from(new Set((videoIds || []).filter(Boolean)));
+  if (targetIds.length === 0) {
+    return [];
+  }
+
+  const targetIdSet = new Set(targetIds);
+  const liveStreams = await Stream.findAll(userId, 'live');
+  const playlistCache = new Map();
+  const conflicts = [];
+
+  for (const stream of liveStreams) {
+    if (!stream || !stream.video_id) {
+      continue;
+    }
+
+    if (stream.video_type === 'video') {
+      if (targetIdSet.has(stream.video_id)) {
+        conflicts.push({
+          videoId: stream.video_id,
+          streamId: stream.id,
+          streamTitle: stream.title || 'Untitled stream'
+        });
+      }
+      continue;
+    }
+
+    if (stream.video_type === 'playlist') {
+      let playlist = playlistCache.get(stream.video_id);
+      if (playlist === undefined) {
+        playlist = await Playlist.findByIdWithVideos(stream.video_id);
+        playlistCache.set(stream.video_id, playlist || null);
+      }
+
+      if (!playlist) {
+        continue;
+      }
+
+      const playlistItems = [...(playlist.videos || []), ...(playlist.audios || [])];
+      for (const item of playlistItems) {
+        if (targetIdSet.has(item.id)) {
+          conflicts.push({
+            videoId: item.id,
+            streamId: stream.id,
+            streamTitle: stream.title || playlist.name || 'Untitled stream'
+          });
+        }
+      }
+    }
+  }
+
+  return conflicts;
+}
+
+function buildDeleteBlockedMessage(conflicts, videoMap, targetType) {
+  if (!conflicts || conflicts.length === 0) {
+    return null;
+  }
+
+  const firstConflict = conflicts[0];
+  const streamTitle = firstConflict.streamTitle || 'Untitled stream';
+  const blockedItem = videoMap.get(firstConflict.videoId);
+  const blockedItemTitle = blockedItem?.title || 'This file';
+
+  if (targetType === 'folder') {
+    return `Cannot delete folder because "${blockedItemTitle}" is currently used by live stream "${streamTitle}". Stop the stream first.`;
+  }
+
+  return `Cannot delete file because it is currently used by live stream "${streamTitle}". Stop the stream first.`;
+}
+
 app.get('/gallery', isAuthenticated, async (req, res) => {
   try {
-    const videos = await Video.findAll(req.session.userId);
+    const currentFolderId = normalizeFolderId(req.query.folder);
+    const folders = await MediaFolder.findAllByUser(req.session.userId);
+    const currentFolder = currentFolderId ? await MediaFolder.findById(currentFolderId, req.session.userId) : null;
+    if (currentFolderId && !currentFolder) {
+      return res.redirect('/gallery');
+    }
+    const videos = await Video.findByUserAndFolder(req.session.userId, currentFolderId);
     res.render('gallery', {
       title: 'Video Gallery',
       active: 'gallery',
       user: await User.findById(req.session.userId),
-      videos: videos
+      videos: videos,
+      folders: folders,
+      currentFolder: currentFolder,
+      currentFolderId: currentFolderId || ''
     });
   } catch (error) {
     console.error('Gallery error:', error);
     res.redirect('/dashboard');
+  }
+});
+
+app.get('/api/gallery/data', isAuthenticated, async (req, res) => {
+  try {
+    const currentFolderId = normalizeFolderId(req.query.folder);
+    const folders = await MediaFolder.findAllByUser(req.session.userId);
+    const currentFolder = currentFolderId ? await MediaFolder.findById(currentFolderId, req.session.userId) : null;
+
+    if (currentFolderId && !currentFolder) {
+      return res.status(404).json({ success: false, error: 'Folder not found' });
+    }
+
+    const videos = await Video.findByUserAndFolder(req.session.userId, currentFolderId);
+    res.json({
+      success: true,
+      videos,
+      folders,
+      currentFolder,
+      currentFolderId: currentFolderId || ''
+    });
+  } catch (error) {
+    console.error('Gallery data error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load gallery data' });
+  }
+});
+
+app.post('/api/media-folders', isAuthenticated, [
+  body('name').trim().notEmpty().withMessage('Folder name is required').isLength({ max: 80 }).withMessage('Folder name is too long')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: errors.array()[0].msg });
+    }
+
+    const name = req.body.name.trim();
+    const existingFolder = await MediaFolder.findByName(req.session.userId, name);
+    if (existingFolder) {
+      return res.status(400).json({ success: false, error: 'Folder name already exists' });
+    }
+
+    const folder = await MediaFolder.create({
+      name,
+      user_id: req.session.userId
+    });
+
+    res.json({ success: true, folder });
+  } catch (error) {
+    console.error('Error creating media folder:', error);
+    res.status(500).json({ success: false, error: 'Failed to create folder' });
+  }
+});
+
+app.put('/api/media-folders/:id', isAuthenticated, [
+  body('name').trim().notEmpty().withMessage('Folder name is required').isLength({ max: 80 }).withMessage('Folder name is too long')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, error: errors.array()[0].msg });
+    }
+
+    const folder = await MediaFolder.findById(req.params.id, req.session.userId);
+    if (!folder) {
+      return res.status(404).json({ success: false, error: 'Folder not found' });
+    }
+
+    const name = req.body.name.trim();
+    const existingFolder = await MediaFolder.findByName(req.session.userId, name);
+    if (existingFolder && existingFolder.id !== folder.id) {
+      return res.status(400).json({ success: false, error: 'Folder name already exists' });
+    }
+
+    await MediaFolder.update(folder.id, req.session.userId, { name });
+    res.json({ success: true, message: 'Folder renamed successfully' });
+  } catch (error) {
+    console.error('Error renaming media folder:', error);
+    res.status(500).json({ success: false, error: 'Failed to rename folder' });
+  }
+});
+
+app.delete('/api/media-folders/:id', isAuthenticated, async (req, res) => {
+  try {
+    const folder = await MediaFolder.findById(req.params.id, req.session.userId);
+    if (!folder) {
+      return res.status(404).json({ success: false, error: 'Folder not found' });
+    }
+
+    const videosInFolder = await Video.findByUserAndFolder(req.session.userId, folder.id);
+    const videoMap = new Map(videosInFolder.map(video => [video.id, video]));
+    const conflicts = await findLiveStreamConflictsForVideos(req.session.userId, videosInFolder.map(video => video.id));
+    if (conflicts.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: buildDeleteBlockedMessage(conflicts, videoMap, 'folder')
+      });
+    }
+
+    for (const video of videosInFolder) {
+      await Video.delete(video.id);
+    }
+
+    await MediaFolder.delete(folder.id, req.session.userId);
+    res.json({ success: true, message: 'Folder deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting media folder:', error);
+    res.status(500).json({ success: false, error: 'Failed to delete folder' });
+  }
+});
+
+app.put('/api/videos/:id/folder', isAuthenticated, async (req, res) => {
+  try {
+    const video = await Video.findById(req.params.id);
+    if (!video || video.user_id !== req.session.userId) {
+      return res.status(404).json({ success: false, error: 'Video not found' });
+    }
+
+    const folderId = normalizeFolderId(req.body.folderId);
+    if (folderId) {
+      const folder = await MediaFolder.findById(folderId, req.session.userId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+    }
+
+    await Video.update(req.params.id, { folder_id: folderId });
+    res.json({ success: true, folderId });
+  } catch (error) {
+    console.error('Error moving video to folder:', error);
+    res.status(500).json({ success: false, error: 'Failed to move video' });
   }
 });
 app.get('/settings', isAuthenticated, async (req, res) => {
@@ -1529,6 +1748,14 @@ app.post('/api/videos/upload', isAuthenticated, (req, res, next) => {
       });
     }
 
+    const folderId = normalizeFolderId(req.body.folderId);
+    if (folderId) {
+      const folder = await MediaFolder.findById(folderId, req.session.userId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+    }
+
     const user = await User.findById(req.session.userId);
     if (user.disk_limit > 0) {
       const currentUsage = await User.getDiskUsage(req.session.userId);
@@ -1585,17 +1812,18 @@ app.post('/api/videos/upload', isAuthenticated, (req, res, next) => {
           .on('end', async () => {
             try {
               const videoData = {
-                title,
-                filepath: filePath,
-                thumbnail_path: thumbnailPath,
-                file_size: fileSize,
-                duration,
-                format,
-                resolution,
-                bitrate,
-                fps,
-                user_id: req.session.userId
-              };
+              title,
+              filepath: filePath,
+              thumbnail_path: thumbnailPath,
+              file_size: fileSize,
+              duration,
+              format,
+              resolution,
+              bitrate,
+              fps,
+              user_id: req.session.userId,
+              folder_id: folderId
+            };
               const video = await Video.create(videoData);
               res.json({
                 success: true,
@@ -1664,6 +1892,14 @@ app.post('/api/audio/upload', isAuthenticated, (req, res, next) => {
       });
     }
 
+    const folderId = normalizeFolderId(req.body.folderId);
+    if (folderId) {
+      const folder = await MediaFolder.findById(folderId, req.session.userId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+    }
+
     const user = await User.findById(req.session.userId);
     if (user.disk_limit > 0) {
       const currentUsage = await User.getDiskUsage(req.session.userId);
@@ -1699,7 +1935,8 @@ app.post('/api/audio/upload', isAuthenticated, (req, res, next) => {
       resolution: null,
       bitrate: audioInfo.bitrate,
       fps: null,
-      user_id: req.session.userId
+      user_id: req.session.userId,
+      folder_id: folderId
     };
     const video = await Video.create(videoData);
     res.json({
@@ -1723,6 +1960,13 @@ app.post('/api/videos/chunk/init', isAuthenticated, async (req, res) => {
     if (!filename || !fileSize || !totalChunks) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
+    const folderId = normalizeFolderId(req.body.folderId);
+    if (folderId) {
+      const folder = await MediaFolder.findById(folderId, req.session.userId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+    }
     const allowedExts = ['.mp4', '.avi', '.mov'];
     const ext = path.extname(filename).toLowerCase();
     if (!allowedExts.includes(ext)) {
@@ -1741,7 +1985,7 @@ app.post('/api/videos/chunk/init', isAuthenticated, async (req, res) => {
       }
     }
 
-    const info = await chunkUploadService.initUpload(filename, fileSize, totalChunks, req.session.userId);
+    const info = await chunkUploadService.initUpload(filename, fileSize, totalChunks, req.session.userId, { folderId });
     res.json({ 
       success: true, 
       uploadId: info.uploadId, 
@@ -1854,7 +2098,8 @@ app.post('/api/videos/chunk/complete', isAuthenticated, async (req, res) => {
               resolution,
               bitrate,
               fps,
-              user_id: req.session.userId
+              user_id: req.session.userId,
+              folder_id: info.folderId || null
             });
           })
           .on('error', (err) => {
@@ -1915,17 +2160,17 @@ app.delete('/api/videos/:id', isAuthenticated, async (req, res) => {
     if (video.user_id !== req.session.userId) {
       return res.status(403).json({ success: false, error: 'Not authorized' });
     }
-    const videoPath = path.join(__dirname, 'public', video.filepath);
-    if (fs.existsSync(videoPath)) {
-      fs.unlinkSync(videoPath);
+
+    const videoMap = new Map([[video.id, video]]);
+    const conflicts = await findLiveStreamConflictsForVideos(req.session.userId, [video.id]);
+    if (conflicts.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: buildDeleteBlockedMessage(conflicts, videoMap, 'file')
+      });
     }
-    if (video.thumbnail_path) {
-      const thumbnailPath = path.join(__dirname, 'public', video.thumbnail_path);
-      if (fs.existsSync(thumbnailPath)) {
-        fs.unlinkSync(thumbnailPath);
-      }
-    }
-    await Video.delete(videoId, req.session.userId);
+
+    await Video.delete(videoId);
     res.json({ success: true, message: 'Video deleted successfully' });
   } catch (error) {
     console.error('Error deleting video:', error);
@@ -2423,11 +2668,18 @@ app.post('/api/videos/import-drive', isAuthenticated, [
       return res.status(400).json({ success: false, error: errors.array()[0].msg });
     }
     const { driveUrl } = req.body;
+    const folderId = normalizeFolderId(req.body.folderId);
+    if (folderId) {
+      const folder = await MediaFolder.findById(folderId, req.session.userId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+    }
     const { extractFileId, downloadFile } = require('./utils/googleDriveService');
     try {
       const fileId = extractFileId(driveUrl);
       const jobId = uuidv4();
-      processGoogleDriveImport(jobId, fileId, req.session.userId)
+      processGoogleDriveImport(jobId, fileId, req.session.userId, folderId)
         .catch(err => console.error('Drive import failed:', err));
       return res.json({
         success: true,
@@ -2457,7 +2709,7 @@ app.get('/api/videos/import-status/:jobId', isAuthenticated, async (req, res) =>
   });
 });
 const importJobs = {};
-async function processGoogleDriveImport(jobId, fileId, userId) {
+async function processGoogleDriveImport(jobId, fileId, userId, folderId = null) {
   const { downloadFile } = require('./utils/googleDriveService');
   const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
   const ffmpeg = require('fluent-ffmpeg');
@@ -2559,7 +2811,8 @@ async function processGoogleDriveImport(jobId, fileId, userId) {
       format: format,
       resolution: resolution,
       bitrate: bitrate,
-      user_id: userId
+      user_id: userId,
+      folder_id: folderId
     };
     
     const video = await Video.create(videoData);
@@ -2595,11 +2848,18 @@ app.post('/api/videos/import-mediafire', isAuthenticated, [
       return res.status(400).json({ success: false, error: errors.array()[0].msg });
     }
     const { mediafireUrl } = req.body;
+    const folderId = normalizeFolderId(req.body.folderId);
+    if (folderId) {
+      const folder = await MediaFolder.findById(folderId, req.session.userId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+    }
     const { extractFileKey } = require('./utils/mediafireService');
     try {
       const fileKey = extractFileKey(mediafireUrl);
       const jobId = uuidv4();
-      processMediafireImport(jobId, fileKey, req.session.userId)
+      processMediafireImport(jobId, fileKey, req.session.userId, folderId)
         .catch(err => console.error('Mediafire import failed:', err));
       return res.json({
         success: true,
@@ -2619,7 +2879,7 @@ app.post('/api/videos/import-mediafire', isAuthenticated, [
   }
 });
 
-async function processMediafireImport(jobId, fileKey, userId) {
+async function processMediafireImport(jobId, fileKey, userId, folderId = null) {
   const { downloadFile } = require('./utils/mediafireService');
   const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
   const ffmpeg = require('fluent-ffmpeg');
@@ -2684,7 +2944,8 @@ async function processMediafireImport(jobId, fileKey, userId) {
       format: format,
       resolution: resolution,
       bitrate: bitrate,
-      user_id: userId
+      user_id: userId,
+      folder_id: folderId
     };
     
     const video = await Video.create(videoData);
@@ -2720,6 +2981,13 @@ app.post('/api/videos/import-dropbox', isAuthenticated, [
       return res.status(400).json({ success: false, error: errors.array()[0].msg });
     }
     const { dropboxUrl } = req.body;
+    const folderId = normalizeFolderId(req.body.folderId);
+    if (folderId) {
+      const folder = await MediaFolder.findById(folderId, req.session.userId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+    }
     if (!dropboxUrl.includes('dropbox.com')) {
       return res.status(400).json({
         success: false,
@@ -2727,7 +2995,7 @@ app.post('/api/videos/import-dropbox', isAuthenticated, [
       });
     }
     const jobId = uuidv4();
-    processDropboxImport(jobId, dropboxUrl, req.session.userId)
+    processDropboxImport(jobId, dropboxUrl, req.session.userId, folderId)
       .catch(err => console.error('Dropbox import failed:', err));
     return res.json({
       success: true,
@@ -2740,7 +3008,7 @@ app.post('/api/videos/import-dropbox', isAuthenticated, [
   }
 });
 
-async function processDropboxImport(jobId, dropboxUrl, userId) {
+async function processDropboxImport(jobId, dropboxUrl, userId, folderId = null) {
   const { downloadFile } = require('./utils/dropboxService');
   const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
   const ffmpeg = require('fluent-ffmpeg');
@@ -2805,7 +3073,8 @@ async function processDropboxImport(jobId, dropboxUrl, userId) {
       format: format,
       resolution: resolution,
       bitrate: bitrate,
-      user_id: userId
+      user_id: userId,
+      folder_id: folderId
     };
     
     const video = await Video.create(videoData);
@@ -2841,6 +3110,13 @@ app.post('/api/videos/import-mega', isAuthenticated, [
       return res.status(400).json({ success: false, error: errors.array()[0].msg });
     }
     const { megaUrl } = req.body;
+    const folderId = normalizeFolderId(req.body.folderId);
+    if (folderId) {
+      const folder = await MediaFolder.findById(folderId, req.session.userId);
+      if (!folder) {
+        return res.status(404).json({ success: false, error: 'Folder not found' });
+      }
+    }
     if (!megaUrl.includes('mega.nz') && !megaUrl.includes('mega.co.nz')) {
       return res.status(400).json({
         success: false,
@@ -2848,7 +3124,7 @@ app.post('/api/videos/import-mega', isAuthenticated, [
       });
     }
     const jobId = uuidv4();
-    processMegaImport(jobId, megaUrl, req.session.userId)
+    processMegaImport(jobId, megaUrl, req.session.userId, folderId)
       .catch(err => console.error('MEGA import failed:', err));
     return res.json({
       success: true,
@@ -2861,7 +3137,7 @@ app.post('/api/videos/import-mega', isAuthenticated, [
   }
 });
 
-async function processMegaImport(jobId, megaUrl, userId) {
+async function processMegaImport(jobId, megaUrl, userId, folderId = null) {
   const { downloadFile } = require('./utils/megaService');
   const { getVideoInfo, generateThumbnail } = require('./utils/videoProcessor');
   const ffmpeg = require('fluent-ffmpeg');
@@ -2926,7 +3202,8 @@ async function processMegaImport(jobId, megaUrl, userId) {
       format: format,
       resolution: resolution,
       bitrate: bitrate,
-      user_id: userId
+      user_id: userId,
+      folder_id: folderId
     };
     
     const video = await Video.create(videoData);

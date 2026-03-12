@@ -35,9 +35,10 @@ async function findExistingUpload(filename, fileSize, userId) {
   return null;
 }
 
-async function initUpload(filename, fileSize, totalChunks, userId) {
+async function initUpload(filename, fileSize, totalChunks, userId, options = {}) {
   const existingUpload = await findExistingUpload(filename, fileSize, userId);
   if (existingUpload) {
+    existingUpload.folderId = options.folderId || existingUpload.folderId || null;
     existingUpload.status = 'uploading';
     existingUpload.lastActivity = Date.now();
     await fs.writeJson(getInfoPath(existingUpload.uploadId), existingUpload);
@@ -51,6 +52,7 @@ async function initUpload(filename, fileSize, totalChunks, userId) {
     totalChunks,
     uploadedChunks: [],
     userId,
+    folderId: options.folderId || null,
     createdAt: Date.now(),
     lastActivity: Date.now(),
     status: 'uploading'

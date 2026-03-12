@@ -360,7 +360,7 @@
           </div>
 
           <div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
                 <label class="text-sm font-medium text-white block mb-2">Privacy</label>
                 <select id="globalPrivacy" name="globalPrivacy" class="w-full px-4 py-2.5 bg-dark-700 border border-gray-600 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary">
@@ -380,6 +380,17 @@
                   <option value="17">Sports</option>
                   <option value="27">Education</option>
                 </select>
+              </div>
+              <div>
+                <label class="text-sm font-medium text-white block mb-2">Monetization</label>
+                <div class="h-[42px] px-4 bg-dark-700 border border-gray-600 rounded-lg flex items-center justify-between">
+                  <span class="text-sm text-gray-300">Enable monetization</span>
+                  <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="globalMonetization" name="globalMonetization" class="sr-only peer">
+                    <div class="w-11 h-6 bg-dark-900 rounded-full peer peer-checked:bg-primary"></div>
+                    <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -544,6 +555,7 @@ function openCreateRotationModal() {
   document.getElementById('rotationForm').reset();
   document.getElementById('rotationId').value = '';
   document.getElementById('rotationDurationBadge').textContent = 'Duration: 00:00';
+  document.getElementById('globalMonetization').checked = false;
   
   document.getElementById('repeatMode').value = 'daily';
   
@@ -872,6 +884,8 @@ function initThumbnailUpload(itemEl) {
   input.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
+      itemEl.dataset.thumbnailPath = '';
+      itemEl.dataset.originalThumbnail = '';
       const reader = new FileReader();
       reader.onload = (ev) => {
         img.src = ev.target.result;
@@ -927,6 +941,7 @@ async function saveRotation() {
   const endTime = document.getElementById('rotationEndTime').value;
   const globalPrivacy = document.getElementById('globalPrivacy').value;
   const globalCategory = document.getElementById('globalCategory').value;
+  const globalMonetization = document.getElementById('globalMonetization').checked;
   
   if (!name) {
     showToast('error', 'Please enter rotation name');
@@ -994,10 +1009,7 @@ async function saveRotation() {
     let thumbnailPath = null;
     let originalThumbnailPath = null;
     if (rotationId) {
-      const thumbnailImg = item.querySelector('.thumbnail-img');
-      if (thumbnailImg && thumbnailImg.src && !thumbnailInput.files[0]) {
-        thumbnailPath = thumbnailImg.src.split('/').pop();
-      }
+      thumbnailPath = item.dataset.thumbnailPath || null;
       originalThumbnailPath = item.dataset.originalThumbnail || null;
     }
     
@@ -1008,15 +1020,16 @@ async function saveRotation() {
       description,
       privacy: globalPrivacy,
       category: globalCategory,
+      youtube_monetization: globalMonetization,
       tags,
+      thumbnail_upload_index: i,
       thumbnail_path: thumbnailPath,
       original_thumbnail_path: originalThumbnailPath
     });
     
     if (thumbnailInput.files[0]) {
-      formData.append('thumbnails', thumbnailInput.files[0]);
-    } else {
-      formData.append('thumbnails', new File([], ''));
+      const compressedThumbnail = await compressRotationThumbnail(thumbnailInput.files[0]);
+      formData.append(`thumbnail_${i}`, compressedThumbnail, compressedThumbnail.name);
     }
   }
   
@@ -1040,10 +1053,22 @@ async function saveRotation() {
       },
       body: formData
     });
+
+    let result;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      result = await response.json();
+    } else {
+      const errorText = await response.text();
+      result = {
+        success: false,
+        error: response.status === 413
+          ? 'Thumbnail upload is too large. Please use smaller images.'
+          : (errorText || `Request failed with status ${response.status}`)
+      };
+    }
     
-    const result = await response.json();
-    
-    if (result.success) {
+    if (response.ok && result.success) {
       showToast('success', rotationId ? 'Rotation updated!' : 'Rotation created!');
       closeCreateRotationModal();
       setTimeout(() => window.location.reload(), 1000);
@@ -1085,6 +1110,9 @@ async function editRotation(id) {
       if (rotation.items && rotation.items.length > 0) {
         document.getElementById('globalPrivacy').value = rotation.items[0].privacy || 'unlisted';
         document.getElementById('globalCategory').value = rotation.items[0].category || '22';
+        document.getElementById('globalMonetization').checked = rotation.items[0].youtube_monetization === true || rotation.items[0].youtube_monetization === 1;
+      } else {
+        document.getElementById('globalMonetization').checked = false;
       }
       
       if (rotation.youtube_channel_id) {
@@ -1143,7 +1171,7 @@ async function editRotation(id) {
           itemEl.querySelector(`input[name="items[${rotationItemCount}][title]"]`).value = item.title;
           itemEl.querySelector(`textarea[name="items[${rotationItemCount}][description]"]`).value = item.description || '';
           
-          if (item.thumbnail_path) {
+          if (item.thumbnail_path && item.thumbnail_path !== 'rotations') {
             const thumbnailImg = itemEl.querySelector('.thumbnail-img');
             const thumbnailPreview = itemEl.querySelector('.thumbnail-preview');
             const thumbnailPlaceholder = itemEl.querySelector('.thumbnail-placeholder');
@@ -1151,10 +1179,15 @@ async function editRotation(id) {
             thumbnailImg.src = `/uploads/thumbnails/${item.thumbnail_path.split('/').pop()}`;
             thumbnailPreview.classList.remove('hidden');
             thumbnailPlaceholder.classList.add('hidden');
+            itemEl.dataset.thumbnailPath = item.thumbnail_path;
+          } else {
+            itemEl.dataset.thumbnailPath = '';
           }
           
           if (item.original_thumbnail_path) {
             itemEl.dataset.originalThumbnail = item.original_thumbnail_path;
+          } else {
+            itemEl.dataset.originalThumbnail = '';
           }
           
           if (item.tags) {
@@ -1184,6 +1217,46 @@ async function editRotation(id) {
   } catch (error) {
     console.error('Error:', error);
     showToast('error', 'An error occurred');
+  }
+}
+
+async function compressRotationThumbnail(file) {
+  if (!file || !file.type.startsWith('image/')) {
+    return file;
+  }
+
+  try {
+    const imageUrl = URL.createObjectURL(file);
+    const image = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = imageUrl;
+    });
+
+    const maxWidth = 1280;
+    const maxHeight = 720;
+    const ratio = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+    const width = Math.round(image.width * ratio);
+    const height = Math.round(image.height * ratio);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    context.drawImage(image, 0, 0, width, height);
+
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+    URL.revokeObjectURL(imageUrl);
+
+    if (!blob) {
+      return file;
+    }
+
+    const compressedName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    return new File([blob], compressedName, { type: 'image/jpeg' });
+  } catch (error) {
+    return file;
   }
 }
 

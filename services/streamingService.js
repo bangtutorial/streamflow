@@ -28,6 +28,7 @@ const activeStreams = new Map();
 const streamLogs = new Map();
 const streamRetryCount = new Map();
 const manuallyStoppingStreams = new Set();
+const startingStreams = new Set();
 
 const MAX_LOG_LINES = 50;
 const MAX_RETRY_ATTEMPTS = 15;
@@ -69,6 +70,7 @@ function getStreamLogs(streamId) {
 function cleanupStreamData(streamId) {
   streamRetryCount.delete(streamId);
   manuallyStoppingStreams.delete(streamId);
+  startingStreams.delete(streamId);
 }
 
 function getRetryDelay(retryCount) {
@@ -205,6 +207,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
       '-f', 'concat',
       '-safe', '0',
       '-i', concatFile,
+      '-re',
       '-f', 'concat',
       '-safe', '0',
       '-i', audioConcatFile,
@@ -232,6 +235,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
     '-f', 'concat',
     '-safe', '0',
     '-i', concatFile,
+    '-re',
     '-f', 'concat',
     '-safe', '0',
     '-i', audioConcatFile,
@@ -251,10 +255,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
     '-sc_threshold', '0',
     '-s', resolution,
     '-r', String(fps),
-    '-c:a', 'aac',
-    '-b:a', '128k',
-    '-ar', '44100',
-    '-ac', '2',
+    '-c:a', 'copy',
     '-f', 'flv',
     '-flvflags', 'no_duration_filesize',
     rtmpUrl
@@ -389,6 +390,12 @@ async function killFFmpegProcess(streamId, streamData) {
 }
 
 async function startStream(streamId, isRetry = false, baseUrl = null) {
+  if (startingStreams.has(streamId)) {
+    return { success: false, error: 'Stream start is already in progress' };
+  }
+
+  startingStreams.add(streamId);
+
   try {
     if (!isRetry) {
       streamRetryCount.set(streamId, 0);
@@ -596,6 +603,8 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
   } catch (error) {
     addStreamLog(streamId, `Start failed: ${error.message}`);
     return { success: false, error: error.message };
+  } finally {
+    startingStreams.delete(streamId);
   }
 }
 
@@ -681,6 +690,10 @@ function isStreamActive(streamId) {
   }
 
   return true;
+}
+
+function isStreamStarting(streamId) {
+  return startingStreams.has(streamId);
 }
 
 function getActiveStreams() {
@@ -923,6 +936,7 @@ module.exports = {
   startStream,
   stopStream,
   isStreamActive,
+  isStreamStarting,
   getActiveStreams,
   getActiveStreamInfo,
   getStreamLogs,

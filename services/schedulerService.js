@@ -35,7 +35,7 @@ async function checkScheduledStreams() {
     const streams = await Stream.findScheduledInRange(null, now);
 
     for (const stream of streams) {
-      if (streamingService.isStreamActive(stream.id)) {
+      if (streamingService.isStreamActive(stream.id) || streamingService.isStreamStarting(stream.id)) {
         continue;
       }
 

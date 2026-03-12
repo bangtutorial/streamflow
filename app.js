@@ -3165,8 +3165,7 @@ app.post('/api/streams/youtube', isAuthenticated, uploadThumbnail.single('thumbn
         error: 'YouTube API credentials not configured.' 
       });
     }
-    
-    const { videoId, title, description, privacy, category, tags, loopVideo, scheduleStartTime, scheduleEndTime, repeat, ytChannelId } = req.body;
+    const { videoId, title, description, privacy, category, tags, loopVideo, scheduleStartTime, scheduleEndTime, repeat, ytChannelId, ytMonetization } = req.body;
     
     let selectedChannel;
     if (ytChannelId) {
@@ -3231,7 +3230,8 @@ app.post('/api/streams/youtube', isAuthenticated, uploadThumbnail.single('thumbn
       youtube_tags: tags || '',
       youtube_thumbnail: localThumbnailPath,
       youtube_channel_id: selectedChannel.id,
-      is_youtube_api: true
+      is_youtube_api: true,
+      youtube_monetization: ytMonetization === 'true' || ytMonetization === true
     };
     
     if (scheduleStartTime) {
@@ -3348,6 +3348,9 @@ app.put('/api/streams/:id', isAuthenticated, uploadThumbnail.single('thumbnail')
       if (req.body.loopVideo !== undefined) {
         updateData.loop_video = req.body.loopVideo === 'true' || req.body.loopVideo === true;
       }
+      if (req.body.ytMonetization !== undefined) {
+        updateData.youtube_monetization = req.body.ytMonetization === 'true' || req.body.ytMonetization === true;
+      }
       
       if (req.body.scheduleStartTime) {
         const scheduleStartDate = parseScheduleDateTime(req.body.scheduleStartTime);
@@ -3442,6 +3445,17 @@ app.put('/api/streams/:id', isAuthenticated, uploadThumbnail.single('thumbnail')
                 });
               } catch (statusError) {
                 console.log('Note: Could not update broadcast status:', statusError.message);
+              }
+
+              if (req.body.ytMonetization !== undefined) {
+                try {
+                  const { syncBroadcastMonetization } = require('./services/youtubeService');
+                  const shouldEnableMonetization = req.body.ytMonetization === 'true' || req.body.ytMonetization === true;
+                  await syncBroadcastMonetization(youtube, stream.youtube_broadcast_id, shouldEnableMonetization);
+                } catch (monetizationError) {
+                  console.log('Note: Could not update broadcast monetization:', monetizationError.message);
+                  updateData.youtube_monetization = false;
+                }
               }
               
               const tagsArray = req.body.tags ? req.body.tags.split(',').map(t => t.trim()).filter(t => t) : [];
@@ -3635,6 +3649,12 @@ app.post('/api/streams/:id/status', isAuthenticated, [
           success: false,
           error: 'Stream is already live',
           stream
+        });
+      }
+      if (streamingService.isStreamStarting(streamId)) {
+        return res.status(409).json({
+          success: false,
+          error: 'Stream start is already in progress'
         });
       }
       if (!stream.video_id) {
@@ -4084,7 +4104,7 @@ app.get('/api/rotations/:id', isAuthenticated, async (req, res) => {
   }
 });
 
-app.post('/api/rotations', isAuthenticated, uploadThumbnail.array('thumbnails'), async (req, res) => {
+app.post('/api/rotations', isAuthenticated, uploadThumbnail.any(), async (req, res) => {
   try {
     const { name, repeat_mode, start_time, end_time, items, youtube_channel_id } = req.body;
     
@@ -4109,10 +4129,13 @@ app.post('/api/rotations', isAuthenticated, uploadThumbnail.array('thumbnails'),
     });
     
     const uploadedFiles = req.files || [];
+    const uploadedFileMap = new Map(
+      uploadedFiles.map(file => [file.fieldname, file])
+    );
     
     for (let i = 0; i < parsedItems.length; i++) {
       const item = parsedItems[i];
-      const thumbnailFile = uploadedFiles[i];
+      const thumbnailFile = uploadedFileMap.get(`thumbnail_${item.thumbnail_upload_index}`);
       
       let thumbnailPath = null;
       let originalThumbnailPath = null;
@@ -4141,7 +4164,8 @@ app.post('/api/rotations', isAuthenticated, uploadThumbnail.array('thumbnails'),
         thumbnail_path: thumbnailPath,
         original_thumbnail_path: originalThumbnailPath,
         privacy: item.privacy || 'unlisted',
-        category: item.category || '22'
+        category: item.category || '22',
+        youtube_monetization: item.youtube_monetization === true || item.youtube_monetization === 'true'
       });
     }
     
@@ -4152,7 +4176,7 @@ app.post('/api/rotations', isAuthenticated, uploadThumbnail.array('thumbnails'),
   }
 });
 
-app.put('/api/rotations/:id', isAuthenticated, uploadThumbnail.array('thumbnails'), async (req, res) => {
+app.put('/api/rotations/:id', isAuthenticated, uploadThumbnail.any(), async (req, res) => {
   try {
     const rotation = await Rotation.findById(req.params.id);
     if (!rotation) {
@@ -4181,12 +4205,15 @@ app.put('/api/rotations/:id', isAuthenticated, uploadThumbnail.array('thumbnails
     }
     
     const uploadedFiles = req.files || [];
+    const uploadedFileMap = new Map(
+      uploadedFiles.map(file => [file.fieldname, file])
+    );
     
     for (let i = 0; i < parsedItems.length; i++) {
       const item = parsedItems[i];
-      const thumbnailFile = uploadedFiles[i];
+      const thumbnailFile = uploadedFileMap.get(`thumbnail_${item.thumbnail_upload_index}`);
       
-      let thumbnailPath = item.thumbnail_path || null;
+      let thumbnailPath = item.thumbnail_path && item.thumbnail_path !== 'rotations' ? item.thumbnail_path : null;
       let originalThumbnailPath = item.original_thumbnail_path || null;
       if (thumbnailFile && thumbnailFile.size > 0) {
         const originalFilename = thumbnailFile.filename;
@@ -4213,7 +4240,8 @@ app.put('/api/rotations/:id', isAuthenticated, uploadThumbnail.array('thumbnails
         thumbnail_path: thumbnailPath,
         original_thumbnail_path: originalThumbnailPath,
         privacy: item.privacy || 'unlisted',
-        category: item.category || '22'
+        category: item.category || '22',
+        youtube_monetization: item.youtube_monetization === true || item.youtube_monetization === 'true'
       });
     }
     

@@ -6,6 +6,7 @@ const { google } = require('googleapis');
 const { decrypt } = require('../utils/encryption');
 const path = require('path');
 const fs = require('fs');
+const { syncBroadcastMonetization } = require('./youtubeService');
 
 function getRedirectUri(user) {
   if (user && user.youtube_redirect_uri) {
@@ -280,6 +281,16 @@ async function startRotationStream(rotation, item) {
 
     const broadcast = broadcastResponse.data;
 
+    let monetizationEnabled = item.youtube_monetization === true || item.youtube_monetization === 1;
+    if (monetizationEnabled) {
+      try {
+        await syncBroadcastMonetization(youtube, broadcast.id, true);
+      } catch (monetizationError) {
+        monetizationEnabled = false;
+        console.warn(`[RotationService] Failed to enable monetization for broadcast ${broadcast.id}. Continuing without monetization. Error: ${monetizationError.message}`);
+      }
+    }
+
     const streamResponse = await youtube.liveStreams.insert({
       part: ['snippet', 'cdn'],
       requestBody: {
@@ -365,7 +376,9 @@ async function startRotationStream(rotation, item) {
       youtube_privacy: item.privacy,
       youtube_category: item.category,
       youtube_tags: item.tags,
+      youtube_monetization: monetizationEnabled,
       youtube_channel_id: selectedChannel.id,
+      is_youtube_api: true,
       schedule_time: rotation.start_time,
       end_time: rotation.end_time
     });

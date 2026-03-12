@@ -771,6 +771,7 @@
   });
 
   let serverTimeOffset = 0;
+  let serverTimezoneOffset = 0;
   let serverTimeInterval = null;
 
   async function initServerTime() {
@@ -781,6 +782,9 @@
       const serverTime = new Date(data.serverTime);
       const clientTime = new Date();
       serverTimeOffset = serverTime.getTime() - clientTime.getTime();
+      if (typeof data.timezoneOffset === 'number') {
+        serverTimezoneOffset = data.timezoneOffset;
+      }
       updateServerTimeDisplay();
       if (serverTimeInterval) clearInterval(serverTimeInterval);
       serverTimeInterval = setInterval(updateServerTimeDisplay, 1000);
@@ -797,19 +801,23 @@
       const serverTime = new Date(data.serverTime);
       const clientTime = new Date();
       serverTimeOffset = serverTime.getTime() - clientTime.getTime();
+      if (typeof data.timezoneOffset === 'number') {
+        serverTimezoneOffset = data.timezoneOffset;
+      }
     } catch (error) {
     }
   }
 
   function updateServerTimeDisplay() {
-    const now = new Date(Date.now() + serverTimeOffset);
-    const day = String(now.getDate()).padStart(2, '0');
+    const serverNowMs = Date.now() + serverTimeOffset;
+    const serverWallClock = new Date(serverNowMs - serverTimezoneOffset * 60 * 1000);
+    const day = String(serverWallClock.getUTCDate()).padStart(2, '0');
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const month = monthNames[now.getMonth()];
-    const year = now.getFullYear();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const month = monthNames[serverWallClock.getUTCMonth()];
+    const year = serverWallClock.getUTCFullYear();
+    const hours = String(serverWallClock.getUTCHours()).padStart(2, '0');
+    const minutes = String(serverWallClock.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(serverWallClock.getUTCSeconds()).padStart(2, '0');
     const dateStr = `${day} ${month} ${year}`;
     const timeStr = `${hours}:${minutes}:${seconds}`;
     const dateEl = document.getElementById('server-date');

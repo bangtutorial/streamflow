@@ -66,6 +66,7 @@ function createTables() {
         start_time TIMESTAMP,
         end_time TIMESTAMP,
         use_advanced_settings BOOLEAN DEFAULT 0,
+        youtube_monetization BOOLEAN DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         user_id TEXT,
@@ -253,6 +254,7 @@ function createTables() {
         thumbnail_path TEXT,
         privacy TEXT DEFAULT 'unlisted',
         category TEXT DEFAULT '22',
+        youtube_monetization INTEGER DEFAULT 0,
         start_time TEXT,
         end_time TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -282,6 +284,12 @@ function createTables() {
       db.run(`ALTER TABLE rotation_items ADD COLUMN original_thumbnail_path TEXT`, (err) => {
         if (err && !err.message.includes('duplicate column name')) {
           console.error('Error adding original_thumbnail_path column to rotation_items:', err.message);
+        }
+      });
+
+      db.run(`ALTER TABLE rotation_items ADD COLUMN youtube_monetization INTEGER DEFAULT 0`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding youtube_monetization column to rotation_items:', err.message);
         }
       });
 
@@ -337,6 +345,12 @@ function createTables() {
       db.run(`ALTER TABLE users ADD COLUMN welcome_shown INTEGER DEFAULT 0`, (err) => {
         if (err && !err.message.includes('duplicate column name')) {
           console.error('Error adding welcome_shown column to users:', err.message);
+        }
+      });
+
+      db.run(`ALTER TABLE streams ADD COLUMN youtube_monetization INTEGER DEFAULT 0`, (err) => {
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding youtube_monetization column to streams:', err.message);
         }
       });
 

@@ -4,3 +4,5 @@ logs/
 
 # ignore real env from repo
 .env
+package-lock.json
+db/streamflow.db

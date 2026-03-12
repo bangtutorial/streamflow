@@ -12,6 +12,80 @@ function getYouTubeOAuth2Client(clientId, clientSecret, redirectUri) {
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
+function omitUndefined(value) {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entryValue]) => entryValue !== undefined)
+  );
+}
+
+async function syncBroadcastMonetization(youtube, broadcastId, enabled) {
+  const broadcastResponse = await youtube.liveBroadcasts.list({
+    part: 'id,snippet,contentDetails,status,monetizationDetails',
+    id: broadcastId
+  });
+
+  const currentBroadcast = broadcastResponse.data.items?.[0];
+  if (!currentBroadcast) {
+    throw new Error(`Broadcast ${broadcastId} not found`);
+  }
+
+  const currentSnippet = currentBroadcast.snippet || {};
+  const currentContentDetails = currentBroadcast.contentDetails || {};
+  const currentStatus = currentBroadcast.status || {};
+  const currentMonitorStream = currentContentDetails.monitorStream || {};
+  const monitorStream = omitUndefined({
+    enableMonitorStream: currentMonitorStream.enableMonitorStream,
+    broadcastStreamDelayMs:
+      currentMonitorStream.enableMonitorStream !== undefined
+        ? currentMonitorStream.broadcastStreamDelayMs ?? 0
+        : undefined
+  });
+
+  const requestBody = {
+    id: broadcastId,
+    snippet: omitUndefined({
+      title: currentSnippet.title,
+      description: currentSnippet.description || '',
+      scheduledStartTime: currentSnippet.scheduledStartTime,
+      scheduledEndTime: currentSnippet.scheduledEndTime
+    }),
+    contentDetails: omitUndefined({
+      boundStreamId: currentContentDetails.boundStreamId,
+      enableAutoStart: currentContentDetails.enableAutoStart,
+      enableAutoStop: currentContentDetails.enableAutoStop,
+      enableClosedCaptions: currentContentDetails.enableClosedCaptions,
+      enableContentEncryption: currentContentDetails.enableContentEncryption,
+      enableDvr: currentContentDetails.enableDvr,
+      enableEmbed: currentContentDetails.enableEmbed,
+      latencyPreference: currentContentDetails.latencyPreference,
+      projection: currentContentDetails.projection,
+      recordFromStart: currentContentDetails.recordFromStart,
+      startWithSlate: currentContentDetails.startWithSlate,
+      monitorStream: Object.keys(monitorStream).length > 0 ? monitorStream : undefined
+    }),
+    status: omitUndefined({
+      privacyStatus: currentStatus.privacyStatus,
+      selfDeclaredMadeForKids: currentStatus.selfDeclaredMadeForKids
+    }),
+    monetizationDetails: enabled
+      ? {
+          adsMonetizationStatus: 'ON',
+          cuepointSchedule: {
+            enabled: true,
+            ytOptimizedCuepointConfig: 'MEDIUM'
+          }
+        }
+      : {
+          adsMonetizationStatus: 'OFF'
+        }
+  };
+
+  await youtube.liveBroadcasts.update({
+    part: 'id,snippet,contentDetails,status,monetizationDetails',
+    requestBody
+  });
+}
+
 async function createYouTubeBroadcast(streamId, baseUrl) {
   const stream = await Stream.findById(streamId);
   if (!stream) {
@@ -86,26 +160,39 @@ async function createYouTubeBroadcast(streamId, baseUrl) {
 
   console.log(`[YouTubeService] Creating YouTube broadcast for stream ${streamId}`);
 
-  const broadcastResponse = await youtube.liveBroadcasts.insert({
-    part: 'snippet,contentDetails,status',
-    requestBody: {
-      snippet: broadcastSnippet,
-      contentDetails: {
-        enableAutoStart: true,
-        enableAutoStop: true,
-        monitorStream: {
-          enableMonitorStream: false
-        }
-      },
-      status: {
-        privacyStatus: stream.youtube_privacy || 'unlisted',
-        selfDeclaredMadeForKids: false
+  let broadcastResponse;
+  const broadcastData = {
+    snippet: broadcastSnippet,
+    contentDetails: {
+      enableAutoStart: true,
+      enableAutoStop: true,
+      monitorStream: {
+        enableMonitorStream: false
       }
+    },
+    status: {
+      privacyStatus: stream.youtube_privacy || 'unlisted',
+      selfDeclaredMadeForKids: false
     }
+  };
+
+  broadcastResponse = await youtube.liveBroadcasts.insert({
+    part: 'snippet,contentDetails,status',
+    requestBody: broadcastData
   });
 
   const broadcast = broadcastResponse.data;
   console.log(`[YouTubeService] Created broadcast: ${broadcast.id}`);
+
+  if (stream.youtube_monetization) {
+    try {
+      await syncBroadcastMonetization(youtube, broadcast.id, true);
+      console.log(`[YouTubeService] Enabled monetization for broadcast ${broadcast.id}`);
+    } catch (monetizationError) {
+      console.warn(`[YouTubeService] Failed to enable monetization for broadcast ${broadcast.id}. Continuing without monetization. Error: ${monetizationError.message}`);
+      await Stream.update(streamId, { youtube_monetization: false });
+    }
+  }
 
   if (tagsArray.length > 0 || stream.youtube_category) {
     try {
@@ -229,5 +316,6 @@ async function deleteYouTubeBroadcast(streamId) {
 module.exports = {
   createYouTubeBroadcast,
   deleteYouTubeBroadcast,
-  getYouTubeOAuth2Client
+  getYouTubeOAuth2Client,
+  syncBroadcastMonetization
 };

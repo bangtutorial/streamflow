@@ -628,6 +628,17 @@
                     </label>
                   </div>
 
+                  <div class="h-[42px] flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <label class="text-sm text-gray-300">Enable Monetization</label>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="ytEnableMonetization" class="sr-only peer">
+                      <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                      <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                    </label>
+                  </div>
+
                   <div id="ytScheduleSettings" class="hidden space-y-4">
                     <div>
                       <label class="text-xs text-gray-400 block mb-1">Start Time</label>
@@ -1070,6 +1081,17 @@
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" id="editYtEnableSchedule" class="sr-only peer">
+                      <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
+                      <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
+                    </label>
+                  </div>
+
+                  <div class="h-[42px] flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <label class="text-sm text-gray-300">Enable Monetization</label>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" id="editYtEnableMonetization" class="sr-only peer">
                       <div class="w-11 h-6 bg-dark-700 rounded-full peer peer-checked:bg-primary"></div>
                       <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full transition-all peer-checked:translate-x-5"></div>
                     </label>
@@ -1618,6 +1640,8 @@
           if (scheduleStart) ytFormData.scheduleStartTime = scheduleStart;
           if (scheduleEnd) ytFormData.scheduleEndTime = scheduleEnd;
         }
+
+        ytFormData.ytMonetization = document.getElementById('ytEnableMonetization').checked;
         
         const createBtn = document.querySelector('#newStreamModal button[type="submit"]');
         const originalBtnText = createBtn.innerHTML;
@@ -3165,7 +3189,9 @@
         
         editYtTags = stream.youtube_tags ? stream.youtube_tags.split(',').filter(t => t.trim()) : [];
         renderEditYtTags();
-        
+
+        document.getElementById('editYtEnableMonetization').checked = stream.youtube_monetization === true || stream.youtube_monetization === 1;
+
         if (stream.video_id) {
           document.getElementById('editYtSelectedVideoId').value = stream.video_id;
           const ytDisplayName = stream.video_type === 'playlist' 
@@ -3652,6 +3678,8 @@
               loopVideo: true,
               ytChannelId: document.getElementById('editYtSelectedChannelId')?.value || ''
             };
+
+            ytFormDataObj.ytMonetization = document.getElementById('editYtEnableMonetization').checked;
             
             const enableSchedule = document.getElementById('editYtEnableSchedule').checked;
             if (enableSchedule) {
@@ -3842,14 +3870,14 @@
         });
       }, 1000);
     }
-    let serverTimezoneOffset = null;
+    let dashboardServerTimezoneOffset = null;
     
     async function fetchServerTimeSync() {
       try {
         const response = await fetch('/api/server-time');
         const data = await response.json();
         if (data.timezoneOffset !== undefined) {
-          serverTimezoneOffset = data.timezoneOffset;
+          dashboardServerTimezoneOffset = data.timezoneOffset;
         }
       } catch (error) {
         console.error('Error fetching server time:', error);
@@ -3861,7 +3889,7 @@
         .then(response => response.json())
         .then(data => {
           if (data.timezoneOffset !== undefined) {
-            serverTimezoneOffset = data.timezoneOffset;
+            dashboardServerTimezoneOffset = data.timezoneOffset;
           }
           if (data.formattedTime) {
             const timeDisplay = `Server time: ${data.formattedTime}`;
@@ -3889,18 +3917,18 @@
     }
     
     function convertToServerTime(date) {
-      if (serverTimezoneOffset === null) return date;
+      if (dashboardServerTimezoneOffset === null) return date;
       const localOffset = date.getTimezoneOffset();
-      const offsetDiff = localOffset - serverTimezoneOffset;
+      const offsetDiff = localOffset - dashboardServerTimezoneOffset;
       return new Date(date.getTime() + offsetDiff * 60 * 1000);
     }
     
     function convertFromServerTime(isoString) {
       if (!isoString) return null;
       const date = new Date(isoString);
-      if (serverTimezoneOffset === null) return date;
+      if (dashboardServerTimezoneOffset === null) return date;
       const localOffset = date.getTimezoneOffset();
-      const offsetDiff = localOffset - serverTimezoneOffset;
+      const offsetDiff = localOffset - dashboardServerTimezoneOffset;
       return new Date(date.getTime() + offsetDiff * 60 * 1000);
     }
 

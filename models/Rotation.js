@@ -2,6 +2,12 @@ const { v4: uuidv4 } = require('uuid');
 const { db } = require('../db/database');
 
 class Rotation {
+  static normalizeRotationItem(row) {
+    if (!row) return row;
+    row.youtube_monetization = row.youtube_monetization === 1;
+    return row;
+  }
+
   static create(rotationData) {
     const id = uuidv4();
     const {
@@ -77,6 +83,9 @@ class Rotation {
               if (err) {
                 console.error('Error finding rotation items:', err.message);
                 return reject(err);
+              }
+              if (items) {
+                items.forEach(item => Rotation.normalizeRotationItem(item));
               }
               rotation.items = items || [];
               resolve(rotation);
@@ -189,14 +198,15 @@ class Rotation {
       thumbnail_path = null,
       original_thumbnail_path = null,
       privacy = 'unlisted',
-      category = '22'
+      category = '22',
+      youtube_monetization = false
     } = itemData;
 
     return new Promise((resolve, reject) => {
       db.run(
-        `INSERT INTO rotation_items (id, rotation_id, order_index, video_id, title, description, tags, thumbnail_path, original_thumbnail_path, privacy, category)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [id, rotation_id, order_index, video_id, title, description, tags, thumbnail_path, original_thumbnail_path, privacy, category],
+        `INSERT INTO rotation_items (id, rotation_id, order_index, video_id, title, description, tags, thumbnail_path, original_thumbnail_path, privacy, category, youtube_monetization)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [id, rotation_id, order_index, video_id, title, description, tags, thumbnail_path, original_thumbnail_path, privacy, category, youtube_monetization ? 1 : 0],
         function(err) {
           if (err) {
             console.error('Error adding rotation item:', err.message);
@@ -214,7 +224,11 @@ class Rotation {
 
     Object.entries(itemData).forEach(([key, value]) => {
       fields.push(`${key} = ?`);
-      values.push(value);
+      if (key === 'youtube_monetization' && typeof value === 'boolean') {
+        values.push(value ? 1 : 0);
+      } else {
+        values.push(value);
+      }
     });
 
     values.push(itemId);
@@ -259,7 +273,7 @@ class Rotation {
             console.error('Error getting next rotation item:', err.message);
             return reject(err);
           }
-          resolve(row);
+          resolve(Rotation.normalizeRotationItem(row));
         }
       );
     });
@@ -280,7 +294,7 @@ class Rotation {
             console.error('Error getting first rotation item:', err.message);
             return reject(err);
           }
-          resolve(row);
+          resolve(Rotation.normalizeRotationItem(row));
         }
       );
     });
@@ -324,6 +338,9 @@ class Rotation {
           if (err) {
             console.error('Error getting rotation items:', err.message);
             return reject(err);
+          }
+          if (rows) {
+            rows.forEach(row => Rotation.normalizeRotationItem(row));
           }
           resolve(rows || []);
         }

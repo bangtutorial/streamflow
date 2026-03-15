@@ -21,6 +21,7 @@ nvm alias default 'lts/*'
 echo "✅ Node.js $(node -v) berhasil diinstall"
 echo "📦 Installing pnpm..."
 npm install -g pnpm
+export SHELL="/bin/bash"
 pnpm setup
 export PNPM_HOME="$HOME/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"

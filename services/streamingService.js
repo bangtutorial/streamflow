@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg');
+const ffprobeInstaller = require('@ffprobe-installer/ffprobe');
 const { v4: uuidv4 } = require('uuid');
 const { db } = require('../db/database');
 const Stream = require('../models/Stream');
@@ -13,6 +14,13 @@ if (fs.existsSync('/usr/bin/ffmpeg')) {
   ffmpegPath = '/usr/bin/ffmpeg';
 } else {
   ffmpegPath = ffmpegInstaller.path;
+}
+
+let ffprobePath;
+if (fs.existsSync('/usr/bin/ffprobe')) {
+  ffprobePath = '/usr/bin/ffprobe';
+} else {
+  ffprobePath = ffprobeInstaller.path;
 }
 
 function shuffleArray(array) {
@@ -36,6 +44,10 @@ const BASE_RETRY_DELAY = 2000;
 const MAX_RETRY_DELAY = 30000;
 const HEALTH_CHECK_INTERVAL = 30000;
 const SYNC_INTERVAL = 60000;
+const STREAM_START_TIMEOUT = 15000;
+
+const YOUTUBE_COPY_ALLOWED_VIDEO_CODECS = new Set(['h264']);
+const YOUTUBE_COPY_ALLOWED_AUDIO_CODECS = new Set(['aac', 'mp3']);
 
 let schedulerService = null;
 let syncIntervalId = null;
@@ -44,7 +56,7 @@ let initialized = false;
 
 function setSchedulerService(service) {
   schedulerService = service;
-  
+
   if (!initialized) {
     initialized = true;
     syncIntervalId = setInterval(syncStreamStatuses, SYNC_INTERVAL);
@@ -78,6 +90,313 @@ function getRetryDelay(retryCount) {
   return delay + Math.random() * 1000;
 }
 
+function getProjectRoot() {
+  return path.resolve(__dirname, '..');
+}
+
+function resolvePublicFilePath(relativePath) {
+  if (!relativePath) {
+    throw new Error('Missing media filepath');
+  }
+
+  const relPath = relativePath.startsWith('/') ? relativePath.substring(1) : relativePath;
+  return path.join(getProjectRoot(), 'public', relPath);
+}
+
+function isYouTubeDestination(stream) {
+  if (stream && stream.is_youtube_api) {
+    return true;
+  }
+
+  const rtmpUrl = (stream.rtmp_url || '').toLowerCase();
+  return rtmpUrl.includes('youtube.com');
+}
+
+function isProgressLogLine(line) {
+  return line.includes('frame=') || line.includes('time=') || line.includes('speed=');
+}
+
+function buildMediaLabel(media, index, type) {
+  if (media && media.title) {
+    return `${type} "${media.title}"`;
+  }
+
+  return `${type} #${index + 1}`;
+}
+
+function isSupportedYouTubePixelFormat(pixFmt) {
+  const normalized = (pixFmt || '').toLowerCase();
+  return normalized === 'yuv420p' || normalized === 'yuvj420p';
+}
+
+function getPrimaryStream(probeData, codecType) {
+  return (probeData.streams || []).find(stream => stream.codec_type === codecType) || null;
+}
+
+function getFrameRateLabel(videoStream) {
+  return videoStream && videoStream.avg_frame_rate ? videoStream.avg_frame_rate : 'unknown fps';
+}
+
+function buildCopyModeCompatibilityError(label, detail) {
+  return `${label} tidak kompatibel dengan YouTube: ${detail}.`;
+}
+
+function createUnsupportedCopyModeError(message) {
+  const error = new Error(message);
+  error.code = 'UNSUPPORTED_COPY_MODE_MEDIA';
+  return error;
+}
+
+function getRelevantStartupLog(line) {
+  const trimmed = (line || '').trim();
+  if (!trimmed || isProgressLogLine(trimmed)) {
+    return null;
+  }
+
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.startsWith('press [q]') ||
+    lower.startsWith('input #') ||
+    lower.startsWith('output #') ||
+    lower.startsWith('metadata:') ||
+    lower.startsWith('stream mapping:')
+  ) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+function buildStartupFailureMessage(startupState, fallbackMessage = null) {
+  const detail = startupState.lastErrorLine || startupState.lastLogLine || fallbackMessage;
+  if (detail) {
+    return `FFmpeg gagal memulai stream: ${detail}`;
+  }
+
+  return 'FFmpeg gagal memulai stream';
+}
+
+function runFFprobe(filePath) {
+  return new Promise((resolve, reject) => {
+    const ffprobeProcess = spawn(ffprobePath, [
+      '-v', 'error',
+      '-print_format', 'json',
+      '-show_format',
+      '-show_streams',
+      filePath
+    ], {
+      detached: false,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    ffprobeProcess.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    ffprobeProcess.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    ffprobeProcess.on('error', (error) => {
+      reject(error);
+    });
+
+    ffprobeProcess.on('exit', (code) => {
+      if (code !== 0) {
+        return reject(new Error(stderr.trim() || `ffprobe exited with code ${code}`));
+      }
+
+      try {
+        resolve(JSON.parse(stdout));
+      } catch (error) {
+        reject(error);
+      }
+    });
+  });
+}
+
+function validateYouTubeCopyVideoProbe(probeData, label) {
+  const videoStream = getPrimaryStream(probeData, 'video');
+  if (!videoStream) {
+    return buildCopyModeCompatibilityError(label, 'video stream tidak ditemukan');
+  }
+
+  const videoCodec = (videoStream.codec_name || '').toLowerCase();
+  if (!YOUTUBE_COPY_ALLOWED_VIDEO_CODECS.has(videoCodec)) {
+    return buildCopyModeCompatibilityError(label, `codec video ${videoCodec || 'unknown'} tidak didukung`);
+  }
+
+  if (!isSupportedYouTubePixelFormat(videoStream.pix_fmt)) {
+    return buildCopyModeCompatibilityError(label, `pixel format ${videoStream.pix_fmt || 'unknown'} bukan 4:2:0 standar`);
+  }
+
+  const audioStream = getPrimaryStream(probeData, 'audio');
+  if (audioStream) {
+    const audioCodec = (audioStream.codec_name || '').toLowerCase();
+    if (!YOUTUBE_COPY_ALLOWED_AUDIO_CODECS.has(audioCodec)) {
+      return buildCopyModeCompatibilityError(label, `codec audio ${audioCodec || 'unknown'} tidak didukung`);
+    }
+  }
+
+  return null;
+}
+
+function validateYouTubeCopyAudioProbe(probeData, label) {
+  const audioStream = getPrimaryStream(probeData, 'audio');
+  if (!audioStream) {
+    return buildCopyModeCompatibilityError(label, 'audio stream tidak ditemukan');
+  }
+
+  const audioCodec = (audioStream.codec_name || '').toLowerCase();
+  if (!YOUTUBE_COPY_ALLOWED_AUDIO_CODECS.has(audioCodec)) {
+    return buildCopyModeCompatibilityError(label, `codec audio ${audioCodec || 'unknown'} tidak didukung`);
+  }
+
+  return null;
+}
+
+function validatePlaylistCopyConsistency(referenceStream, currentStream, label) {
+  const mismatches = [];
+
+  if ((currentStream.codec_name || '').toLowerCase() !== (referenceStream.codec_name || '').toLowerCase()) {
+    mismatches.push('codec video berbeda');
+  }
+
+  if (currentStream.width !== referenceStream.width || currentStream.height !== referenceStream.height) {
+    mismatches.push('resolusi berbeda');
+  }
+
+  if ((currentStream.pix_fmt || '').toLowerCase() !== (referenceStream.pix_fmt || '').toLowerCase()) {
+    mismatches.push('pixel format berbeda');
+  }
+
+  if (getFrameRateLabel(currentStream) !== getFrameRateLabel(referenceStream)) {
+    mismatches.push('frame rate berbeda');
+  }
+
+  if (mismatches.length === 0) {
+    return null;
+  }
+
+  return `${label} tidak bisa digabung aman di copy mode YouTube karena ${mismatches.join(', ')}.`;
+}
+
+async function validateCopyModeCompatibility(stream) {
+  return validateCopyModeCompatibilityForInput({
+    videoId: stream.video_id,
+    useAdvancedSettings: stream.use_advanced_settings,
+    isYouTubeApi: stream.is_youtube_api,
+    rtmpUrl: stream.rtmp_url
+  });
+}
+
+async function validateCopyModeCompatibilityForInput({
+  videoId,
+  useAdvancedSettings = false,
+  isYouTubeApi = false,
+  rtmpUrl = ''
+}) {
+  if (useAdvancedSettings || !isYouTubeDestination({ is_youtube_api: isYouTubeApi, rtmp_url: rtmpUrl })) {
+    return;
+  }
+
+  const playlist = await Playlist.findByIdWithVideos(videoId);
+
+  if (playlist) {
+    if (!playlist.videos || playlist.videos.length === 0) {
+      throw new Error('Playlist is empty');
+    }
+
+    let referenceVideoStream = null;
+
+    for (let index = 0; index < playlist.videos.length; index++) {
+      const video = playlist.videos[index];
+      const probeData = await runFFprobe(resolvePublicFilePath(video.filepath));
+      const label = buildMediaLabel(video, index, 'Video');
+      const compatibilityError = validateYouTubeCopyVideoProbe(probeData, label);
+
+      if (compatibilityError) {
+        throw createUnsupportedCopyModeError(compatibilityError);
+      }
+
+      const currentVideoStream = getPrimaryStream(probeData, 'video');
+      if (!referenceVideoStream) {
+        referenceVideoStream = currentVideoStream;
+      } else {
+        const consistencyError = validatePlaylistCopyConsistency(referenceVideoStream, currentVideoStream, label);
+        if (consistencyError) {
+          throw createUnsupportedCopyModeError(consistencyError);
+        }
+      }
+    }
+
+    for (let index = 0; index < (playlist.audios || []).length; index++) {
+      const audio = playlist.audios[index];
+      const probeData = await runFFprobe(resolvePublicFilePath(audio.filepath));
+      const label = buildMediaLabel(audio, index, 'Audio');
+      const compatibilityError = validateYouTubeCopyAudioProbe(probeData, label);
+
+      if (compatibilityError) {
+        throw createUnsupportedCopyModeError(compatibilityError);
+      }
+    }
+
+    return;
+  }
+
+  const video = await Video.findById(videoId);
+  if (!video) {
+    throw new Error('Video not found');
+  }
+
+  const compatibilityError = validateYouTubeCopyVideoProbe(
+    await runFFprobe(resolvePublicFilePath(video.filepath)),
+    buildMediaLabel(video, 0, 'Video')
+  );
+
+  if (compatibilityError) {
+    throw createUnsupportedCopyModeError(compatibilityError);
+  }
+}
+
+function waitForStreamStartup(streamId, ffmpegProcess, startupState) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+
+    const finishResolve = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      resolve();
+    };
+
+    const finishReject = (message) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      reject(new Error(message));
+    };
+
+    const timer = setTimeout(() => {
+      finishReject(buildStartupFailureMessage(
+        startupState,
+        `tidak ada progres FFmpeg dalam ${Math.round(STREAM_START_TIMEOUT / 1000)} detik`
+      ));
+    }, STREAM_START_TIMEOUT);
+
+    startupState.resolve = finishResolve;
+
+    startupState.reject = finishReject;
+  });
+}
+
 async function buildFFmpegArgsForPlaylist(stream, playlist) {
   if (!playlist.videos || playlist.videos.length === 0) {
     throw new Error('Playlist is empty');
@@ -93,7 +412,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
 
   let videoPaths = [];
   const videos = playlist.is_shuffle ? shuffleArray(playlist.videos) : playlist.videos;
-  
+
   for (const video of videos) {
     const relPath = video.filepath.startsWith('/') ? video.filepath.substring(1) : video.filepath;
     const fullPath = path.join(projectRoot, 'public', relPath);
@@ -106,7 +425,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
   const concatFile = path.join(tempDir, `playlist_${stream.id}.txt`);
   let content = '';
   const loopCount = stream.loop_video ? 10000 : 1;
-  
+
   for (let i = 0; i < loopCount; i++) {
     for (const vp of videoPaths) {
       content += `file '${vp.replace(/\\/g, '/')}'\n`;
@@ -177,7 +496,7 @@ async function buildFFmpegArgsForPlaylist(stream, playlist) {
 
   let audioPaths = [];
   const audios = playlist.is_shuffle ? shuffleArray(playlist.audios) : playlist.audios;
-  
+
   for (const audio of audios) {
     const relPath = audio.filepath.startsWith('/') ? audio.filepath.substring(1) : audio.filepath;
     const fullPath = path.join(projectRoot, 'public', relPath);
@@ -373,7 +692,7 @@ async function killFFmpegProcess(streamId, streamData) {
 
     try {
       proc.kill('SIGTERM');
-    } catch (e) {}
+    } catch (e) { }
 
     setTimeout(() => {
       if (!resolved) {
@@ -381,7 +700,7 @@ async function killFFmpegProcess(streamId, streamData) {
           if (proc.exitCode === null) {
             proc.kill('SIGKILL');
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }, 3000);
 
@@ -423,6 +742,8 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
     const originalStartTime = stream.start_time;
     const originalEndTime = stream.end_time;
 
+    await validateCopyModeCompatibility(stream);
+
     if (stream.is_youtube_api) {
       const youtubeService = require('./youtubeService');
       const effectiveBaseUrl = baseUrl || process.env.BASE_URL || 'http://localhost:7575';
@@ -456,6 +777,15 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
       stdio: ['ignore', 'pipe', 'pipe']
     });
 
+    const startupState = {
+      lastLogLine: '',
+      lastErrorLine: '',
+      resolve: null,
+      reject: null
+    };
+
+    const startupPromise = waitForStreamStartup(streamId, ffmpegProcess, startupState);
+
     let startTimeIso;
     if (isRetry && originalStartTime) {
       startTimeIso = originalStartTime;
@@ -472,10 +802,6 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
       lastActivity: Date.now()
     });
 
-    if (!isRetry) {
-      await Stream.updateStatus(streamId, 'live', stream.user_id, { startTimeOverride: startTimeIso });
-    }
-
     ffmpegProcess.stdout.on('data', (data) => {
       const msg = data.toString().trim();
       if (msg) {
@@ -484,15 +810,35 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
       }
     });
 
-  ffmpegProcess.stderr.on('data', (data) => {
-    const msg = data.toString().trim();
-    if (msg) {
-      updateStreamActivity(streamId);
-      if (!(msg.includes('frame=') || msg.includes('speed=') || msg.includes('time='))) {
-        addStreamLog(streamId, `[FFmpeg] ${msg}`);
+    ffmpegProcess.stderr.on('data', (data) => {
+      const lines = data.toString().split(/\r?\n|\r/g);
+      for (const rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) {
+          continue;
+        }
+
+        updateStreamActivity(streamId);
+
+        if (isProgressLogLine(line)) {
+          if (startupState.resolve) {
+            startupState.resolve();
+          }
+          continue;
+        }
+
+        addStreamLog(streamId, `[FFmpeg] ${line}`);
+
+        const relevantLog = getRelevantStartupLog(line);
+        if (relevantLog) {
+          startupState.lastLogLine = relevantLog;
+
+          if (/(error|failed|invalid|unsupported|broken pipe|connection.*refused|input\/output error|could not write header)/i.test(relevantLog)) {
+            startupState.lastErrorLine = relevantLog;
+          }
+        }
       }
-    }
-  });
+    });
 
     ffmpegProcess.on('exit', async (code, signal) => {
       addStreamLog(streamId, `FFmpeg exited: code=${code}, signal=${signal}`);
@@ -506,8 +852,15 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
         return;
       }
 
+      if (startupState.reject) {
+        startupState.reject(buildStartupFailureMessage(
+          startupState,
+          `FFmpeg exited with code=${code}, signal=${signal}`
+        ));
+      }
+
       const currentStream = await Stream.findById(streamId);
-      
+
       if (currentStream && currentStream.end_time) {
         const endTime = new Date(currentStream.end_time);
         const now = new Date();
@@ -519,15 +872,15 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
               if (schedulerService) {
                 schedulerService.handleStreamStopped(streamId);
               }
-            } catch (e) {}
+            } catch (e) { }
           }
           cleanupStreamData(streamId);
           return;
         }
       }
 
-      const shouldRetry = signal === 'SIGSEGV' || signal === 'SIGKILL' || signal === 'SIGPIPE' || 
-                          (code !== 0 && code !== null) || (code === null && signal === null);
+      const shouldRetry = signal === 'SIGSEGV' || signal === 'SIGKILL' || signal === 'SIGPIPE' ||
+        (code !== 0 && code !== null) || (code === null && signal === null);
 
       if (shouldRetry && currentStream && currentStream.status !== 'offline') {
         const retryCount = streamRetryCount.get(streamId) || 0;
@@ -575,19 +928,39 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
           if (schedulerService) {
             schedulerService.handleStreamStopped(streamId);
           }
-        } catch (e) {}
+        } catch (e) { }
         cleanupStreamData(streamId);
       }
     });
 
     ffmpegProcess.on('error', async (err) => {
       addStreamLog(streamId, `Process error: ${err.message}`);
+      startupState.lastErrorLine = err.message;
+      if (startupState.reject) {
+        startupState.reject(buildStartupFailureMessage(startupState, err.message));
+      }
       activeStreams.delete(streamId);
       try {
         await Stream.updateStatus(streamId, 'offline', stream.user_id);
-      } catch (e) {}
+      } catch (e) { }
       cleanupStreamData(streamId);
     });
+
+    try {
+      await startupPromise;
+    } catch (startupError) {
+      manuallyStoppingStreams.add(streamId);
+      await killFFmpegProcess(streamId, activeStreams.get(streamId));
+      manuallyStoppingStreams.delete(streamId);
+      activeStreams.delete(streamId);
+      cleanupTempFiles(streamId);
+      cleanupStreamData(streamId);
+      throw startupError;
+    }
+
+    if (!isRetry) {
+      await Stream.updateStatus(streamId, 'live', stream.user_id, { startTimeOverride: startTimeIso });
+    }
 
     if (schedulerService && originalEndTime) {
       if (typeof schedulerService.scheduleStreamTerminationByEndTime === 'function') {
@@ -602,7 +975,7 @@ async function startStream(streamId, isRetry = false, baseUrl = null) {
     };
   } catch (error) {
     addStreamLog(streamId, `Start failed: ${error.message}`);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, code: error.code || null };
   } finally {
     startingStreams.delete(streamId);
   }
@@ -645,7 +1018,7 @@ async function stopStream(streamId) {
         try {
           const youtubeService = require('./youtubeService');
           await youtubeService.deleteYouTubeBroadcast(streamId);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       await saveStreamHistory(stream);
@@ -676,7 +1049,7 @@ function cleanupTempFiles(streamId) {
       if (fs.existsSync(file)) {
         fs.unlinkSync(file);
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 
@@ -751,7 +1124,7 @@ async function syncStreamStatuses() {
         if (proc && typeof proc.kill === 'function') {
           try {
             proc.kill('SIGTERM');
-          } catch (e) {}
+          } catch (e) { }
         }
         activeStreams.delete(streamId);
         cleanupStreamData(streamId);
@@ -768,7 +1141,7 @@ async function syncStreamStatuses() {
         cleanupStreamData(streamId);
       }
     }
-  } catch (error) {}
+  } catch (error) { }
 }
 
 async function healthCheckStreams() {
@@ -797,7 +1170,7 @@ async function healthCheckStreams() {
 
       if (streamData.lastActivity && (now - streamData.lastActivity) > staleThreshold) {
         addStreamLog(streamId, 'Stream appears stale, restarting...');
-        
+
         const stream = await Stream.findById(streamId);
         if (stream && stream.status === 'live') {
           if (stream.end_time) {
@@ -812,24 +1185,24 @@ async function healthCheckStreams() {
               continue;
             }
           }
-          
+
           manuallyStoppingStreams.add(streamId);
           await killFFmpegProcess(streamId, streamData);
           activeStreams.delete(streamId);
           manuallyStoppingStreams.delete(streamId);
-          
+
           setTimeout(async () => {
             try {
               const currentStream = await Stream.findById(streamId);
               if (currentStream && currentStream.status === 'live') {
                 await startStream(streamId, true);
               }
-            } catch (e) {}
+            } catch (e) { }
           }, 3000);
         }
       }
     }
-  } catch (error) {}
+  } catch (error) { }
 }
 
 async function saveStreamHistory(stream) {
@@ -901,13 +1274,13 @@ async function gracefulShutdown() {
     clearInterval(healthCheckIntervalId);
     healthCheckIntervalId = null;
   }
-  
+
   const streamIds = Array.from(activeStreams.keys());
 
   for (const streamId of streamIds) {
     try {
       const streamData = activeStreams.get(streamId);
-      
+
       manuallyStoppingStreams.add(streamId);
       await killFFmpegProcess(streamId, streamData);
 
@@ -918,7 +1291,7 @@ async function gracefulShutdown() {
 
       activeStreams.delete(streamId);
       cleanupStreamData(streamId);
-    } catch (e) {}
+    } catch (e) { }
   }
 }
 
@@ -935,6 +1308,7 @@ process.on('SIGINT', async () => {
 module.exports = {
   startStream,
   stopStream,
+  validateCopyModeCompatibilityForInput,
   isStreamActive,
   isStreamStarting,
   getActiveStreams,

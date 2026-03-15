@@ -18,6 +18,7 @@ function getRedirectUri(user) {
 
 let checkIntervalId = null;
 const activeRotationStreams = new Map();
+const failedRotationStarts = new Map();
 const loggedAlreadyRunning = new Set();
 const loggedScheduleInfo = new Set();
 
@@ -91,6 +92,37 @@ function init() {
   checkRotations();
 }
 
+async function moveRotationToNextScheduledItem(rotation, items, currentIndex, reason) {
+  const nextIndex = currentIndex + 1;
+
+  if (nextIndex >= items.length) {
+    if (rotation.repeat_mode && rotation.repeat_mode !== 'none') {
+      const nextSchedule = getNextSchedule(rotation);
+
+      await Rotation.update(rotation.id, {
+        current_index: 0,
+        start_time: formatLocalDateTime(nextSchedule.start),
+        end_time: formatLocalDateTime(nextSchedule.end)
+      });
+      console.log(`[RotationService] ${reason} Rotation ${rotation.name} diulang dari item pertama pada ${formatLocalDateTime(nextSchedule.start)}`);
+    } else {
+      await Rotation.update(rotation.id, { status: 'completed' });
+      console.log(`[RotationService] ${reason} Rotation ${rotation.name} selesai`);
+    }
+
+    return;
+  }
+
+  const nextSchedule = getNextSchedule(rotation);
+
+  await Rotation.update(rotation.id, {
+    current_index: nextIndex,
+    start_time: formatLocalDateTime(nextSchedule.start),
+    end_time: formatLocalDateTime(nextSchedule.end)
+  });
+  console.log(`[RotationService] ${reason} Lanjut ke item ${nextIndex + 1}/${items.length} pada ${formatLocalDateTime(nextSchedule.start)}`);
+}
+
 async function checkRotations() {
   try {
     const activeRotations = await Rotation.findActiveRotations();
@@ -114,6 +146,7 @@ async function checkRotations() {
             activeRotationStreams.delete(streamKey);
             loggedAlreadyRunning.delete(streamKey);
           }
+          failedRotationStarts.delete(streamKey);
         }
 
         if (rotation.repeat_mode && rotation.repeat_mode !== 'none') {
@@ -156,33 +189,25 @@ async function checkRotations() {
             activeRotationStreams.delete(streamKey);
             loggedAlreadyRunning.delete(streamKey);
           }
+          failedRotationStarts.delete(streamKey);
         }
 
         const nextIndex = currentIndex + 1;
         
         if (nextIndex >= items.length) {
-          if (rotation.repeat_mode && rotation.repeat_mode !== 'none') {
-            const nextSchedule = getNextSchedule(rotation);
-            
-            await Rotation.update(rotation.id, { 
-              current_index: 0,
-              start_time: formatLocalDateTime(nextSchedule.start),
-              end_time: formatLocalDateTime(nextSchedule.end)
-            });
-            console.log(`[RotationService] All items completed. Rotation ${rotation.name} rescheduled for ${formatLocalDateTime(nextSchedule.start)}`);
-          } else {
-            await Rotation.update(rotation.id, { status: 'completed' });
-            console.log(`[RotationService] All items completed. Rotation ${rotation.name} marked as completed`);
-          }
+          await moveRotationToNextScheduledItem(
+            rotation,
+            items,
+            currentIndex,
+            'Semua item di slot hari ini selesai.'
+          );
         } else {
-          const nextSchedule = getNextSchedule(rotation);
-          
-          await Rotation.update(rotation.id, { 
-            current_index: nextIndex,
-            start_time: formatLocalDateTime(nextSchedule.start),
-            end_time: formatLocalDateTime(nextSchedule.end)
-          });
-          console.log(`[RotationService] Moving to next item (${nextIndex + 1}/${items.length}). Rotation ${rotation.name} rescheduled for ${formatLocalDateTime(nextSchedule.start)}`);
+          await moveRotationToNextScheduledItem(
+            rotation,
+            items,
+            currentIndex,
+            'Slot hari ini berakhir.'
+          );
         }
         continue;
       }
@@ -191,16 +216,33 @@ async function checkRotations() {
       if (!currentItem) continue;
 
       const streamKey = `${rotation.id}_${currentItem.id}`;
+      const windowKey = `${rotation.start_time}|${rotation.end_time}|${currentIndex}`;
+
+      if (failedRotationStarts.get(streamKey) === windowKey) {
+        continue;
+      }
 
       if (!activeRotationStreams.has(streamKey)) {
         console.log(`[RotationService] Starting rotation item ${currentIndex + 1}/${items.length}: ${currentItem.title}`);
         const result = await startRotationStream(rotation, currentItem);
         if (result.success) {
+          failedRotationStarts.delete(streamKey);
           activeRotationStreams.set(streamKey, { 
             rotationId: rotation.id, 
             itemId: currentItem.id,
             streamId: result.streamId 
           });
+        } else if (result.code === 'UNSUPPORTED_COPY_MODE_MEDIA') {
+          failedRotationStarts.delete(streamKey);
+          await moveRotationToNextScheduledItem(
+            rotation,
+            items,
+            currentIndex,
+            `Item "${currentItem.title}" di-skip karena media tidak kompatibel dengan copy mode YouTube.`
+          );
+        } else {
+          failedRotationStarts.set(streamKey, windowKey);
+          console.error(`[RotationService] Failed to start item ${currentIndex + 1}/${items.length}: ${result.error}`);
         }
         loggedAlreadyRunning.delete(streamKey);
       } else {
@@ -217,6 +259,17 @@ async function checkRotations() {
 
 async function startRotationStream(rotation, item) {
   try {
+    let actualVideoId = item.video_id;
+    if (item.video_id && item.video_id.startsWith('playlist:')) {
+      actualVideoId = item.video_id.substring(9);
+    }
+
+    await streamingService.validateCopyModeCompatibilityForInput({
+      videoId: actualVideoId,
+      useAdvancedSettings: false,
+      isYouTubeApi: true
+    });
+
     const user = await User.findById(rotation.user_id);
     if (!user) {
       console.error('[RotationService] User not found');
@@ -354,11 +407,6 @@ async function startRotationStream(rotation, item) {
       }
     }
 
-    let actualVideoId = item.video_id;
-    if (item.video_id && item.video_id.startsWith('playlist:')) {
-      actualVideoId = item.video_id.substring(9);
-    }
-
     const stream = await Stream.create({
       title: item.title,
       video_id: actualVideoId,
@@ -383,12 +431,19 @@ async function startRotationStream(rotation, item) {
       end_time: rotation.end_time
     });
 
-    await streamingService.startStream(stream.id);
+    const startResult = await streamingService.startStream(stream.id);
+    if (!startResult.success) {
+      return {
+        success: false,
+        error: startResult.error,
+        code: startResult.code || null
+      };
+    }
 
     return { success: true, streamId: stream.id, broadcastId: broadcast.id };
   } catch (error) {
     console.error('[RotationService] Error starting rotation stream:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message, code: error.code || null };
   }
 }
 
@@ -518,6 +573,7 @@ async function pauseRotation(rotationId) {
         activeRotationStreams.delete(streamKey);
         loggedAlreadyRunning.delete(streamKey);
       }
+      failedRotationStarts.delete(streamKey);
     }
 
     await Rotation.update(rotationId, { status: 'paused' });
@@ -540,6 +596,7 @@ async function stopRotation(rotationId) {
         activeRotationStreams.delete(streamKey);
         loggedAlreadyRunning.delete(streamKey);
       }
+      failedRotationStarts.delete(streamKey);
     }
 
     await Rotation.update(rotationId, { status: 'inactive', current_index: 0 });
@@ -564,6 +621,7 @@ function shutdown() {
     });
   }
   activeRotationStreams.clear();
+  failedRotationStarts.clear();
 }
 
 module.exports = {

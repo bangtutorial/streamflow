@@ -10,7 +10,7 @@ echo
 echo "🔄 Updating sistem..."
 sudo apt update && sudo apt upgrade -y
 echo "📦 Installing nvm (Node Version Manager)..."
-curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/refs/heads/master/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
 source "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"

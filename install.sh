@@ -61,7 +61,13 @@ EOF
 echo "✅ pnpm $(pnpm -v) berhasil diinstall"
 
 # ─────────────────────────────────────────
-# 5. Install FFmpeg
+# 5. Install build tools (wajib untuk native modules)
+# ─────────────────────────────────────────
+echo "🔨 Installing build tools (python3, make, g++)..."
+sudo apt install -y python3 make g++ build-essential
+
+# ─────────────────────────────────────────
+# 6. Install FFmpeg
 # ─────────────────────────────────────────
 if command -v ffmpeg &> /dev/null; then
     echo "✅ FFmpeg sudah terinstall, skip..."
@@ -71,7 +77,7 @@ else
 fi
 
 # ─────────────────────────────────────────
-# 6. Install Git
+# 7. Install Git
 # ─────────────────────────────────────────
 if command -v git &> /dev/null; then
     echo "✅ Git sudah terinstall, skip..."
@@ -81,7 +87,7 @@ else
 fi
 
 # ─────────────────────────────────────────
-# 7. Clone repository
+# 8. Clone repository
 # ─────────────────────────────────────────
 echo "📥 Clone repository..."
 if [ -d "$HOME/streamflow" ]; then
@@ -94,20 +100,54 @@ else
 fi
 
 # ─────────────────────────────────────────
-# 8. Install dependencies & generate secret
+# 9. Install dependencies & build native modules
 # ─────────────────────────────────────────
 echo "⚙️ Installing dependencies..."
 pnpm install
+
+echo "🔨 Approving & building native modules (sqlite3, bcrypt, ffmpeg)..."
+# Buat file .pnpmfile.cjs untuk allow semua build scripts secara otomatis
+cat > "$HOME/streamflow/.pnpmfile.cjs" << 'PNPMEOF'
+function readPackage(pkg, context) {
+  return pkg;
+}
+
+module.exports = {
+  hooks: {
+    readPackage,
+  },
+};
+PNPMEOF
+
+# Approve semua build scripts yang dibutuhkan
+pnpm approve-builds --all 2>/dev/null || true
+
+# Reinstall dengan build scripts diizinkan
+pnpm install --ignore-scripts=false
+
+# Pastikan sqlite3 native binary terkompilasi
+echo "🔨 Rebuilding sqlite3 native binary..."
+cd "$HOME/streamflow/node_modules/.pnpm/sqlite3@5.1.7/node_modules/sqlite3" 2>/dev/null && \
+    npm run install --build-from-source 2>/dev/null || \
+    node-pre-gyp install --fallback-to-build 2>/dev/null || true
+cd "$HOME/streamflow"
+
+# Pastikan bcrypt native binary terkompilasi
+echo "🔨 Rebuilding bcrypt native binary..."
+cd "$HOME/streamflow/node_modules/.pnpm/bcrypt@6.0.0/node_modules/bcrypt" 2>/dev/null && \
+    npm run install --build-from-source 2>/dev/null || true
+cd "$HOME/streamflow"
+
 pnpm run generate-secret
 
 # ─────────────────────────────────────────
-# 9. Setup timezone
+# 10. Setup timezone
 # ─────────────────────────────────────────
 echo "🕐 Setup timezone ke Asia/Jakarta..."
 sudo timedatectl set-timezone Asia/Jakarta
 
 # ─────────────────────────────────────────
-# 10. Setup firewall
+# 11. Setup firewall
 # ─────────────────────────────────────────
 echo "🔧 Setup firewall..."
 sudo ufw allow ssh
@@ -115,7 +155,7 @@ sudo ufw allow 7575
 sudo ufw --force enable
 
 # ─────────────────────────────────────────
-# 11. Install PM2
+# 12. Install PM2
 # ─────────────────────────────────────────
 
 # Reload PATH secara lengkap sebelum cek & install PM2
@@ -146,7 +186,7 @@ fi
 echo "✅ PM2 $(pm2 --version) berhasil disiapkan"
 
 # ─────────────────────────────────────────
-# 12. Start StreamFlow via PM2
+# 13. Start StreamFlow via PM2
 # ─────────────────────────────────────────
 echo "▶️ Starting StreamFlow..."
 cd "$HOME/streamflow"
@@ -158,7 +198,7 @@ pm2 start app.js --name streamflow
 pm2 save
 
 # ─────────────────────────────────────────
-# 13. Setup PM2 startup (auto-start on reboot)
+# 14. Setup PM2 startup (auto-start on reboot)
 # ─────────────────────────────────────────
 echo "🔁 Setup PM2 startup on boot..."
 PM2_STARTUP_CMD=$(pm2 startup systemd -u "$USER" --hp "$HOME" 2>&1 | grep "sudo env" | head -1)
@@ -170,7 +210,7 @@ fi
 pm2 save
 
 # ─────────────────────────────────────────
-# 14. Selesai
+# 15. Selesai
 # ─────────────────────────────────────────
 echo
 echo "================================"

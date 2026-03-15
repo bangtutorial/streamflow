@@ -12,7 +12,7 @@ sudo apt update && sudo apt upgrade -y
 echo "📦 Installing nvm (Node Version Manager)..."
 curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+source "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 echo "📦 Installing Node.js LTS terbaru..."
 nvm install --lts

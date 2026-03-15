@@ -4,7 +4,7 @@
 
 ## StreamFlow: Web-Based Multi-Platform Streaming
 
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/bangtutorial/streamflow/releases)
+[![Version](https://img.shields.io/badge/version-2.2.2-blue.svg)](https://github.com/bangtutorial/streamflow/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/bangtutorial/streamflow/blob/main/LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/bangtutorial/streamflow/blob/main/CONTRIBUTING.md)
 [![GitHub Stars](https://img.shields.io/github/stars/bangtutorial/streamflow?style=social)](https://github.com/bangtutorial/streamflow/stargazers)

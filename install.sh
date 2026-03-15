@@ -20,11 +20,11 @@ nvm use --lts
 nvm alias default 'lts/*'
 echo "✅ Node.js $(node -v) berhasil diinstall"
 echo "📦 Installing pnpm..."
-npm install -g pnpm
 export SHELL="/bin/bash"
-pnpm setup
+npm install -g pnpm
 export PNPM_HOME="$HOME/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"
+mkdir -p "$PNPM_HOME"
 echo "✅ pnpm $(pnpm -v) berhasil diinstall"
 if command -v ffmpeg &> /dev/null; then
     echo "✅ FFmpeg sudah terinstall, skip..."

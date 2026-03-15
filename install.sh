@@ -19,6 +19,9 @@ nvm install --lts
 nvm use --lts
 nvm alias default 'lts/*'
 echo "✅ Node.js $(node -v) berhasil diinstall"
+echo "📦 Installing pnpm..."
+npm install -g pnpm
+echo "✅ pnpm $(pnpm -v) berhasil diinstall"
 if command -v ffmpeg &> /dev/null; then
     echo "✅ FFmpeg sudah terinstall, skip..."
 else
@@ -35,8 +38,8 @@ echo "📥 Clone repository..."
 git clone https://github.com/bangtutorial/streamflow
 cd streamflow
 echo "⚙️ Installing dependencies..."
-npm install
-npm run generate-secret
+pnpm install
+pnpm run generate-secret
 echo "🕐 Setup timezone ke Asia/Jakarta..."
 sudo timedatectl set-timezone Asia/Jakarta
 echo "🔧 Setup firewall..."
@@ -47,7 +50,7 @@ if command -v pm2 &> /dev/null; then
     echo "✅ PM2 sudah terinstall, skip..."
 else
     echo "🚀 Installing PM2..."
-    npm install -g pm2
+    pnpm add -g pm2
 fi
 export PATH="$NVM_DIR/versions/node/$(nvm current)/bin:$PATH"
 echo "▶️ Starting StreamFlow..."
@@ -62,7 +65,7 @@ SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || echo "IP_SERVER")
 echo
 echo "🌐 URL Akses: http://$SERVER_IP:7575"
 echo "📦 Node.js: $(node -v)"
-echo "📦 npm: $(npm -v)"
+echo "📦 pnpm: $(pnpm -v)"
 echo
 echo "📋 Langkah selanjutnya:"
 echo "1. Buka URL di browser"

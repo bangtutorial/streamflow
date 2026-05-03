@@ -12,7 +12,7 @@
 
 **StreamFlow** adalah platform live streaming berbasis web yang powerful dan mudah digunakan. Streaming ke YouTube, Facebook, dan platform RTMP lainnya secara bersamaan dengan satu aplikasi. Dilengkapi dengan video management, scheduled streaming, dan real-time monitoring untuk pengalaman streaming yang profesional.
 
-[🚀 Installation](#-quick-installation) • [📖 Documentation](#-manual-installation) • [🐳 Docker](#-docker-deployment) • [🪛 Troubleshooting](#-troubleshooting) • [💬 Community](https://github.com/bangtutorial/streamflow/discussions)
+[🚀 Installation](#-quick-installation) • [📖 Documentation](#-manual-installation) • [📺 YouTube Setup](YOUTUBE-OAUTH-SETUP.md) • • [🐳 Docker](#-docker-deployment) • [🪛 Troubleshooting](#-troubleshooting) • [💬 Community](https://github.com/bangtutorial/streamflow/discussions)
 
 ![screenshot](https://github.com/user-attachments/assets/fef1c0a5-04f6-41ae-8ea1-5eb1fff13a22)
 
@@ -235,7 +235,27 @@ sudo timedatectl set-timezone Asia/Jakarta
 pm2 restart streamflow
 ```
 
-## 🐳 Docker Deployment
+
+## 📺 YouTube Integration (OAuth Setup)
+
+Untuk fitur **streaming otomatis ke YouTube** (auto-create live broadcast via YouTube Data API v3), StreamFlow perlu OAuth 2.0 credentials dari Google Cloud.
+
+**⚠️ Penting**: Google OAuth **menolak redirect URI dengan IP publik + HTTP**. Kalau VPS kamu diakses via `http://IP:7575`, fitur YouTube tidak akan jalan sampai kamu setup salah satu dari:
+
+- **Cloudflare Tunnel** — HTTPS gratis, setup 5 menit, tanpa domain (**rekomendasi utama**)
+- **SSH Port Forwarding** — setup OAuth sekali via `localhost:7575`
+- **Domain + nginx + Let's Encrypt** — production-grade
+
+� **Panduan lengkap step-by-step**: [YOUTUBE-OAUTH-SETUP.md](YOUTUBE-OAUTH-SETUP.md)
+
+Panduan mencakup:
+- Install & jalankan Cloudflare Tunnel (quick tunnel + named tunnel permanen)
+- SSH Port Forwarding untuk setup sementara
+- Setup domain + nginx reverse proxy + Let's Encrypt SSL
+- Konfigurasi Google Cloud Console (Project, YouTube API, OAuth Consent, Client ID)
+- Troubleshooting: `redirect_uri_mismatch`, `Error 400`, dll.
+
+## �🐳 Docker Deployment
 
 ### 1. Persiapan Environment
 
@@ -291,6 +311,12 @@ rm db/*.db
 # Restart aplikasi untuk membuat database baru
 pm2 restart streamflow
 ```
+
+### YouTube OAuth Error (`redirect_uri_mismatch`, `Access blocked`, dll)
+
+Google OAuth butuh HTTPS atau localhost — tidak menerima IP publik dengan HTTP.
+
+👉 Lihat [YOUTUBE-OAUTH-SETUP.md](YOUTUBE-OAUTH-SETUP.md) untuk panduan setup lengkap via Cloudflare Tunnel / SSH Tunnel / Domain HTTPS.
 
 ### Docker Troubleshooting
 

@@ -15,7 +15,7 @@
     "@tus/server": "^2.3.0",
     "axios": "^1.8.1",
     "bcrypt": "^6.0.0",
-    "connect-sqlite3": "^0.9.15",
+    "connect-sqlite3": "0.9.15",
     "csrf": "^3.1.0",
     "dotenv": "^16.5.0",
     "ejs": "^3.1.9",
